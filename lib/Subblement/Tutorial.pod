@@ -1,0 +1,52 @@
+package Sub::Extras::Tutorial;
+
+=head1 DESCRIPTION
+
+=head2 A
+
+Here's a normal Perl module:
+
+ package MyModule;
+
+ sub pow {
+     my ($base, $exp) = @_;
+     $base ** $exp;
+ }
+
+ 1;
+
+Here's a Perl module after we add some metadata and do a few adjustments:
+
+ package MyModule;
+
+ our %SUB_EXTRAS;
+ $SUB_EXTRAS{pow} = {
+     desc => 'Exponent a number',
+     args => {
+         base=>[float=>{desc=>'Number to exponent', required=>1, arg_pos=>1}],
+         exp =>[float=>{desc=>'The exponent'      , required=>1, arg_pos=>2}],
+     },
+     return => [float]
+ };
+
+ sub pow {
+     my (%args) = @_;
+     $args{base} ** $args{exp};
+ }
+
+ 1;
+
+There are some differences:
+
+=over 4
+
+=item * $SUB_EXTRAS{pow}
+
+=item * Accept arguments
+
+=item * Return result in an array form
+
+=back
+
+=cut
+
