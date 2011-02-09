@@ -375,6 +375,7 @@ In your module:
          arg  => ...,
          arg2 => ...
      },
+     ...
  };
  sub foo {
     ...
@@ -387,7 +388,6 @@ In your script:
 
  #!/usr/bin/perl
  use Sub::Spec::CmdLine qw(run);
- use YourModule;
  run(module=>'YourModule', sub=>'foo');
 
 In the command-line:
@@ -395,13 +395,32 @@ In the command-line:
  % script.pl --help
  % script.pl --arg value --arg2 '[an, array, in, yaml, syntax]' ...
 
+For running multiple subs, in your script:
+
+ use Sub::Spec::CmdLine qw(run);
+ run(subcommands => {
+     foo => { module=>'YourModule', sub=>'foo'},
+     bar => { module=>'YourModule', sub=>'bar'},
+     ...
+ });
+
+In the command-line:
+
+ % script.pl --help
+ % script.pl --list
+ % script.pl foo --help
+ % script.pl foo --arg value --arg2 ...
+ % script.pl bar --blah ...
 
 =head1 DESCRIPTION
 
-NOTE: This module is not ready for public consumption yet. It will be after
-L<Data::Sah> and L<Sub::Spec> is released.
+This module utilize sub specs (as defined by L<Sub::Spec>) to let your subs be
+accessible from the command-line.
 
 This module uses Log::Any logging framework.
+
+NOTE: This module is not ready for public consumption yet. It will be after
+L<Data::Sah> and L<Sub::Spec> is released.
 
 
 =head1 FUNCTIONS
