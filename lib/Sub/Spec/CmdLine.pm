@@ -132,8 +132,8 @@ sub gen_usage($;$) {
     my $usage = "";
 
     if ($sub_spec->{summary}) {
-        $usage .= ($sub_spec->{_module} ? "$sub_spec->{_module}::" : "") .
-            ($sub_spec->{_sub} ? "$sub_spec->{_sub} - " : "") .
+        $usage .= ($sub_spec->{_package} ? "$sub_spec->{_package}::" : "") .
+            ($sub_spec->{name} ? "$sub_spec->{name} - " : "") .
                 "$sub_spec->{summary}\n\n";
     }
 
