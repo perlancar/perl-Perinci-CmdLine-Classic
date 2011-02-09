@@ -417,7 +417,8 @@ In the command-line:
 This module utilize sub specs (as defined by L<Sub::Spec>) to let your subs be
 accessible from the command-line.
 
-This module uses Log::Any logging framework.
+This module uses L<Log::Any> logging framework. Use something like
+L<Log::Any::App>, etc to see more logging statements for debugging.
 
 NOTE: This module is not ready for public consumption yet. It will be after
 L<Data::Sah> and L<Sub::Spec> is released.
