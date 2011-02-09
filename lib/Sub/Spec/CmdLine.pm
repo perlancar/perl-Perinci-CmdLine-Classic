@@ -84,12 +84,12 @@ sub parse_argv {
 
     $log->tracef("tmp args result (after YAML conversion): %s", $args);
 
-    # process arg_order
+    # process arg_pos
   ARGV:
     for my $i (reverse 0..@$argv-1) {
         while (my ($name, $schema) = each %$spec_args) {
             my $ah0 = $schema->{attr_hashes}[0];
-            my $o = $ah0->{arg_order};
+            my $o = $ah0->{arg_pos};
             if (defined($o) && $o == $i) {
                 die "You specified option --$name but also argument #".
                     ($i+1)."\n" if defined($args->{$name});
@@ -103,7 +103,7 @@ sub parse_argv {
         }
     }
 
-    $log->tracef("tmp args result (after arg_order processing): %s, argv: %s",
+    $log->tracef("tmp args result (after arg_pos processing): %s, argv: %s",
                  $args, $argv);
     die "Error: extra argument(s): ".join(", ", @$argv)."\n" if @$argv;
 
@@ -150,8 +150,8 @@ sub gen_usage($;$) {
     for my $name (sort {
         (($args->{$a}{attr_hashes}[0]{arg_category} // "") cmp
              ($args->{$b}{attr_hashes}[0]{arg_category} // "")) ||
-                 (($args->{$a}{attr_hashes}[0]{arg_order} // 9999) <=>
-                      ($args->{$b}{attr_hashes}[0]{arg_order} // 9999)) ||
+                 (($args->{$a}{attr_hashes}[0]{arg_pos} // 9999) <=>
+                      ($args->{$b}{attr_hashes}[0]{arg_pos} // 9999)) ||
                           ($a cmp $b) } keys %$args) {
         my $arg = $args->{$name};
         my $ah0 = $arg->{attr_hashes}[0];
@@ -174,7 +174,7 @@ sub gen_usage($;$) {
             $arg_desc  .= "[" . $arg->{type} . "]";
         }
 
-        my $o = $ah0->{arg_order};
+        my $o = $ah0->{arg_pos};
         my $g = $ah0->{arg_greedy};
 
         $arg_desc .= " $ah0->{summary}" if $ah0->{summary};
@@ -441,7 +441,7 @@ Note: As with GetOptions, this function modifies its argument, @argv.
 
 Why would one use this function instead of using Getopt::Long directly? We want
 YAML parsing (ability to pass data structures via command line), parsing of
-arg_order and arg_greedy, stricter behaviour (dies on error).
+arg_pos and arg_greedy, stricter behaviour (dies on error).
 
 One problem with Getopt::Long: all options get set to undef even if not
 specified. So currently we delete undef keys in %$args.
