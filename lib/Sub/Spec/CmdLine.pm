@@ -159,7 +159,7 @@ sub gen_usage($;$) {
         my $cat = $ah0->{arg_category} // "";
         if (!defined($prev_cat) || $prev_cat ne $cat) {
             $usage .= ($cat ? "$cat options" : "Options") .
-                ": (* denotes required options):\n";
+                " (* denotes required options):\n";
             $prev_cat = $cat;
         }
 
