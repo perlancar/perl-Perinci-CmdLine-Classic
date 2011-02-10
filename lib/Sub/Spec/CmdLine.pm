@@ -145,8 +145,9 @@ sub gen_usage($;$) {
 
     my $args  = $sub_spec->{args} // {};
     my $rargs = $sub_spec->{required_args};
-    my $has_cat = grep { $_->[1]{arg_category} } values %$args;
     $args = { map {$_ => _parse_schema($args->{$_})} keys %$args };
+    my $has_cat = grep { $_->{attr_hashes}[0]{arg_category} }
+        values %$args;
     my $prev_cat;
     my $noted_star_req;
     for my $name (sort {
