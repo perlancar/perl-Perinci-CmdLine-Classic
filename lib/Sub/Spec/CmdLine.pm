@@ -145,6 +145,7 @@ sub gen_usage($;$) {
 
     my $args  = $sub_spec->{args} // {};
     my $rargs = $sub_spec->{required_args};
+    my $has_cat = grep { $_->[1]{arg_category} } values %$args;
     $args = { map {$_ => _parse_schema($args->{$_})} keys %$args };
     my $prev_cat;
     for my $name (sort {
@@ -158,8 +159,9 @@ sub gen_usage($;$) {
 
         my $cat = $ah0->{arg_category} // "";
         if (!defined($prev_cat) || $prev_cat ne $cat) {
-            $usage .= ($cat ? ucfirst("$cat options") : "Options") .
-                " (* denotes required options):\n";
+            $usage .= ($cat ? ucfirst("$cat options") :
+                           ($has_cat ? "General options" : "Options")) .
+                               " (* denotes required options):\n";
             $prev_cat = $cat;
         }
 
