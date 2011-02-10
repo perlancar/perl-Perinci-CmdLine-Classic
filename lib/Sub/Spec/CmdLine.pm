@@ -208,10 +208,10 @@ sub gen_usage($;$) {
     }
 
     if ($sub_spec->{cmdline_examples}) {
-        $usage .= "Examples:\n\n";
+        $usage .= "\nExamples:\n\n";
         my $cmd = $opts->{cmd} // $0;
         for my $ex (@{ $sub_spec->{cmdline_examples} }) {
-            $usage .= "% $cmd $ex->{cmd}\n";
+            $usage .= " % $cmd $ex->{cmd}\n";
             my $desc = $ex->{description};
             if ($desc) {
                 $desc =~ s/^\n+//; $desc =~ s/\n+$//;
