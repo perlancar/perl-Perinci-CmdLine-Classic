@@ -185,8 +185,8 @@ sub gen_usage($;$) {
 
         $arg_desc .= " $ah0->{summary}" if $ah0->{summary};
         $arg_desc .= " (one of: ".
-            Data::Dump::Partial::dumpp($ah0->{choices}).")"
-                  if defined($ah0->{choices});
+            Data::Dump::Partial::dumpp($ah0->{in}).")"
+                  if defined($ah0->{in});
         $arg_desc .= " (default: ".
             Data::Dump::Partial::dumpp($ah0->{default}).")"
                   if defined($ah0->{default});
