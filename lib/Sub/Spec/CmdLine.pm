@@ -129,10 +129,13 @@ sub gen_usage($;$) {
 
     my $usage = "";
 
+    my $cmd = $opts->{cmd};
+    if ($sub_spec->{name}) {
+        $cmd = ($sub_spec->{_package} ? "$sub_spec->{_package}::" : "") .
+            $sub_spec->{name};
+    }
     if ($sub_spec->{summary}) {
-        $usage .= ($sub_spec->{_package} ? "$sub_spec->{_package}::" : "") .
-            ($sub_spec->{name} ? "$sub_spec->{name} - " : "") .
-                "$sub_spec->{summary}\n\n";
+        $usage .= ($cmd ? "$cmd - " : "") . "$sub_spec->{summary}\n\n";
     }
 
     my $desc = $sub_spec->{description};
@@ -244,7 +247,7 @@ sub format_result {
         if ($res->[0] == 200) {
             $r = $res->[2];
             $r //= $opts->{default_success_message}
-                if $opts->{default_success_message};
+                if defined($opts->{default_success_message});
         } else {
             $r = defined($res->[2]) ? $res : "ERROR $res->[0]: $res->[1]";
         }
