@@ -246,7 +246,7 @@ sub format_result {
         if (!defined($res->[2])) {
             return $res->[0] == 200 ?
                 ($opts->{default_success_message} // "") :
-                    "ERROR $res->[0]: $res->[1]";
+                    "ERROR $res->[0]: $res->[1]\n";
         }
         my $r = $res->[0] == 200 ? $res->[2] : $res;
         if ($format eq 'text') {
