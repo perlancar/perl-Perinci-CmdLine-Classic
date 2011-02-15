@@ -302,7 +302,7 @@ sub run {
     if ($args{subcommands}) {
         $subcmdname = shift @ARGV or die "Please specify a subcommand, ".
             "use $0 -l to list available subcommands\n";
-        my $subcmd = $args{subcommands}{$subcmdname};
+        $subcmd = $args{subcommands}{$subcmdname};
         $subcmd or die "Unknown subcommand `$subcmdname`, please ".
             "use $0 -l to list available subcommands\n";
         $module = $subcmd->{module} // $args{module};
