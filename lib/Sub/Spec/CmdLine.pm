@@ -360,7 +360,8 @@ _
     my $res    = $subref->(%$args);
 
     $log->tracef("opts=%s", \%opts);
-    print format_result($res, $opts{format});
+    print format_result($res, $opts{format})
+        unless $spec->{cmdline_suppress_output};
     my $exit_code = $res->[0] == 200 ? 0 : $res->[0] - 300;
     if ($exit) { exit $exit_code } else { return $exit_code }
 }
