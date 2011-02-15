@@ -349,7 +349,7 @@ _
     }
 
     # handle per-command --help
-    if ($subcmd && $ARGV[0] =~ /^(--help|-h|-\?)$/) {
+    if ($subcmd && $ARGV[0] && $ARGV[0] =~ /^(--help|-h|-\?)$/) {
         print gen_usage($spec, {cmd=>"$cmd $subcmdname"});
         if ($exit) { exit 0 } else { return 0 }
     }
