@@ -267,7 +267,7 @@ sub run {
     my %args = @_;
 
     my %opts = (format => undef, action => 'run');
-    Getopt::Long::Configure("pass_through");
+    Getopt::Long::Configure("pass_through", "no_permute");
     GetOptions(
         "--list|l"     => sub { $opts{action} = 'list'     },
         "--help|h|?"   => sub { $opts{action} = 'help'     },
