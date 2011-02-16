@@ -716,7 +716,7 @@ arg, args.
 
 =back
 
-run() can also perform completion for bash (if L<Sub::Spec::BashCompletion> is
+run() can also perform completion for bash (if L<Sub::Spec::BashComplete> is
 available). To get bash completion for your B<perlprog>, just type this in bash:
 
  % complete -C /path/to/perlprog perlprog
