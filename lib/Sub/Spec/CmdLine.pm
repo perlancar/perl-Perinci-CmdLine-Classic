@@ -456,7 +456,15 @@ _
 
     # handle per-command --help
     if ($subcmd && $ARGV[0] && $ARGV[0] =~ /^(--help|-h|-\?)$/) {
-        print gen_usage($spec, {cmd=>"$cmd $subcmdname"});
+        if ($subcmd->{help}) {
+            if (ref($subcmd->{help}) eq 'CODE') {
+                print $subcmd->{help}->();
+            } else {
+                print $subcmd->{help};
+            }
+        } else {
+            print gen_usage($spec, {cmd=>"$cmd $subcmdname"});
+        }
         if ($exit) { exit 0 } else { return 0 }
     }
 
