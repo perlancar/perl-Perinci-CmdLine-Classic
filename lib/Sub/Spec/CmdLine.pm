@@ -6,8 +6,6 @@ use strict;
 use warnings;
 use Log::Any '$log';
 
-use Getopt::Long    qw(GetOptionsFromArray);
-
 require Exporter;
 our @ISA       = qw(Exporter);
 our @EXPORT_OK = qw(parse_argv gen_usage format_result run);
@@ -29,13 +27,14 @@ sub _parse_schema {
 }
 
 sub parse_argv {
+    require Getopt::Long;
     require YAML::Syck; $YAML::Syck::ImplicitTyping = 1;
 
     my ($argv, $sub_spec, $opts) = @_;
     my $args_spec = $sub_spec->{args} // {};
     $args_spec = { map { $_ => _parse_schema($args_spec->{$_}) }
                        keys %$args_spec };
-    my $opts //= {};
+    $opts //= {};
     $opts->{strict} //= 1;
 
     my %go_spec;
@@ -56,7 +55,7 @@ sub parse_argv {
         }
     }
     $log->tracef("GetOptions rule: %s", \%go_spec);
-    my $result = GetOptionsFromArray($argv, %go_spec);
+    my $result = Getopt::Long::GetOptionsFromArray($argv, %go_spec);
     unless ($result) {
         die "Incorrect command-line options/arguments\n" if $opts->{strict};
     }
@@ -273,11 +272,13 @@ sub format_result {
 }
 
 sub run {
+    require Getopt::Long;
+
     my %args = @_;
 
     my %opts = (format => undef, action => 'run');
     Getopt::Long::Configure("pass_through", "no_permute");
-    GetOptions(
+    Getopt::Long::GetOptions(
         "--list|l"     => sub { $opts{action} = 'list'     },
         "--version|v"  => sub { $opts{action} = 'version'  },
         "--help|h|?"   => sub { $opts{action} = 'help'     },
