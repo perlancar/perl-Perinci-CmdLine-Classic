@@ -55,6 +55,7 @@ sub parse_argv {
         }
     }
     $log->tracef("GetOptions rule: %s", \%go_spec);
+    Getopt::Long::Configure("no_pass_through", "no_ignore_case", "permute");
     my $result = Getopt::Long::GetOptionsFromArray($argv, %go_spec);
     unless ($result) {
         die "Incorrect command-line options/arguments\n" if $opts->{strict};
@@ -302,7 +303,7 @@ sub run {
     }
 
     my %opts = (format => undef, action => 'run');
-    Getopt::Long::Configure("pass_through", "no_permute");
+    Getopt::Long::Configure("pass_through", "no_ignore_case", "no_permute");
     my %getopts = (
         "--list|l"     => sub { $opts{action} = 'list'     },
         "--version|v"  => sub { $opts{action} = 'version'  },
@@ -427,7 +428,13 @@ sub run {
 
     # handle general --help
     if ($opts{action} eq 'help') {
-        if ($args{subcommands}) {
+        if ($args{help}) {
+            if (ref($args{help}) eq 'CODE') {
+                print $args{help}->();
+            } else {
+                print $args{help};
+            }
+        } elsif ($args{subcommands}) {
             say $cmd, ($args{summary} ? " - $args{summary}" : "");
             print <<_;
 
@@ -617,6 +624,16 @@ Arguments:
 
 =item * sub => STR
 
+=item * spec => SPEC
+
+Instead of trying to look for the spec using B<module> and B<sub>, use the
+supplied spec.
+
+=item * help => STRING | CODEREF
+
+Instead of generating help using gen_usage() from the spec, use the supplied
+help message (or help code, which is expected to return help text).
+
 =item * subcommands => {NAME => {module=>..., sub=>..., summary=>..., ...}, ...}
 
 B<module> and B<sub> should be specified if you only have one sub to run. If you
@@ -625,9 +642,20 @@ have several subs to run, assign each of them to a subcommand, e.g.:
  summary     => 'Maintain a directory containing git repos',
  module      => 'Git::Bunch',
  subcommands => {
+   check   => { },
    backup  => { }, # module defaults to main module argument,
-   status  => { }, # sub defaults to the same name as subcommand name
+   sync    => { }, # sub defaults to the same name as subcommand name
  },
+
+Available argument for each subcommand: module (defaults to main B<module>
+argument), sub (defaults to subcommand name), summary, help, category (for
+arrangement when listing commands), run, complete_arg, complete_args.
+
+=item * run => CODEREF
+
+Instead of running command by invoking subroutine specified by B<module> and
+B<sub>, run this code instead. Code is expected to return a response structure
+([CODE, MESSAGE, DATA]).
 
 =item * exit => BOOL (optional, default 1)
 
