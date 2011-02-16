@@ -466,11 +466,11 @@ sub run {
             print <<_;
 
 Usage:
+  $cmd --help (or -h, or -?)
+  $cmd --list (or -l)
+  $cmd --version (or -v)
   $cmd SUBCOMMAND [ARGS ...]
   $cmd SUBCOMMAND --help (or -h, or -?)
-  $cmd --version (or -v)
-  $cmd --list (or -l)
-  $cmd --help
 
 Options:
   --help     Show this message
