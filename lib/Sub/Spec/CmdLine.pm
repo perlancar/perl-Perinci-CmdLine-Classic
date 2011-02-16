@@ -277,6 +277,28 @@ sub run {
     my %args = @_;
     my $exit = $args{exit} // 1;
 
+    # detect (1) if we're being invoked for bash completion, get ARGV from
+    # COMP_LINE instead since ARGV given by bash is messed up / different
+    my ($comp_words, $comp_cword, $comp_word);
+    if ($ENV{COMP_LINE}) {
+        eval { require Sub::Spec::BashComplete };
+        my $eval_err = $@;
+        if ($eval_err) {
+            die "Can't load Sub::Spec::BashComplete: $eval_err\n";
+        }
+
+        my $res = Sub::Spec::BashComplete::_parse_request();
+        $comp_words = $res->{words};
+        $comp_cword = $res->{cword};
+        $comp_word  = $comp_words->[$comp_cword] // "";
+
+        @ARGV = @$comp_words;
+
+        # drop $0
+        shift @$comp_words;
+        $comp_cword--;
+    }
+
     my %opts = (format => undef, action => 'run');
     Getopt::Long::Configure("pass_through", "no_permute");
     my %getopts = (
@@ -302,8 +324,11 @@ sub run {
     if ($args{subcommands} && @ARGV) {
         $subcmdname = shift @ARGV;
         $subcmd = $args{subcommands}{$subcmdname};
-        $subcmd or die "Unknown subcommand `$subcmdname`, please ".
-            "use $0 -l to list available subcommands\n";
+        # it's ok if user type incomplete subcommand name under completion
+        unless ($ENV{COMP_LINE}) {
+            $subcmd or die "Unknown subcommand `$subcmdname`, please ".
+                "use $0 -l to list available subcommands\n";
+        }
         $module = $subcmd->{module} // $args{module};
         $sub    = $subcmd->{sub}    // $subcmdname;
     } else {
@@ -314,28 +339,28 @@ sub run {
     # require module and get spec
     my $spec;
     if ($module && $sub) {
-        my $modulep = $args{module};
-        $modulep =~ s!::!/!g; $modulep .= ".pm";
-        if ($args{require} // 1) {
-            eval { require $modulep };
-            die $@ if $@;
-        }
-        no strict 'refs';
-        my $subs = \%{$module."::SUBS"};
-        $spec = $subs->{$sub};
-        die "Can't find spec for sub $module\::$sub\n" unless $spec;
-    }
-
-    # detect if we're being invoked for bash completion
-    if (defined $ENV{COMP_LINE}) {
         {
-            eval { require Sub::Spec::BashComplete };
-            my $eval_err = $@;
-            if ($eval_err) {
-                $log->warn("Can't load Sub::Spec::BashComplete: $eval_err");
-                last;
+            my $modulep = $args{module};
+            $modulep =~ s!::!/!g; $modulep .= ".pm";
+            if ($args{require} // 1) {
+                eval { require $modulep };
+                if ($@) {
+                    die $@ unless $ENV{COMP_LINE};
+                    last;
+                }
             }
 
+            no strict 'refs';
+            my $subs = \%{$module."::SUBS"};
+            $spec = $subs->{$sub};
+            die "Can't find spec for sub $module\::$sub\n"
+                unless $spec || $ENV{COMP_LINE};
+        }
+    }
+
+    # detect (2) if we're being invoked for bash completion
+    if ($ENV{COMP_LINE}) {
+        {
             my @general_opts;
             for my $o (keys %getopts) {
                 $o =~ s/^--//;
@@ -343,27 +368,22 @@ sub run {
                 for (@o) { push @general_opts, length > 1 ? "--$_" : "-$_" }
             }
 
-            my $res = Sub::Spec::BashComplete::_parse_request();
-            my $words = $res->{words};
-            my $cword = $res->{cword};
-            my $word  = $words->[$cword] // "";
-
             if ($spec) {
-                shift @$words;
-                $cword--;
+                shift @$comp_words;
+                $comp_word--;
                 print map {"$_\n"}
                     Sub::Spec::BashComplete::bash_complete_spec_arg(
                         $spec,
-                        {words=>$words, cword=>$cword},
+                        {words=>$comp_words, cword=>$comp_cword},
                     );
                 last;
             }
 
-            # general options
+            # general options & names of subcommands
             print map {"$_\n"}
                 Sub::Spec::BashComplete::_complete_array(
-                $word,
-                \@general_opts
+                $comp_word,
+                [@general_opts, keys(%{$args{subcommands}})]
             );
         }
 
