@@ -32,16 +32,16 @@ sub parse_argv {
     require YAML::Syck; $YAML::Syck::ImplicitTyping = 1;
 
     my ($argv, $sub_spec, $opts) = @_;
-    my $spec_args = $sub_spec->{args} // {};
-    $spec_args = { map { $_ => _parse_schema($spec_args->{$_}) }
-                       keys %$spec_args };
+    my $args_spec = $sub_spec->{args} // {};
+    $args_spec = { map { $_ => _parse_schema($args_spec->{$_}) }
+                       keys %$args_spec };
     my $opts //= {};
     $opts->{strict} //= 1;
 
     my %go_spec;
 
     my $args = {};
-    while (my ($name, $schema) = each %$spec_args) {
+    while (my ($name, $schema) = each %$args_spec) {
         my $opt;
         my @name = ($name);
         push @name, $name if $name =~ s/_/-/g; # allow --foo_bar and --foo-bar
@@ -89,7 +89,7 @@ sub parse_argv {
     # process arg_pos
   ARGV:
     for my $i (reverse 0..@$argv-1) {
-        while (my ($name, $schema) = each %$spec_args) {
+        while (my ($name, $schema) = each %$args_spec) {
             my $ah0 = $schema->{attr_hashes}[0];
             my $o = $ah0->{arg_pos};
             if (defined($o) && $o == $i) {
@@ -115,7 +115,7 @@ sub parse_argv {
     }
 
     # check required args
-    while (my ($name, $schema) = each %$spec_args) {
+    while (my ($name, $schema) = each %$args_spec) {
         if ($schema->{attr_hashes}[0]{required} && !defined($args->{$name})) {
             die "Missing required argument: $name\n" if $opts->{strict};
         }
