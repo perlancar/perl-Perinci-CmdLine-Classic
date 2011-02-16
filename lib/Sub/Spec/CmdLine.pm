@@ -31,11 +31,12 @@ sub _parse_schema {
 sub parse_argv {
     require YAML::Syck; $YAML::Syck::ImplicitTyping = 1;
 
-    my ($argv, $sub_spec) = @_;
-    my $spec_args         = $sub_spec->{args}          // {};
-
+    my ($argv, $sub_spec, $opts) = @_;
+    my $spec_args = $sub_spec->{args} // {};
     $spec_args = { map { $_ => _parse_schema($spec_args->{$_}) }
                        keys %$spec_args };
+    my $opts //= {};
+    $opts->{strict} //= 1;
 
     my %go_spec;
 
@@ -56,7 +57,9 @@ sub parse_argv {
     }
     $log->tracef("GetOptions rule: %s", \%go_spec);
     my $result = GetOptionsFromArray($argv, %go_spec);
-    die "Incorrect command-line options/arguments\n" unless $result;
+    unless ($result) {
+        die "Incorrect command-line options/arguments\n" if $opts->{strict};
+    }
 
     $log->tracef("tmp args result (after getoptions): %s, argv: %s",
                  $args, $argv);
@@ -90,8 +93,10 @@ sub parse_argv {
             my $ah0 = $schema->{attr_hashes}[0];
             my $o = $ah0->{arg_pos};
             if (defined($o) && $o == $i) {
-                die "You specified option --$name but also argument #".
-                    ($i+1)."\n" if defined($args->{$name});
+                if (defined($args->{$name})) {
+                    die "You specified option --$name but also argument #".
+                        ($i+1)."\n" if $opts->{strict};
+                }
                 if ($ah0->{arg_greedy}) {
                     $args->{$name} = [splice(@$argv, $i)];
                     last ARGV;
@@ -104,12 +109,16 @@ sub parse_argv {
 
     $log->tracef("tmp args result (after arg_pos processing): %s, argv: %s",
                  $args, $argv);
-    die "Error: extra argument(s): ".join(", ", @$argv)."\n" if @$argv;
+    if (@$argv) {
+        die "Error: extra argument(s): ".join(", ", @$argv)."\n"
+            if $opts->{strict};
+    }
 
     # check required args
     while (my ($name, $schema) = each %$spec_args) {
-        die "Missing required argument: $name\n"
-            if $schema->{attr_hashes}[0]{required} && !defined($args->{$name});
+        if ($schema->{attr_hashes}[0]{required} && !defined($args->{$name})) {
+            die "Missing required argument: $name\n" if $opts->{strict};
+        }
     }
 
     # cleanup undefined args
@@ -448,7 +457,7 @@ L<Data::Sah> and L<Sub::Spec> is released.
 None of the functions are exported by default, but they are exportable.
 
 
-=head2 parse_argv(\@argv, $sub_spec) => \%args
+=head2 parse_argv(\@argv, $sub_spec[, \%opts]) => \%args
 
 Parse command line argument @argv into hash %args, suitable for passing into
 subs.
@@ -458,12 +467,19 @@ beforehand to modify behaviour (e.g. if you want no_permute).
 
 Note: As with GetOptions, this function modifies its argument, @argv.
 
-Why would one use this function instead of using Getopt::Long directly? We want
-YAML parsing (ability to pass data structures via command line), parsing of
-arg_pos and arg_greedy, stricter behaviour (dies on error).
+Why would one use this function instead of using Getopt::Long directly? Among
+other reasons, we want YAML parsing (ability to pass data structures via command
+line) and parsing of arg_pos and arg_greedy.
 
-One problem with Getopt::Long: all options get set to undef even if not
-specified. So currently we delete undef keys in %$args.
+Options in %opts:
+
+=over 4
+
+=item * strict => BOOL (default 1)
+
+If set to 0, will still return parsed argv even if there are errors.
+
+=back
 
 =head2 gen_usage($sub_spec) => TEXT
 
