@@ -504,7 +504,10 @@ _
     my $res;
     my $args   = parse_argv(\@ARGV, $spec);
     if ($subcmd && $subcmd->{run}) {
-        $res = $subcmd->{run}->($args);
+        $res = $subcmd->{run}->(
+            module=>$module, sub=>$sub, spec=>$spec,
+            args=>$args,
+        );
     } else {
         my $subref = \&{$module."::$sub"};
         $res    = $subref->(%$args);
