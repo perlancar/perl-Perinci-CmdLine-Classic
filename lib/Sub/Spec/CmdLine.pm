@@ -359,7 +359,7 @@ sub run {
         $spec = ref($args{spec}) eq 'CODE' ?
             $args{spec}->(module=>$module, sub=>$sub) :
                 $args{spec}->();
-    } elsif ($module && $sub) {
+    } elsif ($module) {
         {
             my $modulep = $args{module};
             $modulep =~ s!::!/!g; $modulep .= ".pm";
@@ -371,11 +371,13 @@ sub run {
                 }
             }
 
-            no strict 'refs';
-            my $subs = \%{$module."::SUBS"};
-            $spec = $subs->{$sub};
-            die "Can't find spec for sub $module\::$sub\n"
-                unless $spec || $ENV{COMP_LINE};
+            if ($sub) {
+                no strict 'refs';
+                my $subs = \%{$module."::SUBS"};
+                $spec = $subs->{$sub};
+                die "Can't find spec for sub $module\::$sub\n"
+                    unless $spec || $ENV{COMP_LINE};
+            }
         }
     }
 
@@ -465,12 +467,14 @@ sub run {
 Usage:
   $cmd SUBCOMMAND [ARGS ...]
   $cmd SUBCOMMAND --help (or -l, or -?)
+  $cmd --version
   $cmd --list (or -?)
   $cmd --help
 
 Options:
-  --list    List subcommands
-  --help    Show this message
+  --help     Show this message
+  --list     List subcommands
+  --version  Show version
 _
         } else {
             print gen_usage($spec, {cmd=>$cmd});
