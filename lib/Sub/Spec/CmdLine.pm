@@ -347,9 +347,13 @@ sub run {
     # require module and get spec
     my $spec;
     if ($subcmd && $subcmd->{spec}) {
-        $spec = $subcmd->{spec};
+        $spec = ref($subcmd->{spec}) eq 'CODE' ?
+            $subcmd->{spec}->(module=>$module, sub=>$sub) :
+                $subcmd->{spec};
     } elsif ($args{spec}) {
-        $spec = $args{spec};
+        $spec = ref($args{spec}) eq 'CODE' ?
+            $args{spec}->(module=>$module, sub=>$sub) :
+                $args{spec}->();
     } elsif ($module && $sub) {
         {
             my $modulep = $args{module};
@@ -408,10 +412,26 @@ sub run {
     # handle --list
     if ($opts{action} eq 'list') {
         if ($subcmds) {
-            # XXX sort by category
-            for my $c (sort keys %$subcmds) {
-                my $sc = $subcmds->{$c};
-                say "  $c", ($sc->{summary} ? " - $sc->{summary}" : "");
+            my %cat_subcmds; # (cat1 => {subcmd1=>..., ...}, ...)
+            while (my ($k, $v) = each %$subcmds) {
+                my $cat = $v->{category} // "";
+                $cat_subcmds{$cat} //= {};
+                $cat_subcmds{$cat}{$k} = $v;
+            }
+            my $has_many_cats = scalar(keys %cat_subcmds) > 1;
+            my $i = 0;
+            for my $cat (sort keys %cat_subcmds) {
+                print "\n" if $i++;
+                if ($has_many_cats) {
+                    print "List of ", ucfirst($cat), " subcommands:\n";
+                } else {
+                    print "List of subcommands:\n";
+                }
+                my $subc = $cat_subcmds{$cat};
+                for my $c (sort keys %$subc) {
+                    my $sc = $subcmds->{$c};
+                    say "  $c", ($sc->{summary} ? " - $sc->{summary}" : "");
+                }
             }
         }
         if ($exit) { exit 0 } else { return 0 }
@@ -641,7 +661,7 @@ Arguments:
 
 =item * sub => STR
 
-=item * spec => SPEC
+=item * spec => HASH | CODEREF
 
 Instead of trying to look for the spec using B<module> and B<sub>, use the
 supplied spec.
