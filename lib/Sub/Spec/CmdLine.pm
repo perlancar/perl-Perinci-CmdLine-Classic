@@ -324,6 +324,7 @@ sub run {
     # finding out which module/sub to use
     my $subcmdname;
     my $subcmd;
+    my ($complete_arg, $complete_args);
     if ($args{subcommands} && @ARGV) {
         $subcmdname = shift @ARGV;
         $subcmd = $args{subcommands}{$subcmdname};
