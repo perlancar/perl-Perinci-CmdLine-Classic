@@ -467,9 +467,9 @@ sub run {
 
 Usage:
   $cmd SUBCOMMAND [ARGS ...]
-  $cmd SUBCOMMAND --help (or -l, or -?)
-  $cmd --version
-  $cmd --list (or -?)
+  $cmd SUBCOMMAND --help (or -h, or -?)
+  $cmd --version (or -v)
+  $cmd --list (or -l)
   $cmd --help
 
 Options:
