@@ -275,10 +275,11 @@ sub run {
     require Getopt::Long;
 
     my %args = @_;
+    my $exit = $args{exit} // 1;
 
     my %opts = (format => undef, action => 'run');
     Getopt::Long::Configure("pass_through", "no_permute");
-    Getopt::Long::GetOptions(
+    my %getopts = (
         "--list|l"     => sub { $opts{action} = 'list'     },
         "--version|v"  => sub { $opts{action} = 'version'  },
         "--help|h|?"   => sub { $opts{action} = 'help'     },
@@ -289,23 +290,11 @@ sub run {
         "--pretty"     => sub { $opts{format} = 'pretty'   },
         "--nopretty"   => sub { $opts{format} = 'nopretty' },
     );
+    Getopt::Long::GetOptions(%getopts);
 
-    my $exit = $args{exit} // 1;
     my $subcmds = $args{subcommands};
     my $module;
     my $sub;
-
-    # handle --list
-    if ($opts{action} eq 'list') {
-        if ($subcmds) {
-            # XXX sort by category
-            for my $c (sort keys %$subcmds) {
-                my $sc = $subcmds->{$c};
-                say "  $c", ($sc->{summary} ? " - $sc->{summary}" : "");
-            }
-        }
-        if ($exit) { exit 0 } else { return 0 }
-    }
 
     # finding out which module/sub to use
     my $subcmdname;
@@ -322,6 +311,77 @@ sub run {
         $sub    = $args{sub};
     }
 
+    # require module and get spec
+    my $spec;
+    if ($module && $sub) {
+        my $modulep = $args{module};
+        $modulep =~ s!::!/!g; $modulep .= ".pm";
+        if ($args{require} // 1) {
+            eval { require $modulep };
+            die $@ if $@;
+        }
+        no strict 'refs';
+        my $subs = \%{$module."::SUBS"};
+        $spec = $subs->{$sub};
+        die "Can't find spec for sub $module\::$sub\n" unless $spec;
+    }
+
+    # detect if we're being invoked for bash completion
+    if (defined $ENV{COMP_LINE}) {
+        {
+            eval { require Sub::Spec::BashComplete };
+            my $eval_err = $@;
+            if ($eval_err) {
+                $log->warn("Can't load Sub::Spec::BashComplete: $eval_err");
+                last;
+            }
+
+            my @general_opts;
+            for my $o (keys %getopts) {
+                $o =~ s/^--//;
+                my @o = split /\|/, $o;
+                for (@o) { push @general_opts, length > 1 ? "--$_" : "-$_" }
+            }
+
+            my $res = Sub::Spec::BashComplete::_parse_request();
+            my $words = $res->{words};
+            my $cword = $res->{cword};
+            my $word  = $words->[$cword] // "";
+
+            if ($spec) {
+                shift @$words;
+                $cword--;
+                print map {"$_\n"}
+                    Sub::Spec::BashComplete::bash_complete_spec_arg(
+                        $spec,
+                        {words=>$words, cword=>$cword},
+                    );
+                last;
+            }
+
+            # general options
+            print map {"$_\n"}
+                Sub::Spec::BashComplete::_complete_array(
+                $word,
+                \@general_opts
+            );
+        }
+
+        if ($exit) { exit 0 } else { return 0 }
+    }
+
+    # handle --list
+    if ($opts{action} eq 'list') {
+        if ($subcmds) {
+            # XXX sort by category
+            for my $c (sort keys %$subcmds) {
+                my $sc = $subcmds->{$c};
+                say "  $c", ($sc->{summary} ? " - $sc->{summary}" : "");
+            }
+        }
+        if ($exit) { exit 0 } else { return 0 }
+    }
+
     # handle --version
     if ($opts{action} eq 'version') {
         no strict 'refs';
@@ -335,18 +395,6 @@ sub run {
         unless $module && $sub;
 
     my $cmd = $args{cmd} // $0;
-
-    # require module and get spec
-    my $modulep = $args{module};
-    $modulep =~ s!::!/!g; $modulep .= ".pm";
-    if ($args{require} // 1) {
-        eval { require $modulep };
-        die $@ if $@;
-    }
-    no strict 'refs';
-    my $subs = \%{$module."::SUBS"};
-    my $spec = $subs->{$sub};
-    die "Can't find spec for sub $module\::$sub\n" unless $spec;
 
     # handle general --help
     if ($opts{action} eq 'help') {
