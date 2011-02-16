@@ -559,7 +559,7 @@ and there is no data returned, this default_success_message is used. Example:
 
 =head2 run(%args)
 
-Run sub from the command line, which essentially comprises these
+Run subroutine(s) from the command line, which essentially comprises these
 steps:
 
 =over 4
@@ -609,6 +609,7 @@ If set to 0, instead of exiting with exit(), return the exit code instead.
 If set to 0, do not try to require the module.
 
 =back
+
 
 =head1 SEE ALSO
 
