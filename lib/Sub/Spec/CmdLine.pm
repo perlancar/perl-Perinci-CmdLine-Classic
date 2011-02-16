@@ -331,11 +331,15 @@ sub run {
             $subcmd or die "Unknown subcommand `$subcmdname`, please ".
                 "use $0 -l to list available subcommands\n";
         }
-        $module = $subcmd->{module} // $args{module};
-        $sub    = $subcmd->{sub}    // $subcmdname;
+        $module        = $subcmd->{module}        // $args{module};
+        $sub           = $subcmd->{sub}           // $subcmdname;
+        $complete_arg  = $subcmd->{complete_arg}  // $args{complete_arg};
+        $complete_args = $subcmd->{complete_args} // $args{complete_args};
     } else {
-        $module = $args{module};
-        $sub    = $args{sub};
+        $module        = $args{module};
+        $sub           = $args{sub};
+        $complete_arg  = $args{complete_arg};
+        $complete_args = $args{complete_args};
     }
 
     # require module and get spec
@@ -374,7 +378,12 @@ sub run {
                 print map {"$_\n"}
                     Sub::Spec::BashComplete::bash_complete_spec_arg(
                         $spec,
-                        {words=>$comp_words, cword=>$comp_cword},
+                        {
+                            words    => $comp_words,
+                            cword    => $comp_cword,
+                            arg_sub  => $complete_arg,
+                            args_sub => $complete_args,
+                        },
                     );
                 last;
             }
@@ -608,7 +617,7 @@ Arguments:
 
 =item * sub => STR
 
-=item * subcommands => {NAME => {module=>..., sub=>..., summary=>...}, ...}
+=item * subcommands => {NAME => {module=>..., sub=>..., summary=>..., ...}, ...}
 
 B<module> and B<sub> should be specified if you only have one sub to run. If you
 have several subs to run, assign each of them to a subcommand, e.g.:
@@ -627,6 +636,18 @@ If set to 0, instead of exiting with exit(), return the exit code instead.
 =item * require => BOOL (optional, default 1)
 
 If set to 0, do not try to require the module.
+
+=item * complete_arg  => {ARGNAME => CODEREF, ...}
+
+Under bash completion, when completing argument value, you can supply a code to
+provide its completion. Code will be called with %args containing word, words,
+arg, args.
+
+=item * complete_args => CODEREF
+
+Under bash completion, when completing argument value, you can supply a code to
+provide its completion. Code will be called with %args containing word, words,
+arg, args.
 
 =back
 
