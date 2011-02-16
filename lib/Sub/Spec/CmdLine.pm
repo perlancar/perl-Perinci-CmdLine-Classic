@@ -317,6 +317,7 @@ sub run {
     );
     Getopt::Long::GetOptions(%getopts);
 
+    my $cmd = $args{cmd} // $0;
     my $subcmds = $args{subcommands};
     my $module;
     my $sub;
@@ -331,7 +332,7 @@ sub run {
         # it's ok if user type incomplete subcommand name under completion
         unless ($ENV{COMP_LINE}) {
             $subcmd or die "Unknown subcommand `$subcmdname`, please ".
-                "use $0 -l to list available subcommands\n";
+                "use $cmd -l to list available subcommands\n";
         }
         $module        = $subcmd->{module}        // $args{module};
         $sub           = $subcmd->{sub}           // $subcmdname;
@@ -446,10 +447,8 @@ sub run {
     }
 
     die "Please specify a subcommand, ".
-        "use $0 -l to list available subcommands\n"
+        "use $cmd -l to list available subcommands\n"
         unless $module && $sub;
-
-    my $cmd = $args{cmd} // $0;
 
     # handle general --help
     if ($opts{action} eq 'help') {
