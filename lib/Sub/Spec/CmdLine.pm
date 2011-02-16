@@ -295,8 +295,10 @@ sub run {
         @ARGV = @$comp_words;
 
         # drop $0
-        shift @$comp_words;
-        $comp_cword--;
+        if ($comp_cword > 0) {
+            shift @$comp_words;
+            $comp_cword--;
+        }
     }
 
     my %opts = (format => undef, action => 'run');
@@ -369,8 +371,6 @@ sub run {
             }
 
             if ($spec) {
-                shift @$comp_words;
-                $comp_word--;
                 print map {"$_\n"}
                     Sub::Spec::BashComplete::bash_complete_spec_arg(
                         $spec,
