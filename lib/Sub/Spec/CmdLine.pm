@@ -346,7 +346,11 @@ sub run {
 
     # require module and get spec
     my $spec;
-    if ($module && $sub) {
+    if ($subcmd && $subcmd->{spec}) {
+        $spec = $subcmd->{spec};
+    } elsif ($args{spec}) {
+        $spec = $args{spec};
+    } elsif ($module && $sub) {
         {
             my $modulep = $args{module};
             $modulep =~ s!::!/!g; $modulep .= ".pm";
