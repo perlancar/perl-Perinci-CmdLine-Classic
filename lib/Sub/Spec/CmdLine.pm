@@ -448,7 +448,8 @@ sub run {
     if ($opts{action} eq 'version') {
         no strict 'refs';
         my $version = ${$module."::VERSION"} // "?";
-        say "Version $version";
+        my $rev     = ${$module."::REVISION"};
+        say "Version $version", ($rev ? " rev $rev" : "");
         if ($exit) { exit 0 } else { return 0 }
     }
 
