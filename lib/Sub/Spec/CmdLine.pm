@@ -469,10 +469,14 @@ _
         if ($exit) { exit 0 } else { return 0 }
     }
 
-    my $args = parse_argv(\@ARGV, $spec);
-
-    my $subref = \&{$module."::$sub"};
-    my $res    = $subref->(%$args);
+    my $res;
+    my $args   = parse_argv(\@ARGV, $spec);
+    if ($subcmd && $subcmd->{run}) {
+        $res = $subcmd->{run}->($args);
+    } else {
+        my $subref = \&{$module."::$sub"};
+        $res    = $subref->(%$args);
+    }
 
     $log->tracef("opts=%s", \%opts);
     print format_result($res, $opts{format})
