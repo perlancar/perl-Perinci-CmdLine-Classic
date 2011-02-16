@@ -610,6 +610,13 @@ If set to 0, do not try to require the module.
 
 =back
 
+run() can also perform completion for bash (if L<Sub::Spec::BashCompletion> is
+available). To get bash completion for your B<perlprog>, just type this in bash:
+
+ % complete -C /path/to/perlprog perlprog
+
+You can add that line in bash startup file (~/.bashrc, /etc/bash.bashrc, etc).
+
 
 =head1 SEE ALSO
 
