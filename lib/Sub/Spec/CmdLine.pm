@@ -317,7 +317,11 @@ sub run {
     );
     Getopt::Long::GetOptions(%getopts);
 
-    my $cmd = $args{cmd} // $0;
+    my $cmd = $args{cmd};
+    if (!$cmd) {
+        $cmd = $0;
+        $cmd =~ s!.+/!!;
+    }
     my $subcmds = $args{subcommands};
     my $module;
     my $sub;
@@ -446,10 +450,6 @@ sub run {
         if ($exit) { exit 0 } else { return 0 }
     }
 
-    die "Please specify a subcommand, ".
-        "use $cmd -l to list available subcommands\n"
-        unless $module && $sub;
-
     # handle general --help
     if ($opts{action} eq 'help') {
         if ($args{help}) {
@@ -477,6 +477,10 @@ _
         }
         if ($exit) { exit 0 } else { return 0 }
     }
+
+    die "Please specify a subcommand, ".
+        "use $cmd -l to list available subcommands\n"
+        unless $module && $sub;
 
     # handle per-command --help
     if ($subcmd && $ARGV[0] && $ARGV[0] =~ /^(--help|-h|-\?)$/) {
