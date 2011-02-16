@@ -430,7 +430,8 @@ sub run {
             for my $cat (sort keys %cat_subcmds) {
                 print "\n" if $i++;
                 if ($has_many_cats) {
-                    print "List of ", ucfirst($cat), " subcommands:\n";
+                    print "List of ", ucfirst($cat) || "main",
+                        " subcommands:\n";
                 } else {
                     print "List of subcommands:\n";
                 }
