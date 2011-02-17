@@ -57,15 +57,21 @@ sub parse_argv {
         my $aliases = $schema->{attr_hashes}[0]{cmdline_aliases};
         if ($aliases) {
             while (my ($alias, $alinfo) = each %$aliases) {
+                my $opt;
+                if ($schema->{type} eq 'bool' && !$alinfo->{code}) {
+                    $opt = "$alias!";
+                } else {
+                    $opt = "$alias=s";
+                }
                 if ($alinfo->{code}) {
-                    $go_spec{$alias} = sub {
+                    $go_spec{$opt} = sub {
                         $alinfo->{code}->(
                             args    => $args,
                             arg_ref => \$args->{$name[0]},
                         );
                     };
                 } else {
-                    $go_spec{$alias} = \$args->{$name[0]};
+                    $go_spec{$opt} = \$args->{$name[0]};
                 }
             }
         }
