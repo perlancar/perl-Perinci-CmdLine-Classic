@@ -272,6 +272,121 @@ sub format_result {
     die "BUG: Unknown output format `$format`";
 }
 
+sub _run_list {
+    my ($subcommands, $args) = @_;
+
+    return unless $subcommands;
+
+    if (ref($subcommands) eq 'CODE') {
+        $subcommands = $subcommands->(args=>$args);
+        die "Error: subcommands code didn't return a hashref\n"
+            unless ref($subcommands) eq 'HASH';
+    }
+
+    my %percat_subc; # (cat1 => {subcmd1=>..., ...}, ...)
+    while (my ($scn, $sc) = each %$subcommands) {
+        my $cat = $sc->{category} // "";
+        $percat_subc{$cat}       //= {};
+        $percat_subc{$cat}{$scn}   = $sc;
+    }
+    my $has_many_cats = scalar(keys %percat_subc) > 1;
+
+    my $i = 0;
+    for my $cat (sort keys %percat_subc) {
+        print "\n" if $i++;
+        if ($has_many_cats) {
+            print "List of ", ucfirst($cat) || "main",
+                " subcommands:\n";
+        } else {
+            print "List of subcommands:\n";
+        }
+        my $subc = $percat_subc{$cat};
+        for my $scn (sort keys %$subc) {
+            my $sc = $subc->{$scn};
+            say "  $scn", ($sc->{summary} ? " - $sc->{summary}" : "");
+        }
+    }
+}
+
+sub _run_version {
+    my ($module) = @_;
+
+    # get from module's $VERSION
+    no strict 'refs';
+    my $version = ${$module."::VERSION"} // "?";
+    my $rev     = ${$module."::REVISION"};
+    say "Version $version", ($rev ? " rev $rev" : "");
+}
+
+sub _run_completion {
+    my %args = @_;
+
+    my @general_opts;
+    for my $o (keys %{$args{getopts}}) {
+        $o =~ s/^--//;
+        my @o = split /\|/, $o;
+        for (@o) { push @general_opts, length > 1 ? "--$_" : "-$_" }
+    }
+
+    my $spec = $args{spec};
+    if ($spec) {
+        # complete subcommand argument names & values
+        print map {"$_\n"}
+            Sub::Spec::BashComplete::bash_complete_spec_arg(
+                $spec,
+                {
+                    words    => $args{comp_words},
+                    cword    => $args{comp_cword},
+                    arg_sub  => $args{complete_arg},
+                    args_sub => $args{complete_args},
+                },
+            );
+    } else {
+        # complete general options & names of subcommands
+        my $subcommands = $args{args}{subcommands};
+        if (ref($subcommands) eq 'CODE') {
+            $subcommands = $subcommands->(args=>$args{args});
+            die "Error: subcommands code didn't return hashref (2)\n"
+                unless ref($subcommands) eq 'HASH';
+        }
+        print map {"$_\n"}
+            Sub::Spec::BashComplete::_complete_array(
+                $args{comp_word},
+                [@general_opts, keys(%$subcommands)]
+            );
+    }
+}
+
+sub _run_help {
+    my ($help, $spec, $cmd, $summary) = @_;
+
+    if ($help) {
+        if (ref($help) eq 'CODE') {
+            print $help->();
+        } else {
+            print $help;
+        }
+    } elsif ($spec) {
+        print gen_usage($spec, {cmd=>$cmd});
+    } else {
+        say $cmd, ($summary ? " - $summary" : "");
+            print <<_;
+
+Usage:
+  $cmd --help (or -h, or -?)
+  $cmd --list (or -l)
+  $cmd --version (or -v)
+  $cmd SUBCOMMAND [ARGS ...]
+  $cmd SUBCOMMAND --help (or -h, or -?)
+
+Options:
+  --help     Show this message
+  --list     List subcommands
+  --version  Show version
+_
+    }
+}
+
 sub run {
     require Getopt::Long;
 
@@ -322,43 +437,40 @@ sub run {
         $cmd = $0;
         $cmd =~ s!.+/!!;
     }
-    my $subcmds = $args{subcommands};
+    my $subcommands = $args{subcommands};
     my $module;
     my $sub;
 
     # finding out which module/sub to use
-    my $subcmdname;
-    my $subcmd;
-    my ($complete_arg, $complete_args);
-    if ($args{subcommands} && @ARGV) {
-        $subcmdname = shift @ARGV;
-        $subcmd = $args{subcommands}{$subcmdname};
+    my $subc;
+    my $subc_name;
+    if ($subcommands && @ARGV) {
+        $subc_name = shift @ARGV;
+        $subc      = ref($subcommands) eq 'CODE' ?
+            $subcommands->(name=>$subc_name, args=>\%args) :
+            $subcommands->{$subc_name};
         # it's ok if user type incomplete subcommand name under completion
         unless ($ENV{COMP_LINE}) {
-            $subcmd or die "Unknown subcommand `$subcmdname`, please ".
+            $subc or die "Unknown subcommand `$subc_name`, please ".
                 "use $cmd -l to list available subcommands\n";
         }
-        $module        = $subcmd->{module}        // $args{module};
-        $sub           = $subcmd->{sub}           // $subcmdname;
-        $complete_arg  = $subcmd->{complete_arg}  // $args{complete_arg};
-        $complete_args = $subcmd->{complete_args} // $args{complete_args};
+        $module        = $subc->{module}        // $args{module};
+        $sub           = $subc->{sub}           // $subc_name;
     } else {
         $module        = $args{module};
         $sub           = $args{sub};
-        $complete_arg  = $args{complete_arg};
-        $complete_args = $args{complete_args};
     }
 
     # require module and get spec
     my $spec;
-    if ($subcmd && $subcmd->{spec}) {
-        $spec = ref($subcmd->{spec}) eq 'CODE' ?
-            $subcmd->{spec}->(module=>$module, sub=>$sub) :
-                $subcmd->{spec};
+    if ($subc && $subc->{spec}) {
+        $spec = ref($subc->{spec}) eq 'CODE' ?
+            $subc->{spec}->(module=>$module, sub=>$sub) :
+                $subc->{spec};
     } elsif ($args{spec}) {
         $spec = ref($args{spec}) eq 'CODE' ?
             $args{spec}->(module=>$module, sub=>$sub) :
-                $args{spec}->();
+                $args{spec};
     } elsif ($module) {
         {
             my $modulep = $args{module};
@@ -381,142 +493,80 @@ sub run {
         }
     }
 
-    # detect (2) if we're being invoked for bash completion
+    # now that we have spec, detect (2) if we're being invoked for bash
+    # completion and do completion, and exit.
     if ($ENV{COMP_LINE}) {
-        {
-            my @general_opts;
-            for my $o (keys %getopts) {
-                $o =~ s/^--//;
-                my @o = split /\|/, $o;
-                for (@o) { push @general_opts, length > 1 ? "--$_" : "-$_" }
-            }
-
-            if ($spec) {
-                print map {"$_\n"}
-                    Sub::Spec::BashComplete::bash_complete_spec_arg(
-                        $spec,
-                        {
-                            words    => $comp_words,
-                            cword    => $comp_cword,
-                            arg_sub  => $complete_arg,
-                            args_sub => $complete_args,
-                        },
-                    );
-                last;
-            }
-
-            # general options & names of subcommands
-            print map {"$_\n"}
-                Sub::Spec::BashComplete::_complete_array(
-                $comp_word,
-                [@general_opts, keys(%{$args{subcommands}})]
-            );
+        my $complete_arg;
+        my $complete_args;
+        if ($subc) {
+            $complete_arg  = $subc->{complete_arg};
+            $complete_args = $subc->{complete_arg };
         }
-
+        $complete_arg    //= $args{complete_arg};
+        $complete_args   //= $args{complete_args};
+        _run_completion(
+            args          => \%args,
+            spec          => $spec,
+            getopts       => \%getopts,
+            words         => $comp_words,
+            cword         => $comp_word ,
+            word          => $comp_cword,
+            complete_arg  => $complete_arg,
+            complete_args => $complete_args,
+        );
         if ($exit) { exit 0 } else { return 0 }
     }
 
     # handle --list
     if ($opts{action} eq 'list') {
-        if ($subcmds) {
-            my %cat_subcmds; # (cat1 => {subcmd1=>..., ...}, ...)
-            while (my ($k, $v) = each %$subcmds) {
-                my $cat = $v->{category} // "";
-                $cat_subcmds{$cat} //= {};
-                $cat_subcmds{$cat}{$k} = $v;
-            }
-            my $has_many_cats = scalar(keys %cat_subcmds) > 1;
-            my $i = 0;
-            for my $cat (sort keys %cat_subcmds) {
-                print "\n" if $i++;
-                if ($has_many_cats) {
-                    print "List of ", ucfirst($cat) || "main",
-                        " subcommands:\n";
-                } else {
-                    print "List of subcommands:\n";
-                }
-                my $subc = $cat_subcmds{$cat};
-                for my $c (sort keys %$subc) {
-                    my $sc = $subcmds->{$c};
-                    say "  $c", ($sc->{summary} ? " - $sc->{summary}" : "");
-                }
-            }
-        }
+        _run_list($subcommands, \%args);
         if ($exit) { exit 0 } else { return 0 }
     }
 
     # handle --version
     if ($opts{action} eq 'version') {
-        no strict 'refs';
-        my $version = ${$module."::VERSION"} // "?";
-        my $rev     = ${$module."::REVISION"};
-        say "Version $version", ($rev ? " rev $rev" : "");
+        _run_version($module);
         if ($exit) { exit 0 } else { return 0 }
     }
 
     # handle general --help
     if ($opts{action} eq 'help') {
-        if ($args{help}) {
-            if (ref($args{help}) eq 'CODE') {
-                print $args{help}->();
-            } else {
-                print $args{help};
-            }
-        } elsif ($args{subcommands}) {
-            say $cmd, ($args{summary} ? " - $args{summary}" : "");
-            print <<_;
-
-Usage:
-  $cmd --help (or -h, or -?)
-  $cmd --list (or -l)
-  $cmd --version (or -v)
-  $cmd SUBCOMMAND [ARGS ...]
-  $cmd SUBCOMMAND --help (or -h, or -?)
-
-Options:
-  --help     Show this message
-  --list     List subcommands
-  --version  Show version
-_
-        } else {
-            print gen_usage($spec, {cmd=>$cmd});
-        }
+        _run_help($args{help}, undef, $cmd,
+                  $subc ? $subc->{summary} : $args{summary});
         if ($exit) { exit 0 } else { return 0 }
     }
 
     die "Please specify a subcommand, ".
         "use $cmd -l to list available subcommands\n"
-        unless $module && $sub;
+            unless $spec;
 
     # handle per-command --help
-    if ($subcmd && $ARGV[0] && $ARGV[0] =~ /^(--help|-h|-\?)$/) {
-        if ($subcmd->{help}) {
-            if (ref($subcmd->{help}) eq 'CODE') {
-                print $subcmd->{help}->();
-            } else {
-                print $subcmd->{help};
-            }
-        } else {
-            print gen_usage($spec, {cmd=>"$cmd $subcmdname"});
-        }
+    if ($subc && $ARGV[0] && $ARGV[0] =~ /^(--help|-h|-\?)$/) {
+        _run_help($subc->{help}, undef, $spec, "$cmd $subc_name",
+              $subc->{summary});
         if ($exit) { exit 0 } else { return 0 }
     }
 
+    # finally, run!
     my $res;
-    my $args   = parse_argv(\@ARGV, $spec);
-    if ($subcmd && $subcmd->{run}) {
-        $res = $subcmd->{run}->(
+    my $args = parse_argv(\@ARGV, $spec);
+    if ($subc && $subc->{run}) {
+        # use run routine instead if supplied
+        $res = $subc->{run}->(
             module=>$module, sub=>$sub, spec=>$spec,
             args=>$args,
         );
     } else {
+        # call sub
         my $subref = \&{$module."::$sub"};
-        $res    = $subref->(%$args);
+        $res       = $subref->(%$args);
     }
 
+    # output
     $log->tracef("opts=%s", \%opts);
     print format_result($res, $opts{format})
         unless $spec->{cmdline_suppress_output};
+
     my $exit_code = $res->[0] == 200 ? 0 : $res->[0] - 300;
     if ($exit) { exit $exit_code } else { return $exit_code }
 }
@@ -671,6 +721,9 @@ Arguments:
 
 =item * module => STR
 
+Currently this must be supplied if you want --version, even if you use
+subcommands. --version gets $VERSION from the main module.
+
 =item * sub => STR
 
 =item * spec => HASH | CODEREF
@@ -683,7 +736,7 @@ supplied spec.
 Instead of generating help using gen_usage() from the spec, use the supplied
 help message (or help code, which is expected to return help text).
 
-=item * subcommands => {NAME => {module=>..., sub=>..., summary=>..., ...}, ...}
+=item * subcommands => {NAME => {ARGUMENT=>...}, ...} | CODEREF
 
 B<module> and B<sub> should be specified if you only have one sub to run. If you
 have several subs to run, assign each of them to a subcommand, e.g.:
@@ -699,6 +752,11 @@ have several subs to run, assign each of them to a subcommand, e.g.:
 Available argument for each subcommand: module (defaults to main B<module>
 argument), sub (defaults to subcommand name), summary, help, category (for
 arrangement when listing commands), run, complete_arg, complete_args.
+
+Subcommand argument can be a code reference, in which case it will be called
+with C<%args> containing: name (subcommand name), args (arguments to run()). The
+code is expected to return structure for argument with specified name, or, when
+name is not specified, a hashref containing all subcommand arguments.
 
 =item * run => CODEREF
 
