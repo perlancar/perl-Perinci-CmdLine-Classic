@@ -380,7 +380,7 @@ sub _run_completion {
     }
 
     my $spec = $args{spec};
-    if ($spec && $args{space_typed} || !$args{subcommand}) {
+    if ($spec && ($args{space_typed} || !$args{subcommand})) {
         $log->trace("Complete subcommand argument names & values");
         return Sub::Spec::BashComplete::bash_complete_spec_arg(
             $spec,
@@ -397,7 +397,6 @@ sub _run_completion {
     } else {
         $log->trace("Complete general options & names of subcommands");
         my $subcommands = $args{parent_args}{subcommands};
-        $log->tracef("subcommands=%s", $subcommands);
         if (ref($subcommands) eq 'CODE') {
             $subcommands = $subcommands->(parent_args=>$args{parent_args});
             die "Error: subcommands code didn't return hashref (2)\n"
