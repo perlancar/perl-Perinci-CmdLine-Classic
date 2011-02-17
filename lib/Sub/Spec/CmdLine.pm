@@ -379,17 +379,21 @@ sub _run_completion {
         return Sub::Spec::BashComplete::bash_complete_spec_arg(
             $spec,
             {
-                words    => $args{words},
-                cword    => $args{cword},
-                arg_sub  => $args{arg_sub},
-                args_sub => $args{args_sub},
+                words            => $args{words},
+                cword            => $args{cword},
+                arg_sub          => $args{arg_sub},
+                args_sub         => $args{args_sub},
+                custom_completer =>
+                    ($args{subcommand} ? $args{subcommand}{custom_completer} :
+                         undef) // $args{parent_args}{custom_completer}
             },
         );
     } else {
         $log->trace("Complete general options & names of subcommands");
-        my $subcommands = $args{args}{subcommands};
+        my $subcommands = $args{parent_args}{subcommands};
+        $log->tracef("subcommands=%s", $subcommands);
         if (ref($subcommands) eq 'CODE') {
-            $subcommands = $subcommands->(args=>$args{args});
+            $subcommands = $subcommands->(parent_args=>$args{parent_args});
             die "Error: subcommands code didn't return hashref (2)\n"
                 unless ref($subcommands) eq 'HASH';
         }
@@ -551,20 +555,22 @@ sub run {
             shift @$comp_words;
             $comp_cword-- unless $comp_cword < 1;
 
-            $complete_arg  = $subc->{complete_arg};
-            $complete_args = $subc->{complete_arg };
+            $complete_arg    = $subc->{complete_arg};
+            $complete_args   = $subc->{complete_arg };
         }
-        $complete_arg    //= $args{complete_arg};
-        $complete_args   //= $args{complete_args};
+        $complete_arg      //= $args{complete_arg};
+        $complete_args     //= $args{complete_args};
         my @res = _run_completion(
-            args          => \%args,
-            spec          => $spec,
-            getopts       => \%getopts,
-            words         => $comp_words,
-            cword         => $comp_cword,
-            word          => $comp_word ,
-            arg_sub       => $complete_arg,
-            args_sub      => $complete_args,
+            parent_args     => \%args,
+            spec            => $spec,
+            getopts         => \%getopts,
+            words           => $comp_words,
+            cword           => $comp_cword,
+            word            => $comp_word ,
+            arg_sub         => $complete_arg,
+            args_sub        => $complete_args,
+            subcommand      => $subc,
+            subcommand_name => $subc_name,
         );
         $log->tracef("completion result: %s", \@res);
         print map {"$_\n"} @res;
@@ -848,6 +854,12 @@ arg, args.
 Under bash completion, when completing argument value, you can supply a code to
 provide its completion. Code will be called with %args containing word, words,
 arg, args.
+
+=item * custom_completer => CODEREF
+
+To be passed to BashComplete's bash_complete_spec_arg(). This can be used e.g.
+to change bash completion code (e.g. calling bash_complete_spec_arg()
+recursively) based on context.
 
 =back
 
