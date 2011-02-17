@@ -380,7 +380,7 @@ sub _run_completion {
     }
 
     my $spec = $args{spec};
-    if ($spec) {
+    if ($spec && $args{space_typed}) {
         $log->trace("Complete subcommand argument names & values");
         return Sub::Spec::BashComplete::bash_complete_spec_arg(
             $spec,
@@ -555,8 +555,12 @@ sub run {
     # now that we have spec, detect (2) if we're being invoked for bash
     # completion and do completion, and exit.
     if ($ENV{COMP_LINE}) {
+        $log->tracef("TMP: comp_words=%s, comp_cword=%d", $comp_words, $comp_cword);
         my $complete_arg;
         my $complete_args;
+        # user has typed 'CMD subc ^' instead of just 'CMD subc^', in the latter
+        # case we still need to complete subcommands name.
+        my $space_typed = !defined($comp_words->[$comp_cword]);
         if ($subc) {
             shift @$comp_words;
             $comp_cword-- unless $comp_cword < 1;
@@ -567,6 +571,7 @@ sub run {
         $complete_arg      //= $args{complete_arg};
         $complete_args     //= $args{complete_args};
         my @res = _run_completion(
+            space_typed     => $space_typed,
             parent_args     => \%args,
             spec            => $spec,
             getopts         => \%getopts,
