@@ -455,12 +455,6 @@ sub run {
         $comp_word  = $comp_words->[$comp_cword] // "";
 
         @ARGV = @$comp_words;
-
-        # drop $0
-        if ($comp_cword > 0) {
-            shift @$comp_words;
-            $comp_cword--;
-        }
     }
 
     my %opts = (format => undef, action => 'run');
