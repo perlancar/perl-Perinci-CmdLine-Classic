@@ -379,18 +379,62 @@ sub _run_completion {
         for (@o) { push @general_opts, length > 1 ? "--$_" : "-$_" }
     }
 
-    my $spec = $args{spec};
-    if ($spec && ($args{space_typed} || !$args{subcommand})) {
+    my $spec  = $args{spec};
+    my $subc  = $args{subcommand};
+    my $subcn = $args{subcommand_name};
+    my $words = $args{words};
+    my $cword = $args{cword};
+
+    # whether we should complete arg names/values or general opts + subcommands
+    # name
+    my $do_arg;
+    {
+        # we can't do arg unless we already get the spec
+        if (!$spec) {
+            $log->trace("not do_arg because there is no spec");
+            last;
+        }
+
+        # single-sub directly complete arg names/values
+        if (!$subc) {
+            $log->trace("do_arg because single sub");
+            $do_arg++; last;
+        }
+
+        # multiple-sub, just typing "CMD subc ^" (space already typed)
+        if ($cword > 0 && $words->[$cword-1] eq $subcn &&
+                $args{space_typed}) {
+            $log->trace("do_arg because last word typed (+space) is ".
+                            "subcommand name");
+            $do_arg++; last;
+        }
+
+        # multiple-sub, already typing subc in past words
+        if ($cword > 0 && $subcn) {
+            $log->trace("do_arg because subcommand name has been typed ".
+                            "in past words");
+            $do_arg++; last;
+        }
+
+        $log->tracef("not do_arg, cword=%d, words=%s, subcommand_name=%s, ".
+                         "space_typed=%s",
+                     $cword, $words, $subcn, $args{space_typed});
+    }
+    if ($do_arg) {
         $log->trace("Complete subcommand argument names & values");
+
+        shift @$words;
+        $cword-- unless $cword < 1;
+
         return Sub::Spec::BashComplete::bash_complete_spec_arg(
             $spec,
             {
-                words            => $args{words},
-                cword            => $args{cword},
+                words            => $words,
+                cword            => $cword,
                 arg_sub          => $args{arg_sub},
                 args_sub         => $args{args_sub},
                 custom_completer =>
-                    ($args{subcommand} ? $args{subcommand}{custom_completer} :
+                    ($subc ? $subc->{custom_completer} :
                          undef) // $args{parent_args}{custom_completer}
             },
         );
@@ -560,9 +604,6 @@ sub run {
         my $complete_arg;
         my $complete_args;
         if ($subc) {
-            shift @$comp_words;
-            $comp_cword-- unless $comp_cword < 1;
-
             $complete_arg    = $subc->{complete_arg};
             $complete_args   = $subc->{complete_args};
         }
