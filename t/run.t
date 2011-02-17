@@ -155,7 +155,7 @@ sub test_run {
     my $exit_code;
     eval {
         ($stdout, $stderr) = capture {
-            $exit_code = run(exit=>0, load_module=>0, %{$args{args}});
+            $exit_code = run(exit=>0, load=>0, %{$args{args}});
         };
     };
     my $eval_err = $@;

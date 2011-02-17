@@ -445,6 +445,7 @@ sub run {
     # finding out which module/sub to use
     my $subc;
     my $subc_name;
+    my $load;
     if ($subcommands && @ARGV) {
         $subc_name = shift @ARGV;
         $subc      = ref($subcommands) eq 'CODE' ?
@@ -457,9 +458,11 @@ sub run {
         }
         $module        = $subc->{module}        // $args{module};
         $sub           = $subc->{sub}           // $subc_name;
+        $load          = $subc->{load}          // $args{load} // 1;
     } else {
         $module        = $args{module};
         $sub           = $args{sub};
+        $load          = $args{load}            // 1;
     }
 
     # require module and get spec
@@ -476,7 +479,7 @@ sub run {
         {
             my $modulep = $args{module};
             $modulep =~ s!::!/!g; $modulep .= ".pm";
-            if ($args{load_module} // 1) {
+            if ($load) {
                 eval { require $modulep };
                 if ($@) {
                     die $@ unless $ENV{COMP_LINE};
@@ -769,9 +772,9 @@ B<sub>, run this code instead. Code is expected to return a response structure
 
 If set to 0, instead of exiting with exit(), return the exit code instead.
 
-=item * load_module => BOOL (optional, default 1)
+=item * load => BOOL (optional, default 1)
 
-If set to 0, do not try to require the module.
+If set to 0, do not try to load (require()) the module.
 
 =item * complete_arg  => {ARGNAME => CODEREF, ...}
 
