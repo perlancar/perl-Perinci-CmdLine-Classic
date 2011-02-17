@@ -380,7 +380,7 @@ sub _run_completion {
     }
 
     my $spec = $args{spec};
-    if ($spec && $args{space_typed}) {
+    if ($spec && $args{space_typed} || !$args{subcommand}) {
         $log->trace("Complete subcommand argument names & values");
         return Sub::Spec::BashComplete::bash_complete_spec_arg(
             $spec,
