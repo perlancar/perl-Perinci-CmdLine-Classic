@@ -57,14 +57,14 @@ sub parse_argv {
         if ($aliases) {
             while (my ($alias, $alinfo) = each %$aliases) {
                 if ($alinfo->{code}) {
-                    $go_spec{$opt} = sub {
+                    $go_spec{$alias} = sub {
                         $alinfo->{code}->(
                             args    => $args,
                             arg_ref => \$args->{$name[0]},
                         );
                     };
                 } else {
-                    $go_spec{$opt} = \$args->{$name[0]};
+                    $go_spec{$alias} = \$args->{$name[0]};
                 }
             }
         }
