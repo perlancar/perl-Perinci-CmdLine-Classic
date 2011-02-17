@@ -542,6 +542,9 @@ sub run {
         my $complete_arg;
         my $complete_args;
         if ($subc) {
+            shift @$comp_words;
+            $comp_cword--;
+
             $complete_arg  = $subc->{complete_arg};
             $complete_args = $subc->{complete_arg };
         }
