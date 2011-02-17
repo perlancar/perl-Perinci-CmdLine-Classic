@@ -144,6 +144,7 @@ test_run(name      => 'coderef subcommands (c)',
 # XXX test arg: spec (main / per-subcommand)
 # XXX test arg: spec coderef
 # XXX test arg: complete_arg, complete_args (main / per-subcommand)
+# XXX test arg: allow_unknown_args (main / per-subcommand)
 # XXX test: bash completion
 done_testing();
 
@@ -172,7 +173,8 @@ sub test_run {
         }
 
         if ($args{output_re}) {
-            like($stdout // "", $args{output_re}, "output_re");
+            like($stdout // "", $args{output_re}, "output_re")
+                or diag("output is $stdout");
         }
     };
 }
