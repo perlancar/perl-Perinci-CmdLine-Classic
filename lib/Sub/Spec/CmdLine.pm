@@ -36,7 +36,7 @@ sub parse_argv {
                        keys %$args_spec };
     $opts //= {};
     $opts->{strict} //= 1;
-    $log->tracef("-> parse_arg(), argv=%s", $argv);
+    $log->tracef("-> parse_argv(), argv=%s", $argv);
 
     my %go_spec;
 
