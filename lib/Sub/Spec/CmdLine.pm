@@ -502,6 +502,7 @@ _
 }
 
 sub run {
+    $log->trace("-> run()");
     require Getopt::Long;
 
     my %args = @_;
@@ -682,8 +683,11 @@ sub run {
     if ($subc && $subc->{run}) {
         # use run routine instead if supplied
         $res = $subc->{run}->(
-            module=>$module, sub=>$sub, spec=>$spec,
-            args=>$args,
+            subcommand_name => $subc_name,
+            module   => $module,
+            sub      => $sub,
+            spec     => $spec,
+            sub_args => $args,
         );
     } else {
         # call sub
