@@ -137,6 +137,7 @@ test_run(name      => 'coderef subcommands (c)',
          argv      => [qw/foo/],
          dies      => 1,
      );
+# XXX test arg: load_module
 # XXX test arg: run (main / per-subcommand)
 # XXX test arg: help text (main / per-subcommand)
 # XXX test arg: help coderef
@@ -154,7 +155,7 @@ sub test_run {
     my $exit_code;
     eval {
         ($stdout, $stderr) = capture {
-            $exit_code = run(exit=>0, require=>0, %{$args{args}});
+            $exit_code = run(exit=>0, load_module=>0, %{$args{args}});
         };
     };
     my $eval_err = $@;

@@ -476,7 +476,7 @@ sub run {
         {
             my $modulep = $args{module};
             $modulep =~ s!::!/!g; $modulep .= ".pm";
-            if ($args{require} // 1) {
+            if ($args{load_module} // 1) {
                 eval { require $modulep };
                 if ($@) {
                     die $@ unless $ENV{COMP_LINE};
@@ -769,7 +769,7 @@ B<sub>, run this code instead. Code is expected to return a response structure
 
 If set to 0, instead of exiting with exit(), return the exit code instead.
 
-=item * require => BOOL (optional, default 1)
+=item * load_module => BOOL (optional, default 1)
 
 If set to 0, do not try to require the module.
 
