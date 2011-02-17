@@ -590,7 +590,10 @@ sub run {
         "use $cmd -l to list available subcommands\n"
             unless $spec;
 
-    my $args = parse_argv(\@ARGV, $spec);
+    my $opts = {};
+    $opts->{strict} = 0
+        if $subc->{allow_unknown_args} // $args{allow_unknown_args};
+    my $args = parse_argv(\@ARGV, $spec, $opts);
 
     # handle per-command --help
     if ($opts{action} eq 'help') {
