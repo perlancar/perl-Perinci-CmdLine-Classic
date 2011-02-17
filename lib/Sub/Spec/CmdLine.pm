@@ -396,7 +396,7 @@ sub _run_completion {
 
 # returns help text
 sub _run_help {
-    my ($help, $spec, $cmd, $summary, $argv, $args) = @_;
+    my ($help, $spec, $cmd, $summary, $argv) = @_;
 
     my $out = "";
 
@@ -406,7 +406,7 @@ sub _run_help {
         if (ref($help) eq 'CODE') {
             $out .= $help->(
                 spec=>$spec, cmd=>$cmd,
-                args=>$args, argv=>$argv,
+                argv=>$argv,
             );
         } else {
             $out .= $help;
@@ -577,15 +577,6 @@ sub run {
         if ($exit) { exit 0 } else { return 0 }
     }
 
-    my $args;
-    my $opts = {};
-    $opts->{strict} = 0
-        if $subc->{allow_unknown_args} // $args{allow_unknown_args};
-
-    if ($spec) {
-        parse_argv(\@ARGV, $spec, $opts);
-    }
-
     # handle --help
     if ($opts{action} eq 'help') {
         if ($spec) {
@@ -593,7 +584,7 @@ sub run {
                 $subc->{help}, $spec,
                 ($subc_name ? "$cmd $subc_name" : $cmd),
                 ($subc ? $subc->{summary} : $args{summary}),
-                 \@ARGV, $args);
+                 \@ARGV);
         if ($exit) { exit 0 } else { return 0 }
         } else {
             print _run_help(
@@ -607,6 +598,13 @@ sub run {
     die "Please specify a subcommand, ".
         "use $cmd -l to list available subcommands\n"
             unless $spec;
+
+    # parse argv
+    my $args;
+    my $popts = {};
+    $popts->{strict} = 0
+        if $subc->{allow_unknown_args} // $args{allow_unknown_args};
+    parse_argv(\@ARGV, $spec, $popts);
 
     # finally, run!
     my $res;
