@@ -403,7 +403,6 @@ sub _run_completion {
             die "Error: subcommands code didn't return hashref (2)\n"
                 unless ref($subcommands) eq 'HASH';
         }
-        #print "D: comp_word=$args{word}\n";
         return Sub::Spec::BashComplete::_complete_array(
             $args{word},
             [@general_opts, keys(%$subcommands)]
@@ -555,12 +554,12 @@ sub run {
     # now that we have spec, detect (2) if we're being invoked for bash
     # completion and do completion, and exit.
     if ($ENV{COMP_LINE}) {
-        $log->tracef("TMP: comp_words=%s, comp_cword=%d", $comp_words, $comp_cword);
-        my $complete_arg;
-        my $complete_args;
         # user has typed 'CMD subc ^' instead of just 'CMD subc^', in the latter
         # case we still need to complete subcommands name.
         my $space_typed = !defined($comp_words->[$comp_cword]);
+
+        my $complete_arg;
+        my $complete_args;
         if ($subc) {
             shift @$comp_words;
             $comp_cword-- unless $comp_cword < 1;
