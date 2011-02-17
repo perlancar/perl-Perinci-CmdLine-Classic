@@ -55,7 +55,9 @@ sub parse_argv {
         }
     }
     $log->tracef("GetOptions rule: %s", \%go_spec);
-    Getopt::Long::Configure("no_pass_through", "no_ignore_case", "permute");
+    Getopt::Long::Configure(
+        $opts->{strict} ? "no_pass_through" : "pass_through",
+        "no_ignore_case", "permute");
     my $result = Getopt::Long::GetOptionsFromArray($argv, %go_spec);
     unless ($result) {
         die "Incorrect command-line options/arguments\n" if $opts->{strict};
@@ -361,18 +363,19 @@ sub _run_completion {
 sub _run_help {
     my ($help, $spec, $cmd, $summary) = @_;
 
+    say $cmd, ($summary ? " - $summary" : "");
+    print "\n";
+
     if ($help) {
         if (ref($help) eq 'CODE') {
-            print $help->();
+            print $help->(spec=>$spec, cmd=>$cmd);
         } else {
             print $help;
         }
     } elsif ($spec) {
         print gen_usage($spec, {cmd=>$cmd});
     } else {
-        say $cmd, ($summary ? " - $summary" : "");
             print <<_;
-
 Usage:
   $cmd --help (or -h, or -?)
   $cmd --list (or -l)
@@ -546,7 +549,7 @@ sub run {
 
     # handle per-command --help
     if ($subc && $ARGV[0] && $ARGV[0] =~ /^(--help|-h|-\?)$/) {
-        _run_help($subc->{help}, undef, $spec, "$cmd $subc_name",
+        _run_help($subc->{help}, $spec, "$cmd $subc_name",
               $subc->{summary});
         if ($exit) { exit 0 } else { return 0 }
     }
@@ -775,6 +778,8 @@ If set to 0, instead of exiting with exit(), return the exit code instead.
 =item * load => BOOL (optional, default 1)
 
 If set to 0, do not try to load (require()) the module.
+
+=item * allow_unknown_args => BOOL (optional, default 0)
 
 =item * complete_arg  => {ARGNAME => CODEREF, ...}
 
