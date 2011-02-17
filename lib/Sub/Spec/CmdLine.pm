@@ -58,7 +58,7 @@ sub parse_argv {
         if ($aliases) {
             while (my ($alias, $alinfo) = each %$aliases) {
                 my $opt;
-                if ($schema->{type} eq 'bool' && !$alinfo->{code}) {
+                if ($schema->{type} eq 'bool') {
                     $opt = "$alias!";
                 } else {
                     $opt = "$alias=s";
