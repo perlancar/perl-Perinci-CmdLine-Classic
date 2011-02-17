@@ -309,13 +309,14 @@ sub _run_list {
 }
 
 sub _run_version {
-    my ($module) = @_;
+    my ($module, $cmd, $summary) = @_;
 
     # get from module's $VERSION
     no strict 'refs';
     my $version = ${$module."::VERSION"} // "?";
     my $rev     = ${$module."::REVISION"};
-    say "Version $version", ($rev ? " rev $rev" : "");
+
+    say "$cmd version ", $version, ($rev ? " rev $rev" : "");
 }
 
 sub _run_completion {
@@ -525,7 +526,7 @@ sub run {
 
     # handle --version
     if ($opts{action} eq 'version') {
-        _run_version($module);
+        _run_version($module, $cmd, $args{summary});
         if ($exit) { exit 0 } else { return 0 }
     }
 

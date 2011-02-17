@@ -98,7 +98,7 @@ for (qw(--version -v)) {
              args      => {module=>'Foo', sub=>'ok'},
              argv      => [$_],
              exit_code => 0,
-             output_re => qr/^Version 0\.01/m,
+             output_re => qr/version 0\.01/m,
          );
 }
 
