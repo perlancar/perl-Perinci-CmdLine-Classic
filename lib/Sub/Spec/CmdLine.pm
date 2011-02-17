@@ -562,7 +562,7 @@ sub run {
             $comp_cword-- unless $comp_cword < 1;
 
             $complete_arg    = $subc->{complete_arg};
-            $complete_args   = $subc->{complete_arg };
+            $complete_args   = $subc->{complete_args};
         }
         $complete_arg      //= $args{complete_arg};
         $complete_args     //= $args{complete_args};
