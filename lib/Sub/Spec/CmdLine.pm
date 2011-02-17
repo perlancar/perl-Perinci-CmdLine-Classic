@@ -92,18 +92,6 @@ sub parse_argv {
         }
     }
 
-    # parse YAML in remaining @argv
-    for my $i (0..@$argv-1) {
-        next unless defined($argv->[$i]);
-        eval { $argv->[$i] = YAML::Syck::Load($argv->[$i]) };
-        if ($@) {
-            $log->info("Argument #".($i+1)." doesn't contain valid YAML, ".
-                           "assuming it's literal string");
-        }
-    }
-
-    $log->tracef("tmp args result (after YAML conversion): %s", $args);
-
     # process arg_pos
   ARGV:
     for my $i (reverse 0..@$argv-1) {
@@ -117,9 +105,27 @@ sub parse_argv {
                 }
                 if ($ah0->{arg_greedy}) {
                     $args->{$name} = [splice(@$argv, $i)];
+                    my $j = $i;
+                    # convert to yaml
+                    for (@{$args->{$name}}) {
+                        eval { $_ = YAML::Syck::Load($_) };
+                        if ($@) {
+                            $log->info(
+                                "Argument #".($j+1)." doesn't contain ".
+                                    "valid YAML, assuming it's literal string");
+                            $j++;
+                        }
+                    }
                     last ARGV;
                 } else {
                     $args->{$name} = splice(@$argv, $i, 1);
+                    # convert to yaml
+                    eval { $_ = YAML::Syck::Load($_) };
+                    if ($@) {
+                        $log->info(
+                            "Argument #".($i+1)." doesn't contain ".
+                                "valid YAML, assuming it's literal string");
+                    }
                 }
             }
         }
