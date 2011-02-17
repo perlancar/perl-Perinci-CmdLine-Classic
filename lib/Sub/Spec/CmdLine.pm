@@ -240,7 +240,7 @@ sub gen_usage($;$) {
                     "      ",
                     (length == 1 ? "-$_" : "--$_"), " ",
                     $alinfo->{summary} ? $alinfo->{summary} :
-                        " is alias for --$name",
+                        "is alias for --$name",
                     "\n"
                 );
             }
