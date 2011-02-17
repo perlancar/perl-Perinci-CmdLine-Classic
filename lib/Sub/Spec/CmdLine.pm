@@ -363,25 +363,27 @@ sub _run_completion {
     }
 }
 
+# returns help text
 sub _run_help {
     my ($help, $spec, $cmd, $summary, $argv, $args) = @_;
 
-    say $cmd, ($summary ? " - $summary" : "");
-    print "\n";
+    my $out = "";
+
+    $out .= $cmd . ($summary ? " - $summary" : "") . "\n\n";
 
     if ($help) {
         if (ref($help) eq 'CODE') {
-            print $help->(
+            $out .= $help->(
                 spec=>$spec, cmd=>$cmd,
                 args=>$args, argv=>$argv,
             );
         } else {
-            print $help;
+            $out .= $help;
         }
     } elsif ($spec) {
-        print gen_usage($spec, {cmd=>$cmd});
+        $out .= gen_usage($spec, {cmd=>$cmd});
     } else {
-            print <<_;
+            $out .= <<_;
 Usage:
   To get general help:
     $cmd --help (or -h, or -?)
@@ -396,6 +398,7 @@ Usage:
 
 _
     }
+    $out;
 }
 
 sub run {
@@ -545,7 +548,7 @@ sub run {
 
     # handle general --help
     if ($opts{action} eq 'help' && !$spec) {
-        _run_help(
+        print _run_help(
             $args{help}, undef, $cmd,
             $subc ? $subc->{summary} : $args{summary},
             \@ARGV, undef);
@@ -560,7 +563,7 @@ sub run {
 
     # handle per-command --help
     if ($opts{action} eq 'help') {
-        _run_help($subc->{help}, $spec, "$cmd $subc_name",
+        print _run_help($subc->{help}, $spec, "$cmd $subc_name",
               $subc->{summary}, \@ARGV, $args);
         if ($exit) { exit 0 } else { return 0 }
     }
