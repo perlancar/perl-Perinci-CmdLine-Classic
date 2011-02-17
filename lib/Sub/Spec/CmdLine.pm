@@ -36,6 +36,7 @@ sub parse_argv {
                        keys %$args_spec };
     $opts //= {};
     $opts->{strict} //= 1;
+    $log->tracef("-> parse_arg(), argv=%s", $argv);
 
     my %go_spec;
 
@@ -143,6 +144,7 @@ sub parse_argv {
         delete $args->{$_} unless defined($args->{$_});
     }
 
+    $log->tracef("<- parse_argv(), args=%s", $args);
     $args;
 }
 
@@ -368,16 +370,15 @@ sub _run_completion {
     my $spec = $args{spec};
     if ($spec) {
         $log->trace("Complete subcommand argument names & values");
-        print map {"$_\n"}
-            Sub::Spec::BashComplete::bash_complete_spec_arg(
-                $spec,
-                {
-                    words    => $args{words},
-                    cword    => $args{cword},
-                    arg_sub  => $args{arg_sub},
-                    args_sub => $args{args_sub},
-                },
-            );
+        return Sub::Spec::BashComplete::bash_complete_spec_arg(
+            $spec,
+            {
+                words    => $args{words},
+                cword    => $args{cword},
+                arg_sub  => $args{arg_sub},
+                args_sub => $args{args_sub},
+            },
+        );
     } else {
         $log->trace("Complete general options & names of subcommands");
         my $subcommands = $args{args}{subcommands};
@@ -387,11 +388,10 @@ sub _run_completion {
                 unless ref($subcommands) eq 'HASH';
         }
         #print "D: comp_word=$args{word}\n";
-        print map {"$_\n"}
-            Sub::Spec::BashComplete::_complete_array(
-                $args{word},
-                [@general_opts, keys(%$subcommands)]
-            );
+        return Sub::Spec::BashComplete::_complete_array(
+            $args{word},
+            [@general_opts, keys(%$subcommands)]
+        );
     }
 }
 
@@ -543,14 +543,14 @@ sub run {
         my $complete_args;
         if ($subc) {
             shift @$comp_words;
-            $comp_cword--;
+            $comp_cword-- unless $comp_cword < 1;
 
             $complete_arg  = $subc->{complete_arg};
             $complete_args = $subc->{complete_arg };
         }
         $complete_arg    //= $args{complete_arg};
         $complete_args   //= $args{complete_args};
-        _run_completion(
+        my @res = _run_completion(
             args          => \%args,
             spec          => $spec,
             getopts       => \%getopts,
@@ -560,6 +560,8 @@ sub run {
             arg_sub       => $complete_arg,
             args_sub      => $complete_args,
         );
+        $log->tracef("completion result: %s", \@res);
+        print map {"$_\n"} @res;
         if ($exit) { exit 0 } else { return 0 }
     }
 
@@ -598,11 +600,10 @@ sub run {
             unless $spec;
 
     # parse argv
-    my $args;
     my $popts = {};
     $popts->{strict} = 0
         if $subc->{allow_unknown_args} // $args{allow_unknown_args};
-    parse_argv(\@ARGV, $spec, $popts);
+    my $args = parse_argv(\@ARGV, $spec, $popts);
 
     # finally, run!
     my $res;
