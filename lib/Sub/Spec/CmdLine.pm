@@ -577,30 +577,36 @@ sub run {
         if ($exit) { exit 0 } else { return 0 }
     }
 
-    # handle general --help
-    if ($opts{action} eq 'help' && !$spec) {
-        print _run_help(
-            $args{help}, undef, $cmd,
-            $subc ? $subc->{summary} : $args{summary},
-            \@ARGV, undef);
+    my $args;
+    my $opts = {};
+    $opts->{strict} = 0
+        if $subc->{allow_unknown_args} // $args{allow_unknown_args};
+
+    if ($spec) {
+        parse_argv(\@ARGV, $spec, $opts);
+    }
+
+    # handle --help
+    if ($opts{action} eq 'help') {
+        if ($spec) {
+            print _run_help(
+                $subc->{help}, $spec,
+                ($subc_name ? "$cmd $subc_name" : $cmd),
+                ($subc ? $subc->{summary} : $args{summary}),
+                 \@ARGV, $args);
+        if ($exit) { exit 0 } else { return 0 }
+        } else {
+            print _run_help(
+                $args{help}, undef, $cmd,
+                $subc ? $subc->{summary} : $args{summary},
+                \@ARGV, undef);
+        }
         if ($exit) { exit 0 } else { return 0 }
     }
 
     die "Please specify a subcommand, ".
         "use $cmd -l to list available subcommands\n"
             unless $spec;
-
-    my $opts = {};
-    $opts->{strict} = 0
-        if $subc->{allow_unknown_args} // $args{allow_unknown_args};
-    my $args = parse_argv(\@ARGV, $spec, $opts);
-
-    # handle per-command --help
-    if ($opts{action} eq 'help') {
-        print _run_help($subc->{help}, $spec, "$cmd $subc_name",
-              $subc->{summary}, \@ARGV, $args);
-        if ($exit) { exit 0 } else { return 0 }
-    }
 
     # finally, run!
     my $res;
