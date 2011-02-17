@@ -367,7 +367,7 @@ sub _run_completion {
 
     my $spec = $args{spec};
     if ($spec) {
-        # complete subcommand argument names & values
+        $log->trace("Complete subcommand argument names & values");
         print map {"$_\n"}
             Sub::Spec::BashComplete::bash_complete_spec_arg(
                 $spec,
@@ -379,7 +379,7 @@ sub _run_completion {
                 },
             );
     } else {
-        # complete general options & names of subcommands
+        $log->trace("Complete general options & names of subcommands");
         my $subcommands = $args{args}{subcommands};
         if (ref($subcommands) eq 'CODE') {
             $subcommands = $subcommands->(args=>$args{args});
