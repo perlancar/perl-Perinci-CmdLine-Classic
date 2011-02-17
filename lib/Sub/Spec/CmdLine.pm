@@ -175,7 +175,10 @@ sub gen_usage($;$) {
         if (!defined($prev_cat) || $prev_cat ne $cat) {
             $usage .= "\n" if defined($prev_cat);
             $usage .= ($cat ? ucfirst("$cat options") :
-                           ($has_cat ? "General options" : "Options"));
+                           ($has_cat ? "General options" :
+                                ($opts->{options_name} ?
+                                     "$opts->{options_name} options" :
+                                         "Options")));
             $usage .= " (* denotes required options)"
                 unless $noted_star_req++;
             $usage .= ":\n";
@@ -361,14 +364,17 @@ sub _run_completion {
 }
 
 sub _run_help {
-    my ($help, $spec, $cmd, $summary) = @_;
+    my ($help, $spec, $cmd, $summary, $argv, $args) = @_;
 
     say $cmd, ($summary ? " - $summary" : "");
     print "\n";
 
     if ($help) {
         if (ref($help) eq 'CODE') {
-            print $help->(spec=>$spec, cmd=>$cmd);
+            print $help->(
+                spec=>$spec, cmd=>$cmd,
+                args=>$args, argv=>$argv,
+            );
         } else {
             print $help;
         }
@@ -377,16 +383,17 @@ sub _run_help {
     } else {
             print <<_;
 Usage:
-  $cmd --help (or -h, or -?)
-  $cmd --list (or -l)
-  $cmd --version (or -v)
-  $cmd SUBCOMMAND [ARGS ...]
-  $cmd SUBCOMMAND --help (or -h, or -?)
+  To get general help:
+    $cmd --help (or -h, or -?)
+  To list subcommands:
+    $cmd --list (or -l)
+  To show version:
+    $cmd --version (or -v)
+  To get help on a subcommand:
+    $cmd --help SUBCOMMAND
+  To run a subcommand:
+    $cmd SUBCOMMAND [ARGS ...]
 
-Options:
-  --help     Show this message
-  --list     List subcommands
-  --version  Show version
 _
     }
 }
@@ -537,9 +544,11 @@ sub run {
     }
 
     # handle general --help
-    if ($opts{action} eq 'help') {
-        _run_help($args{help}, undef, $cmd,
-                  $subc ? $subc->{summary} : $args{summary});
+    if ($opts{action} eq 'help' && !$spec) {
+        _run_help(
+            $args{help}, undef, $cmd,
+            $subc ? $subc->{summary} : $args{summary},
+            \@ARGV, undef);
         if ($exit) { exit 0 } else { return 0 }
     }
 
@@ -547,16 +556,17 @@ sub run {
         "use $cmd -l to list available subcommands\n"
             unless $spec;
 
+    my $args = parse_argv(\@ARGV, $spec);
+
     # handle per-command --help
-    if ($subc && $ARGV[0] && $ARGV[0] =~ /^(--help|-h|-\?)$/) {
+    if ($opts{action} eq 'help') {
         _run_help($subc->{help}, $spec, "$cmd $subc_name",
-              $subc->{summary});
+              $subc->{summary}, \@ARGV, $args);
         if ($exit) { exit 0 } else { return 0 }
     }
 
     # finally, run!
     my $res;
-    my $args = parse_argv(\@ARGV, $spec);
     if ($subc && $subc->{run}) {
         # use run routine instead if supplied
         $res = $subc->{run}->(
