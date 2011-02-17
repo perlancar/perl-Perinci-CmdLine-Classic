@@ -402,15 +402,14 @@ sub _run_completion {
         }
 
         # multiple-sub, just typing "CMD subc ^" (space already typed)
-        if ($cword > 0 && $words->[$cword-1] eq $subcn &&
-                $args{space_typed}) {
+        if ($cword > 0 && $args{space_typed} && $subcn) {
             $log->trace("do_arg because last word typed (+space) is ".
                             "subcommand name");
             $do_arg++; last;
         }
 
         # multiple-sub, already typing subc in past words
-        if ($cword > 0 && $subcn) {
+        if ($cword > 0 && !$args{space_typed} && $words->[$cword] ne $subcn) {
             $log->trace("do_arg because subcommand name has been typed ".
                             "in past words");
             $do_arg++; last;
@@ -423,8 +422,19 @@ sub _run_completion {
     if ($do_arg) {
         $log->trace("Complete subcommand argument names & values");
 
-        shift @$words;
-        $cword-- unless $cword < 1;
+        # remove subcommand name and general options from words so it doesn't
+        # interfere with matching spec args
+        my $i = 0;
+        while ($i < @$words) {
+            if ($words->[$i] ~~ @general_opts || $words->[$i] eq $subcn) {
+                splice @$words, $i, 1;
+                $cword-- unless $cword <= $i;
+                next;
+            } else {
+                $i++;
+            }
+        }
+        $log->tracef("cleaned words=%s, cword=%d", $words, $cword);
 
         return Sub::Spec::BashComplete::bash_complete_spec_arg(
             $spec,
