@@ -156,7 +156,7 @@ sub parse_argv {
         delete $args->{$_} unless defined($args->{$_});
     }
 
-    $log->tracef("<- parse_argv(), args=%s", $args);
+    $log->tracef("<- parse_argv(), args=%s, remaining argv=%s", $args, $argv);
     $args;
 }
 
