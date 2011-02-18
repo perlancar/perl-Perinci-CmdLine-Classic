@@ -634,7 +634,8 @@ sub run {
             subcommand_name => $subc_name,
         );
         $log->tracef("completion result: %s", \@res);
-        print map {"$_\n"} @res;
+        print map {Sub::Spec::BashComplete::_add_slashes($_), "\n"} @res;
+        #print map {"$_\n"} @res;
         if ($exit) { exit 0 } else { return 0 }
     }
 
