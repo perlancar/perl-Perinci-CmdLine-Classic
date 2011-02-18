@@ -54,7 +54,7 @@ sub parse_argv {
             #$go_spec{$opt} = sub { $args->{$name[0]} = $_[0] };
             $go_spec{$opt} = \$args->{$name[0]};
         }
-        my $aliases = $schema->{attr_hashes}[0]{cmdline_aliases};
+        my $aliases = $schema->{attr_hashes}[0]{arg_aliases};
         if ($aliases) {
             while (my ($alias, $alinfo) = each %$aliases) {
                 my $opt;
@@ -236,7 +236,7 @@ sub gen_usage($;$) {
             Data::Dump::Partial::dumpp($ah0->{default}).")"
                   if defined($ah0->{default});
 
-        my $aliases = $ah0->{cmdline_aliases};
+        my $aliases = $ah0->{arg_aliases};
         if ($aliases) {
             $arg_desc .= "\n";
             for (sort keys %$aliases) {
@@ -246,7 +246,7 @@ sub gen_usage($;$) {
                     "      ",
                     (length == 1 ? "-$_" : "--$_"), " ",
                     $alinfo->{summary} ? $alinfo->{summary} :
-                        "is alias for --$name",
+                        "is alias for '$name'",
                     "\n"
                 );
             }
