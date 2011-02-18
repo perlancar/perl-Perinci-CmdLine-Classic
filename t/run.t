@@ -58,7 +58,7 @@ subtest 'completion' => sub {
         args        => {module=>'Foo', sub=>'ok'},
         comp_line   => 'CMD -',
         comp_point0 => '     ^',
-        result      => [qw(--help -h -\\? --arg1 --arg2 --arg3)],
+        result      => [qw(--help -h -\? --arg1 --arg2 --arg3)],
     );
     test_complete(
         name        => 'arg value from arg spec "in" (single sub)',
