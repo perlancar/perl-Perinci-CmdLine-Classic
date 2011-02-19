@@ -85,8 +85,8 @@ sub parse_argv {
         die "Incorrect command-line options/arguments\n" if $opts->{strict};
     }
 
-    $log->tracef("tmp args result (after getoptions): %s, argv: %s",
-                 $args, $argv);
+    #$log->tracef("tmp args result (after getoptions): %s, argv: %s",
+    #             $args, $argv);
 
     # parse YAML in opt values
     for my $k (keys %$args) {
@@ -137,8 +137,8 @@ sub parse_argv {
         }
     }
 
-    $log->tracef("tmp args result (after arg_pos processing): %s, argv: %s",
-                 $args, $argv);
+    #$log->tracef("tmp args result (after arg_pos processing): %s, argv: %s",
+    #             $args, $argv);
     if (@$argv) {
         die "Error: extra argument(s): ".join(", ", @$argv)."\n"
             if $opts->{strict};
