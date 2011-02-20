@@ -15,9 +15,9 @@ use Sub::Spec::CmdLine qw(run);
 
 package Foo;
 our $VERSION = "0.01";
-our %SUBS;
+our %SPEC;
 
-$SUBS{ok} = {
+$SPEC{ok} = {
     summary => 'Always return ok',
     args => {
         arg1 => ['str*' => {arg_pos=>0, in=>[qw/a b c d/]}],
@@ -31,7 +31,7 @@ sub ok {
      {"First argument"=>$args{arg1}, "Second argument"=>$args{arg2}}];
 }
 
-$SUBS{wantodd} = {
+$SPEC{wantodd} = {
     summary => 'Return error if given an even number',
     args => {
         num => ['int*' => {arg_pos=>0}],

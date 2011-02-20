@@ -23,7 +23,7 @@ die $@ if $@;
 my %subs;
 {
     no strict 'refs';
-    %subs = %{"$module\::SUBS"}
+    %subs = %{"$module\::SPEC"}
         or die "Sorry, no spec found in Perl module $module\n";
 }
 

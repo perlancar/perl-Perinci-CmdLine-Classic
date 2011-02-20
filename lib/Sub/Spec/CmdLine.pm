@@ -597,7 +597,7 @@ sub run {
 
             if ($sub) {
                 no strict 'refs';
-                my $subs = \%{$module."::SUBS"};
+                my $subs = \%{$module."::SPEC"};
                 $spec = $subs->{$sub};
                 die "Can't find spec for sub $module\::$sub\n"
                     unless $spec || $ENV{COMP_LINE};
@@ -713,9 +713,9 @@ __END__
 In your module:
 
  package YourModule;
- our %SUBS;
+ our %SPEC;
 
- $SUBS{foo} = {
+ $SPEC{foo} = {
      summary => 'Foo!',
      args => {
          arg  => ...,
