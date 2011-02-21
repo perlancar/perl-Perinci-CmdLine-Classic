@@ -4,7 +4,7 @@ use 5.010;
 use strict;
 use warnings;
 use Log::Any '$log';
-use Test::More;
+use Test::More 0.96;
 
 use Capture::Tiny      qw(capture);
 use Clone::Any         qw(clone);
