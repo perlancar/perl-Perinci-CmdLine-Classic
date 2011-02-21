@@ -777,8 +777,8 @@ None of the functions are exported by default, but they are exportable.
 
 =head2 parse_argv(\@argv, $sub_spec[, \%opts]) => \%args
 
-Parse command line argument @argv into hash %args, suitable for passing into
-subs.
+Using information in spec's B<args> clause, parse command line argument @argv
+into hash %args, suitable for passing into subs.
 
 Uses Getopt::Long to parse the result.
 
@@ -797,6 +797,52 @@ Options in %opts:
 If set to 0, will still return parsed argv even if there are errors.
 
 =back
+
+=head3 How parse_argv() translates the args spec clause
+
+Bool types can be specified using
+
+ --argname
+
+or
+
+ --noargname
+
+All the other types can be specified using
+
+ --argname VALUE
+
+or
+
+ --argname=VALUE
+
+where I<VALUE> is assumed to be in YAML markup, except when YAML loading failed
+then it will be assumed to be a string literal. Example:
+
+ --argname '[1, 2, 3]'
+
+then $args{argname} will contain a hashref [1, 2, 3]. But with:
+
+ --argname '[1, 2, 3'
+
+then $args{argname} will contain a string '[1, 2, 3' since YAML parsing failed.
+
+parse_argv() also takes B<arg_pos> and B<arg_greedy> type clause in schema into
+account, for example:
+
+ $SPEC{multiply2} = {
+     summary => 'Multiply 2 numbers (a & b)',
+     args => {
+         a => ['num*' => {arg_pos=>0}],
+         b => ['num*' => {arg_pos=>1}],
+     }
+ }
+
+then on the command-line any of below is valid:
+
+ % multiply2 --a 2 --b 3
+ % multiply2 2 --b 3; # first non-option argument is fed into a (arg_pos=0)
+ % multiply2 2 3;     # first argument is fed into a, second into b (arg_pos=1)
 
 =head2 gen_usage($sub_spec) => TEXT
 
