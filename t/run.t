@@ -51,6 +51,8 @@ package main;
 subtest 'completion' => sub {
     plan skip_all => 'Sub::Spec::BashComplete is not available'
         unless eval { require Sub::Spec::BashComplete };
+    plan skip_all => 'Sub::Spec::BashComplete version too old'
+        unless $Sub::Spec::BashComplete::VERSION >= '0.10';
 
     test_complete(
         name        => 'arg name (single sub)',
