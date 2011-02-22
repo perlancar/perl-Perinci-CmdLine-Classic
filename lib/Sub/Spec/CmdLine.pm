@@ -72,7 +72,7 @@ sub parse_argv {
         "no_ignore_case", "permute");
     my $result = Getopt::Long::GetOptionsFromArray($argv, %go_spec);
     unless ($result) {
-        die "Incorrect command-line options/arguments\n" if $opts->{strict};
+        die BlankStr->new if $opts->{strict};
     }
 
     #$log->tracef("tmp args result (after getoptions): %s, argv: %s",
@@ -694,6 +694,10 @@ sub run {
     my $exit_code = $res->[0] == 200 ? 0 : $res->[0] - 300;
     if ($exit) { exit $exit_code } else { return $exit_code }
 }
+
+package BlankStr;
+use overload q{""} => sub { '' };
+sub new { bless(\$_[0], $_[0]) }
 
 1;
 __END__
