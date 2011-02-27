@@ -681,9 +681,20 @@ sub run {
             sub_args => $args,
         );
     } else {
-        # call sub
-        my $subref = \&{$module."::$sub"};
-        $res       = $subref->(%$args);
+        # run sub
+        {
+            require Sub::Spec::Runner;
+            my $runner = Sub::Spec::Runner->new;
+            $runner->load_modules($load);
+            eval { $runner->add("$module\::$sub") };
+            if ($@) {
+                $res = [412, "Cannot add sub to runner: $@"];
+                last;
+            }
+            $runner->args($args);
+            $res = $runner->run;
+            $res = $runner->result("$module\::$sub") // $res;
+        }
     }
 
     # output
