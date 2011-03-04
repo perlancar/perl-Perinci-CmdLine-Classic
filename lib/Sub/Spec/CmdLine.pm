@@ -686,14 +686,13 @@ sub run {
             require Sub::Spec::Runner;
             my $runner = Sub::Spec::Runner->new;
             $runner->load_modules($load);
-            eval { $runner->add("$module\::$sub") };
+            eval { $runner->add("$module\::$sub", $args) };
             my $eval_err = $@;
             if ($eval_err) {
                 chomp($eval_err);
                 $res = [412, $eval_err];
                 last;
             }
-            $runner->args($args);
             $res = $runner->run;
             $res = $runner->result("$module\::$sub") // $res;
         }
