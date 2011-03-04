@@ -492,7 +492,7 @@ _
 }
 
 sub run {
-    $log->trace("-> run()");
+    $log->trace("-> CmdLine's run()");
     require Getopt::Long;
 
     my %args = @_;
@@ -694,6 +694,7 @@ sub run {
                 last;
             }
             $res = $runner->run;
+            $res->[2] = undef;
             $res = $runner->result("$module\::$sub") // $res;
         }
     }
@@ -706,6 +707,7 @@ sub run {
     print format_result($res, $opts{format})
         unless $spec->{cmdline_suppress_output} && !$exit_code;
 
+    $log->trace("<- CmdLine's run()");
     if ($exit) { exit $exit_code } else { return $exit_code }
 }
 
