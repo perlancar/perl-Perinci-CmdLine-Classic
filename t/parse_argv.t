@@ -6,7 +6,7 @@ use warnings;
 use Log::Any '$log';
 use Test::More tests => 13;
 
-use Clone::Any qw(clone);
+use Data::Clone        qw(clone);
 use Sub::Spec::CmdLine qw(parse_argv);
 
 my $spec = {

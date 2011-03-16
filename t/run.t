@@ -7,7 +7,7 @@ use Log::Any '$log';
 use Test::More 0.96;
 
 use Capture::Tiny      qw(capture);
-use Clone::Any         qw(clone);
+use Data::Clone        qw(clone);
 use Sub::Spec::CmdLine qw(run);
 
 # XXX test require in run()
