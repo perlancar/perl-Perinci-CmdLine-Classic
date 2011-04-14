@@ -551,7 +551,7 @@ sub run {
     $getopts{l} = $getopts{list};
     $getopts{v} = $getopts{version};
     $getopts{h} = $getopts{help};
-    $getopts{'help|?'} = $getopts{help}; # Go::L doesn't accept '?'
+    $getopts{'please_help_me|?'} = $getopts{help}; # Go::L doesn't accept '?'
 
     Getopt::Long::GetOptions(%getopts);
 
