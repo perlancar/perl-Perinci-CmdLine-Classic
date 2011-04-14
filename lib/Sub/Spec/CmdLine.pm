@@ -840,6 +840,13 @@ Options in %opts:
 
 If set to 0, will still return parsed argv even if there are errors.
 
+=item * extra_getopts => HASHREF
+
+If specified, add extra Getopt::Long specification (as long as it doesn't clash
+with spec arg). This is used, for example, by run() to add general options
+--help, --version, --list, etc so it can mixed with spec arg options, for
+convenience.
+
 =back
 
 =head3 How parse_argv() translates the args spec clause
