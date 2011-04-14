@@ -141,6 +141,19 @@ for (qw(--help -h -?)) {
          );
 }
 
+test_run(name      => "general option (--version) before subcommand name",
+         args      => {module=>'Foo', subcommands=>{ok=>{}, wantodd=>{}}},
+         argv      => [qw/--version wantodd --num 4/],
+         exit_code => 0,
+         output_re => qr/version 0\.01/m,
+     );
+test_run(name      => "general option (--help) after subcommand name",
+         args      => {module=>'Foo', subcommands=>{ok=>{}, wantodd=>{}}},
+         argv      => [qw/wantodd --num 4 --help/],
+         exit_code => 0,
+         output_re => qr/^Options/m,
+     );
+
 for (qw(--version -v)) {
     test_run(name      => "version ($_)",
              args      => {module=>'Foo', sub=>'ok'},
