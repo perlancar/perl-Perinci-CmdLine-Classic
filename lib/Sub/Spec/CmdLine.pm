@@ -548,9 +548,10 @@ sub run {
     );
     # aliases. we don't use "version|v" etc so the key can be compared with spec
     # arg in parse_argv()
-    $getopts{l}   = $getopts{list};
-    $getopts{v}   = $getopts{version};
-    $getopts{h}   = $getopts{help};
+    $getopts{l} = $getopts{list};
+    $getopts{v} = $getopts{version};
+    $getopts{h} = $getopts{help};
+    $getopts{'help|?'} = $getopts{help}; # Go::L doesn't accept '?'
 
     Getopt::Long::GetOptions(%getopts);
 

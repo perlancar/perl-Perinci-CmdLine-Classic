@@ -132,7 +132,7 @@ test_run(name      => 'unknown subcommand = error',
          dies      => 1,
      );
 
-for (qw(--help -h)) {
+for (qw(--help -h -?)) {
     test_run(name      => "help ($_)",
              args      => {module=>'Foo', sub=>'ok'},
              argv      => [$_],
