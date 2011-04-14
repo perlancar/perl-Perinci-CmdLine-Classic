@@ -473,7 +473,7 @@ sub _run_help {
 
     my $out = "";
 
-    $out .= $cmd . ($summary ? " - $summary" : "") . "\n\n";
+    #$out .= $cmd . ($summary ? " - $summary" : "") . "\n\n";
 
     if ($help) {
         if (ref($help) eq 'CODE') {
