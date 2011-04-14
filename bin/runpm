@@ -30,7 +30,7 @@ my %subs;
 run(
     module      => $module,
     load        => 0,
-    cmd         => $ENV{PERL_RUNPM_PROG} // $0,
+    cmd         => $ENV{PERL_RUNPM_PROG} // "$0 $module",
     subcommands => {
         map { $_ => {} } keys %subs,
     },
