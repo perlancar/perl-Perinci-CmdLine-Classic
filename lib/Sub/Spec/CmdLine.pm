@@ -654,7 +654,7 @@ sub run {
 
     # parse argv
     my $args;
-    if ($spec && $subc) {
+    if ($spec && $opts{action} eq 'run') {
         my $popts = {};
         $popts->{strict} = 0
             if $subc->{allow_unknown_args} // $args{allow_unknown_args};

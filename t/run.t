@@ -132,7 +132,7 @@ test_run(name      => 'unknown subcommand = error',
          dies      => 1,
      );
 
-for (qw(--help -h -?)) {
+for (qw(--help -h)) {
     test_run(name      => "help ($_)",
              args      => {module=>'Foo', sub=>'ok'},
              argv      => [$_],
@@ -202,9 +202,13 @@ sub test_run {
     my ($stdout, $stderr);
     my $exit_code;
     eval {
-        ($stdout, $stderr) = capture {
+        if ($args{output_re}) {
+            ($stdout, $stderr) = capture {
+                $exit_code = run(exit=>0, load=>0, %{$args{args}});
+            };
+        } else {
             $exit_code = run(exit=>0, load=>0, %{$args{args}});
-        };
+        }
     };
     my $eval_err = $@;
 
