@@ -727,9 +727,7 @@ sub run {
                 $res = [412, $eval_err];
                 last;
             }
-            $res = $runner->run;
-            $res->[2] = undef;
-            $res = $runner->result("$module\::$sub") // $res;
+            $res = $runner->run(use_last_res=>1);
         }
     }
 
