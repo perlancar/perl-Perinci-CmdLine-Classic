@@ -13,7 +13,7 @@ use Sub::Spec::CmdLine qw(run);
 my %opts = (
     library => [],
 );
-Getopt::Long::Configure('pass_through');
+Getopt::Long::Configure('pass_through', 'no_permute');
 GetOptions(
     'library|I=s' => $opts{library},
     'help' => \$opts{help},
