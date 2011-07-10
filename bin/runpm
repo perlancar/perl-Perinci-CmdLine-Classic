@@ -21,7 +21,14 @@ GetOptions(
 
 if ($opts{help} || !@ARGV) {
     print <<USAGE;
-Usage: $0 [options] <Perl
+Usage:
+  $0 -h|--help
+  $0 [options] <Perl::Module::Name> -l
+  $0 [options] <Perl::Module::Name> <subname> [--help | [subargs]]
+
+Options:
+  -I LIB  Add LIB to Perl search dir (a la Perl's -I)
+
 USAGE
     exit 0;
 }
