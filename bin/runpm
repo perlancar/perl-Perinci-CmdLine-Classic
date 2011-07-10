@@ -2,15 +2,31 @@
 
 # workaround for dzil
 package runpm;
-# ABSTRACT: Run Perl module as a command-line application
 
 use 5.010;
 use strict;
 use warnings;
 
+use Getopt::Long;
 use Sub::Spec::CmdLine qw(run);
 
-@ARGV or die "Usage: $0 <Perl::Module::Name>\n";
+my %opts = (
+    library => [],
+);
+Getopt::Long::Configure('pass_through');
+GetOptions(
+    'library|I=s' => $opts{library},
+    'help' => \$opt{help},
+);
+
+if ($opt{help} || !@ARGV) {
+    print <<USAGE;
+Usage: $0 [options] <Perl
+USAGE
+    exit 0;
+}
+
+for my $dir (@{ $opts{library} }) { require lib; lib::import($dir) }
 
 my $module = shift @ARGV;
 my $modulep = $module;
@@ -36,6 +52,7 @@ run(
     },
 );
 __END__
+# ABSTRACT: Run Perl module as a command-line application
 
 =head1 SYNOPSIS
 
