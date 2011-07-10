@@ -16,10 +16,10 @@ my %opts = (
 Getopt::Long::Configure('pass_through');
 GetOptions(
     'library|I=s' => $opts{library},
-    'help' => \$opt{help},
+    'help' => \$opts{help},
 );
 
-if ($opt{help} || !@ARGV) {
+if ($opts{help} || !@ARGV) {
     print <<USAGE;
 Usage: $0 [options] <Perl
 USAGE
