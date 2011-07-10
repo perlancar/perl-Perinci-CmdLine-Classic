@@ -57,6 +57,7 @@ run(
     subcommands => {
         map { $_ => {} } keys %subs,
     },
+    dash_to_underscore => 1,
 );
 __END__
 # ABSTRACT: Run Perl module as a command-line application

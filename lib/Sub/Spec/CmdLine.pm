@@ -562,6 +562,7 @@ sub run {
     my $load;
     if ($subcommands && @ARGV) {
         $subc_name = shift @ARGV;
+        $subc_name =~ s/-/_/g if $args{dash_to_underscore};
         $subc      = ref($subcommands) eq 'CODE' ?
             $subcommands->(name=>$subc_name, args=>\%args) :
             $subcommands->{$subc_name};
