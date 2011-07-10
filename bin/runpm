@@ -33,7 +33,7 @@ USAGE
     exit 0;
 }
 
-for my $dir (@{ $opts{library} }) { require lib; lib::import($dir) }
+for my $dir (@{ $opts{library} }) { require lib; lib->import($dir) }
 
 my $module = shift @ARGV;
 my $modulep = $module;
