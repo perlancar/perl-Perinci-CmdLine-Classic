@@ -926,18 +926,24 @@ Also, display help using gen_usage() if given '--help' or '-h' or '-?'.
 
 =back
 
-Arguments:
+Arguments (* denotes required arguments):
 
 =over 4
 
 =item * summary => STR
 
+Used when displaying help message or version.
+
 =item * module => STR
 
-Currently this must be supplied if you want --version, even if you use
-subcommands. --version gets $VERSION from the main module.
+Currently this must be supplied if you want --version to work, even if you use
+subcommands. --version gets $VERSION from the main module. Not required if you
+specify 'spec'.
 
 =item * sub => STR
+
+Required if you only want to execute one subroutine. Alternatively you can
+provide multiple subroutines from which the user can choose (see 'subcommands').
 
 =item * spec => HASH | CODEREF
 
@@ -962,14 +968,14 @@ have several subs to run, assign each of them to a subcommand, e.g.:
    sync    => { }, # sub defaults to the same name as subcommand name
  },
 
-Available argument for each subcommand: module (defaults to main B<module>
-argument), sub (defaults to subcommand name), summary, help, category (for
-arrangement when listing commands), run, complete_arg, complete_args.
+Available argument for each subcommand: 'module' (defaults to main B<module>
+argument), 'sub' (defaults to subcommand name), 'summary', 'help', 'category'
+(for arrangement when listing commands), 'run', 'complete_arg', 'complete_args'.
 
 Subcommand argument can be a code reference, in which case it will be called
-with C<%args> containing: name (subcommand name), args (arguments to run()). The
-code is expected to return structure for argument with specified name, or, when
-name is not specified, a hashref containing all subcommand arguments.
+with C<%args> containing: 'name' (subcommand name), 'args' (arguments to run()).
+The code is expected to return structure for argument with specified name, or,
+when name is not specified, a hashref containing all subcommand arguments.
 
 =item * run => CODEREF
 
@@ -977,37 +983,44 @@ Instead of running command by invoking subroutine specified by B<module> and
 B<sub>, run this code instead. Code is expected to return a response structure
 ([CODE, MESSAGE, DATA]).
 
-=item * exit => BOOL (optional, default 1)
+=item * exit => BOOL (default 1)
 
 If set to 0, instead of exiting with exit(), return the exit code instead.
 
-=item * load => BOOL (optional, default 1)
+=item * load => BOOL (default 1)
 
 If set to 0, do not try to load (require()) the module.
 
-=item * allow_unknown_args => BOOL (optional, default 0)
+=item * allow_unknown_args => BOOL (default 0)
 
-=item * complete_arg  => {ARGNAME => CODEREF, ...}
+If set to 1, unknown command-line argument will not result in fatal error.
+
+=item * complete_arg => {ARGNAME => CODEREF, ...}
 
 Under bash completion, when completing argument value, you can supply a code to
-provide its completion. Code will be called with %args containing word, words,
+provide its completion. Code will be called with %args containing: word, words,
 arg, args.
 
 =item * complete_args => CODEREF
 
 Under bash completion, when completing argument value, you can supply a code to
-provide its completion. Code will be called with %args containing word, words,
+provide its completion. Code will be called with %args containing: word, words,
 arg, args.
 
 =item * custom_completer => CODEREF
 
-To be passed to BashComplete's bash_complete_spec_arg(). This can be used e.g.
-to change bash completion code (e.g. calling bash_complete_spec_arg()
-recursively) based on context.
+To be passed to L<Sub::Spec::BashComplete>'s bash_complete_spec_arg(). This can
+be used e.g. to change bash completion code (e.g. calling
+bash_complete_spec_arg() recursively) based on context.
+
+=item * dash_to_underscore => BOOL (optional, default 0)
+
+If set to 1, subcommand like a-b-c will be converted to a_b_c. This is for
+convenience when typing in command line.
 
 =back
 
-run() can also perform completion for bash (if L<Sub::Spec::BashComplete> is
+run() can also perform completion for bash (if Sub::Spec::BashComplete is
 available). To get bash completion for your B<perlprog>, just type this in bash:
 
  % complete -C /path/to/perlprog perlprog
@@ -1017,7 +1030,7 @@ You can add that line in bash startup file (~/.bashrc, /etc/bash.bashrc, etc).
 
 =head1 FAQ
 
-=head2 Why is nonscalar arguments parsed as YAML instead of other markup (JSON, etc)?
+=head2 Why is nonscalar arguments parsed as YAML instead of JSON/etc?
 
 I think YAML is nicer in command-line because quotes are optional in a few
 places:
