@@ -10,7 +10,7 @@ require Exporter;
 our @ISA       = qw(Exporter);
 our @EXPORT_OK = qw(gen_usage format_result run);
 
-use Sub::Spec::GetArgs::Argv qw(parse_argv);
+use Sub::Spec::GetArgs::Argv qw(get_args_from_argv);
 use Sub::Spec::Utils; # tmp, for _parse_schema
 
 sub _parse_schema {
@@ -401,7 +401,7 @@ sub run {
         "nopretty"   => sub { $opts{format} = 'nopretty' },
     );
     # aliases. we don't use "version|v" etc so the key can be compared with spec
-    # arg in parse_argv()
+    # arg in get_args_from_argv()
     $getopts{l} = $getopts{list};
     $getopts{v} = $getopts{version};
     $getopts{h} = $getopts{help};
@@ -512,17 +512,16 @@ sub run {
     # parse argv
     my $args;
     if ($spec && $opts{action} eq 'run') {
-        my $popts = {};
-        $popts->{strict} = 0
+        my %ga_args = (argv=>\@ARGV, spec=>$spec);
+        $ga_args{strict} = 0
             if $subc->{allow_unknown_args} // $args{allow_unknown_args};
 
         # this allows us to catch --help, --version, etc specified after
         # subcommand name (if it doesn't collide with any spec arg). for
         # convenience, e.g.: allowing 'cmd subcmd --help' in addition to 'cmd
         # --help subcmd'.
-        $popts->{extra_getopts} = \%getopts;
-
-        $args = parse_argv(\@ARGV, $spec, $popts);
+        $ga_args{extra_getopts} = \%getopts;
+        $args = get_args_from_argv(%ga_args);
     }
 
     # handle --list
@@ -700,9 +699,11 @@ steps:
 
 =over 4
 
-=item * Parse command-line options in @ARGV (using parse_argv())
+=item * Parse command-line options in @ARGV (using Sub::Spec::GetArgs::Argv)
 
 Also, display help using gen_usage() if given '--help' or '-h' or '-?'.
+
+See L<Sub::Spec::GetArgs::Argv> for details on parsing.
 
 =item * Call sub
 
