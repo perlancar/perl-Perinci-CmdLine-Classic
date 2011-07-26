@@ -387,12 +387,15 @@ sub run {
     my $old_go_opts = Getopt::Long::Configure(
         "pass_through", "no_ignore_case", "no_permute");
     my %getopts = (
-        "list"       => sub { $_pa_skip_check_required_args++;
-                              $opts{action} = 'list'     },
-        "version"    => sub { $_pa_skip_check_required_args++;
-                              $opts{action} = 'version'  },
-        "help"       => sub { $_pa_skip_check_required_args++;
-                              $opts{action} = 'help'     },
+        "list"       => sub {
+            $Sub::Spec::GetArgs::Argv::_pa_skip_check_required_args++;
+            $opts{action} = 'list'     },
+        "version"    => sub {
+            $Sub::Spec::GetArgs::Argv::_pa_skip_check_required_args++;
+            $opts{action} = 'version'  },
+        "help"       => sub {
+            $Sub::Spec::GetArgs::Argv::_pa_skip_check_required_args++;
+            $opts{action} = 'help'     },
 
         "text"       => sub { $opts{format} = 'text'     },
         "yaml"       => sub { $opts{format} = 'yaml'     },
