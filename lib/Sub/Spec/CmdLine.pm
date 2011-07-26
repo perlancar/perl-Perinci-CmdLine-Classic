@@ -384,7 +384,8 @@ sub run {
     }
 
     my %opts = (format => undef, action => 'run');
-    Getopt::Long::Configure("pass_through", "no_ignore_case", "no_permute");
+    my $old_go_opts = Getopt::Long::Configure(
+        "pass_through", "no_ignore_case", "no_permute");
     my %getopts = (
         "list"       => sub { $_pa_skip_check_required_args++;
                               $opts{action} = 'list'     },
@@ -407,6 +408,7 @@ sub run {
     $getopts{'please_help_me|?'} = $getopts{help}; # Go::L doesn't accept '?'
 
     Getopt::Long::GetOptions(%getopts);
+    Getopt::Long::Configure($old_go_opts);
 
     my $cmd = $args{cmd};
     if (!$cmd) {
