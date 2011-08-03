@@ -1,5 +1,11 @@
 Revision history for Sub::Spec::CmdLine
 
+0.34     2011-08-03
+
+         No functional changes. Fixed test script to adjust to new
+         Object::BlankStr [CT]. Updated dependencies.
+
+
 0.33     2011-07-26
 
          [INCOMPATIBLE CHANGES]
