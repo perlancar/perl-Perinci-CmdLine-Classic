@@ -10,6 +10,7 @@ require Exporter;
 our @ISA       = qw(Exporter);
 our @EXPORT_OK = qw(gen_usage format_result run);
 
+use Module::Loaded;
 use Sub::Spec::GetArgs::Argv qw(get_args_from_argv);
 use Sub::Spec::Utils; # tmp, for _parse_schema
 
@@ -409,6 +410,13 @@ sub run {
     $getopts{v} = $getopts{version};
     $getopts{h} = $getopts{help};
     $getopts{'please_help_me|?'} = $getopts{help}; # Go::L doesn't accept '?'
+
+    # convenience for Log::Any::App-using apps
+    if (is_loaded('Log::Any::App')) {
+        for (qw/quiet verbose debug trace log_level/) {
+            $getopts{$_} = sub {};
+        }
+    }
 
     Getopt::Long::GetOptions(%getopts);
     Getopt::Long::Configure($old_go_opts);
