@@ -204,7 +204,7 @@ sub _run_help {
             $out .= $help;
         }
     } elsif ($spec) {
-        $out .= spec_to_usage(spec=>$spec, cmd=>$cmd);
+        $out .= spec_to_usage(spec=>$spec, cmd=>$cmd)->[2];
     } else {
             $out .= <<_;
 Usage:
