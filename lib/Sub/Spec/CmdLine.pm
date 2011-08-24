@@ -711,8 +711,6 @@ as JSON can be added upon request.
 
 L<Sub::Spec>
 
-L<Sub::Spec::Pod>
-
 L<MooseX::Getopt>
 
 =cut
