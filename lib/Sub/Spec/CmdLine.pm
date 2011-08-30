@@ -536,6 +536,9 @@ accessible from the command-line.
 This module uses L<Log::Any> logging framework. Use something like
 L<Log::Any::App>, etc to see more logging statements for debugging.
 
+Note: If you use this module, make sure that your sub does not return status
+code above 555, because OS exit code is set to $code-300.
+
 
 =head1 FUNCTIONS
 
