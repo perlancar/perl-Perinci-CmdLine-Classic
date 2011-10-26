@@ -276,6 +276,12 @@ sub run {
     $getopts{h} = $getopts{help};
     $getopts{'please_help_me|?'} = $getopts{help}; # Go::L doesn't accept '?'
 
+    if ($args{undo}) {
+        $getopts{undo}       = sub { $opts{undo} = shift };
+        $getopts{undo_data}  = sub { $opts{undo_data} = shift };
+        #$getopts{list_undos} = sub { $opts{list_undos} = 1 }; # not yet
+    }
+
     # convenience for Log::Any::App-using apps
     if (is_loaded('Log::Any::App')) {
         for (qw/quiet verbose debug trace log_level/) {
@@ -451,6 +457,8 @@ sub run {
             require Sub::Spec::Runner;
             my $runner = Sub::Spec::Runner->new;
             $runner->load_modules($load);
+            $runner->undo($opts{undo});
+            $runner->undo_data_dir($opts{undo_dir}) if $opts{undo_dir};
             eval { $runner->add("$module\::$sub", $args) };
             my $eval_err = $@;
             if ($eval_err) {
@@ -682,6 +690,14 @@ bash_complete_spec_arg() recursively) based on context.
 
 If set to 1, subcommand like a-b-c will be converted to a_b_c. This is for
 convenience when typing in command line.
+
+=item * undo => BOOL (optional, default 0)
+
+If set to 1, --undo and --undo-dir will be added to command-line options. --undo
+is used to perform undo: -undo and -undo_data will be passed to subroutine, an
+error will be thrown if subroutine does not have 'undo' features. --undo-dir is
+used to set location of undo data (default ~/.undo; undo directory will be
+created if not exists; each subroutine will have its own subdir here).
 
 =back
 
