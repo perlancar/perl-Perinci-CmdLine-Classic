@@ -276,12 +276,6 @@ sub run {
     $getopts{h} = $getopts{help};
     $getopts{'please_help_me|?'} = $getopts{help}; # Go::L doesn't accept '?'
 
-    if ($args{undo}) {
-        $getopts{undo}       = sub { $opts{undo} = shift };
-        $getopts{undo_data}  = sub { $opts{undo_data} = shift };
-        #$getopts{list_undos} = sub { $opts{list_undos} = 1 }; # not yet
-    }
-
     # convenience for Log::Any::App-using apps
     if (is_loaded('Log::Any::App')) {
         for (qw/quiet verbose debug trace log_level/) {
@@ -355,6 +349,21 @@ sub run {
                     unless $spec || $ENV{COMP_LINE};
             }
         }
+    }
+
+    # check whether we should add undo related command-line arguments
+    {
+        last unless $spec || $args{undo};
+        require Sub::Spec::Object;
+        my $ssspec = Sub::Spec::Object::ssspec($spec);
+        last unless $sspec->feature('undo');
+
+        $opts{undo_action}    = 'do';
+        $getopts{undo_data}   = sub { $opts{undo_data} = shift };
+        $getopts{undo}        = sub { $opts{undo_action} = 'undo' };
+        $getopts{redo}        = sub { $opts{undo_action} = 'redo' };
+        $getopts{list_undos}  = sub { $opts{undo_action} = 'list_undos' };
+        $getopts{clear_undos} = sub { $opts{undo_action} = 'clear_undos' };
     }
 
     # now that we have spec, detect (2) if we're being invoked for bash
