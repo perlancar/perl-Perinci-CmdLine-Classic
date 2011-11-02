@@ -1,5 +1,4 @@
 package Sub::Spec::CmdLine;
-# ABSTRACT: Access Perl subs via command line
 
 use 5.010;
 use strict;
@@ -9,6 +8,8 @@ use Log::Any '$log';
 require Exporter;
 our @ISA       = qw(Exporter);
 our @EXPORT_OK = qw(format_result run);
+
+# VERSION
 
 use Data::Format::Pretty qw(format_pretty);
 use Module::Loaded;
@@ -492,7 +493,7 @@ sub run {
 }
 
 1;
-__END__
+# ABSTRACT: Access Perl subs via command line
 
 =head1 SYNOPSIS
 
@@ -549,6 +550,18 @@ In the command-line:
 
 This module utilize sub specs (as defined by L<Sub::Spec>) to let your subs be
 accessible from the command-line.
+
+This can be used to create a command-line application easily. What you'll get:
+
+=over 4
+
+=item * Command-line parsing (currently using Getopt::Long, with some tweaks)
+
+=item * Help message (utilizing information from sub specs)
+
+=item * Tab completion for bash
+
+=back
 
 This module uses L<Log::Any> logging framework. Use something like
 L<Log::Any::App>, etc to see more logging statements for debugging.
@@ -720,6 +733,18 @@ You can add that line in bash startup file (~/.bashrc, /etc/bash.bashrc, etc).
 
 =head1 FAQ
 
+=head2 How does Sub::Spec::CmdLine compare with other CLI-app frameworks?
+
+B<Differences>: Sub::Spec::CmdLine is part of a more general subroutine metadata
+framework. Aside from command-line apps, your sub spec is also usable for other
+stuffs, like creating REST API's, remote subroutines, or documentation.
+
+B<Pros>: App::Cmd and App::Rad currently does not offer bash completion feature.
+Sub::Spec::CmdLine offers passing arguments as YAML.
+
+B<Cons>: inadequate documentation/tutorial, no configuration file support yet
+(coming soon).
+
 =head2 Why is nonscalar arguments parsed as YAML instead of JSON/etc?
 
 I think YAML is nicer in command-line because quotes are optional in a few
@@ -736,6 +761,8 @@ as JSON can be added upon request.
 
 
 =head1 SEE ALSO
+
+L<App::Cmd>, L<App::Rad>
 
 L<Sub::Spec>
 
