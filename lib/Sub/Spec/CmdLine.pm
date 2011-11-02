@@ -736,8 +736,9 @@ You can add that line in bash startup file (~/.bashrc, /etc/bash.bashrc, etc).
 =head2 How does Sub::Spec::CmdLine compare with other CLI-app frameworks?
 
 B<Differences>: Sub::Spec::CmdLine is part of a more general subroutine metadata
-framework. Aside from command-line apps, your sub spec is also usable for other
+framework. Aside from a command-line app, your sub spec is also usable for other
 stuffs, like creating REST API's, remote subroutines, or documentation.
+Sub::Spec::CmdLine is not OO and does not offer plugins (as of now).
 
 B<Pros>: App::Cmd and App::Rad currently does not offer bash completion feature.
 Sub::Spec::CmdLine offers passing arguments as YAML.
