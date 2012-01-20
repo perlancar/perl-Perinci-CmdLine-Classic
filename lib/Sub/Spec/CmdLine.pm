@@ -357,7 +357,7 @@ sub run {
         last unless $spec || $args{undo};
         require Sub::Spec::Object;
         my $ssspec = Sub::Spec::Object::ssspec($spec);
-        last unless $sspec->feature('undo');
+        last unless $ssspec->feature('undo');
 
         $opts{undo_action}    = 'do';
         $getopts{undo_data}   = sub { $opts{undo_data} = shift };
@@ -547,6 +547,13 @@ In the command-line:
 
 
 =head1 DESCRIPTION
+
+B<NOTICE>: This module and the L<Sub::Spec> standard is deprecated as of Jan
+2012. L<Rinci> is the new specification to replace Sub::Spec, it is about 95%
+compatible with Sub::Spec, but corrects a few issues and is more generic.
+C<Perinci::*> is the Perl implementation for Rinci and many of its modules can
+handle existing Sub::Spec sub specs. See L<Perinci::CmdLine> which supersedes
+this module.
 
 This module utilize sub specs (as defined by L<Sub::Spec>) to let your subs be
 accessible from the command-line.
