@@ -1,0 +1,146 @@
+#!/usr/bin/perl
+
+package peri_run; # to make PodWeaver happy
+
+use 5.010;
+use strict;
+use warnings;
+
+use Getopt::Long;
+use Perinci::CmdLine;
+
+my %opts = (
+    library => [],
+);
+Getopt::Long::Configure('pass_through', 'no_permute');
+GetOptions(
+    'library|I=s' => $opts{library},
+    'help|h|?' => \$opts{help},
+);
+
+if ($opts{help} || !@ARGV) {
+    print <<USAGE;
+Run a Perl module (or any package over Riap) on the command-line
+
+Usage:
+
+    $0 --help
+    $0 [options] <module-URL-or-name> --list
+    $0 [options] <module-URL-or-name> <func-name> [--help | [func-args]]
+
+Options:
+
+    -I LIB  Add LIB to Perl search dir (a la Perl's -I)
+
+Examples:
+
+    $0 Foo::Bar -l
+    $0 http://example.org/api/Foo/Bar/ baz --yaml --arg 12
+
+Notes:
+
+* module-URL-or-name is anything that is accepted by Perinci::Access, so either
+  a Perl module name ('Foo::Bar') or a URL.
+
+* This is currently a pretty minimal front-end. For more options, use
+  Perinci::CmdLine directly.
+
+Todo:
+
+* HTTP authentication parameters
+
+USAGE
+    exit 0;
+}
+
+for my $dir (@{ $opts{library} }) { require lib; lib->import($dir) }
+
+my $module = shift @ARGV;
+my $func   = shift @ARGV;
+
+$module or die "Please specify module. Or use --help to get help.\n";
+
+if ($module =~ /\A\w+*::(?:\w+)*\z/) {
+    $module =~ s!::!/!;
+    $module = "/$module/";
+}
+
+my $cmd = Perinci::CmdLine->new;
+$cmd->program_name($ENV{PERI_RUN_PROGRAM_NAME}) if $ENV{PERI_RUN_PROGRAM_NAME};
+
+if ($func) {
+    $cmd->url("$module$func");
+} else {
+    my $scs = {};
+    my $pa = $cmd->{_pa};
+    my $res = $pa->request(list => $module, {detail=>1});
+    die "Can't request 'list' action on $module: $res->[0] - $res->[1]\n"
+        unless $res->[0] == 200;
+    for my $e (@{$res->[2]}) {
+        my $sub = $e->{uri}; $sub =~ s!.+/!!;
+        $scs->{$sub} = {
+            url => $e->{uri},
+            summary => $e->{summary},
+        };
+    }
+    $cmd->subcommands($scs);
+}
+
+$cmd->run;
+
+# ABSTRACT: Run Perl module (or any package over Riap) on the command-line
+
+=head1 SYNOPSIS
+
+From command-line:
+
+ % peri-run Foo::Bar
+ % peri-run http://example.com/api/Foo/Bar/
+
+Or save this in C<foobar> somewhere in PATH:
+
+ #!/bin/bash
+ export PERI_RUN_PROGRAM_NAME=`basename $0`
+ peri-run Foo::Bar
+
+You can now do:
+
+ % foobar --help; # show help
+
+ % foobar --list; # list all subcommands, which are subroutines in Foo::Bar
+
+ % foobar sub1 --arg1 ... --arg2 ...; # execute sub1
+
+ % foobar --yaml sub1 ...; # execute sub1 and return output as YAML
+
+ % foobar --help sub1; # show help usage for sub1
+
+ % foobar --version
+
+ % complete -C foobar foobar
+ % foobar <TAB>; # tab completion will now work
+
+
+=head1 DESCRIPTION
+
+One of the lazy ways of writing a command-line application is by not writing it.
+You just write your module functions, following a few conventions outlined in
+L<Perinci::Access::InProcess>. Later you "export" your module as a command-line
+application with B<peri-run> and get these features for free (among others):
+options parsing, --help message, output formatting, and bash shell completion.
+
+To make bash completion work, you need to execute the 'complete' command (shown
+in Synopsis) first, either from your bash startup script (~/.bashrc,
+/etc/bash.bashrc, etc).
+
+Currently B<peri-run> offers only few options; it's just a quick way to run your
+module. For more customization (e.g. only export some functions, rename
+subcommands, run two or more modules, custom actions and behaviours via plugins,
+etc), use Perinci::CmdLine directly.
+
+
+=head1 SEE ALSO
+
+L<Perinci::CmdLine>
+
+=cut

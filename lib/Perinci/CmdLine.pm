@@ -1,65 +1,103 @@
-package Sub::Spec::CmdLine;
+package Perinci::CmdLine;
 
 use 5.010;
 use strict;
 use warnings;
 use Log::Any '$log';
 
-require Exporter;
-our @ISA       = qw(Exporter);
-our @EXPORT_OK = qw(format_result run);
+use Perinci::Access;
+use Moo;
 
 # VERSION
 
-use Data::Format::Pretty qw(format_pretty);
-use Module::Loaded;
-use Sub::Spec::GetArgs::Argv qw(get_args_from_argv);
-use Sub::Spec::To::Text::Usage qw(spec_to_usage);
+has program_name => (is => 'rw', default=>sub {local $_=$0; s!.+/!!; $_});
+has url => (is => 'rw');
+has summary => (is => 'rw');
+has subcommands => (is => 'rw');
+has exit => (is => 'rw', default=>sub{1});
+has custom_completer => (is => 'rw');
+has custom_arg_completer => (is => 'rw');
+has dash_to_underscore => (is => 'rw', default=>sub{1});
+#has undo => (is=>'rw', default=>sub{0});
+has format => (is => 'rw', default=>sub{'text'});
 
-sub format_result {
-    my ($res, $format, $opts) = @_;
-    $format //= 'text';
-    $opts   //= {};
+sub BUILD {
+    my ($self, $args) = @_;
+    $self->{_pa} = Perinci::Access->new;
+}
+
+sub format_output {
+    require Data::Format::Pretty;
+
+    my ($self) = @_;
+    my $format = $self->format;
 
     if ($format eq 'yaml') {
-        return format_pretty($res, {module=>'YAML'});
-    } elsif ($format eq 'json') {
-        return format_pretty($res, {module=>'JSON'});
-    } elsif ($format eq 'php') {
-        return format_pretty($res, {module=>'PHP'});
-    } elsif ($format =~ /^(text|pretty|nopretty)$/) {
-        if (!defined($res->[2])) {
-            return $res->[0] == 200 ?
-                ($opts->{default_success_message} // "") :
-                    "ERROR $res->[0]: $res->[1]\n";
+        $self->{_fres} = return format_pretty($self->{_res}, {module=>'YAML'});
+            return;
+    }
+    if ($format eq 'json') {
+        $self->{_fres} = format_pretty($self->{_res}, {module=>'JSON'});
+            return;
+    }
+    if ($format eq 'php') {
+        $self->{_fres} = format_pretty($self->{_res}, {module=>'PHP'});
+            return;
+    }
+    if ($format =~ /^(text|pretty|nopretty)$/) {
+        if (!defined($self->{_res}[2])) {
+            $self->{_fres} = $self->{_res}[0] == 200 ? "" :
+                "ERROR $self->{_res}[0]: $self->{_res}[1]\n";
+            return;
         }
-        my $r = $res->[0] == 200 ? $res->[2] : $res;
+        my $r = $self->{_res}[0] == 200 ? $self->{_res}[2] : $self->{_res};
         if ($format eq 'text') {
-            return format_pretty($r, {module=>'Console'});
-        } elsif ($format eq 'pretty') {
-            return format_pretty($r, {module=>'Text'});
-        } elsif ($format eq 'nopretty') {
-            return format_pretty($r, {module=>'SimpleText'});
+            $self->{_fres} = format_pretty($r, {module=>'Console'});
+            return;
+        }
+        if ($format eq 'pretty') {
+            $self->{_fres} = format_pretty($r, {module=>'Text'});
+            return;
+        }
+        if ($format eq 'nopretty') {
+            $self->{_fres} = format_pretty($r, {module=>'SimpleText'});
+            return;
         }
     }
 
     die "BUG: Unknown output format `$format`";
 }
 
-sub _run_list {
-    my ($subcommands, $args) = @_;
+sub display_output {
+    my ($self) = @_;
+    print $self->{_fres};
+}
+
+sub run_list {
+    my ($self) = @_;
+
+    my $subcommands = $self->subcommands;
 
     return unless $subcommands;
 
     if (ref($subcommands) eq 'CODE') {
-        $subcommands = $subcommands->(args=>$args);
+        $subcommands = $subcommands->($self);
         die "Error: subcommands code didn't return a hashref\n"
             unless ref($subcommands) eq 'HASH';
     }
 
+    # XXX get summary from Riap if not exist
+
     my %percat_subc; # (cat1 => {subcmd1=>..., ...}, ...)
     while (my ($scn, $sc) = each %$subcommands) {
-        my $cat = $sc->{category} // "";
+        my $cat = "";
+        if ($sc->{tags}) {
+            for (@{$sc->{tags}}) {
+                next unless /^category:(.+)/;
+                $cat = $1;
+                last;
+            }
+        }
         $percat_subc{$cat}       //= {};
         $percat_subc{$cat}{$scn}   = $sc;
     }
@@ -80,17 +118,28 @@ sub _run_list {
             say "  $scn", ($sc->{summary} ? " - $sc->{summary}" : "");
         }
     }
+
+    0;
 }
 
-sub _run_version {
-    my ($module, $cmd, $summary) = @_;
+sub run_version {
+    my ($self) = @_;
 
-    # get from module's $VERSION
-    no strict 'refs';
-    my $version = ${$module."::VERSION"} // "?";
-    my $rev     = ${$module."::REVISION"};
+    # get from pkg_version property
 
-    say "$cmd version ", $version, ($rev ? " rev $rev" : "");
+    # XXX url does not necessarily a package url, we should URI->new and then
+    # cut one path
+    my $pkg_url = $self->url;
+
+    my $res = $self->{_pa}->request(meta => $pkg_url);
+    die "Can't request 'meta' action on $pkg_url: $res->[0] - $res->[1]\n"
+        unless $res->[0] == 200;
+
+    my $version = $res->[2]{pkg_version} // "?";
+
+    say $self->program_name, " version ", $version;
+
+    0;
 }
 
 sub _run_completion {
@@ -160,9 +209,8 @@ sub _run_completion {
         }
         $log->tracef("cleaned words=%s, cword=%d", $words, $cword);
 
-        return Sub::Spec::BashComplete::bash_complete_spec_arg(
-            $spec,
-            {
+        return Perinci::BashComplete::bash_complete_riap_func_arg(
+            meta => $spec,
                 words            => $words,
                 cword            => $cword,
                 arg_sub          => $args{arg_sub},
@@ -170,7 +218,6 @@ sub _run_completion {
                 custom_completer =>
                     ($subc ? $subc->{custom_completer} :
                          undef) // $args{parent_args}{custom_completer}
-            },
         );
     } else {
         $log->trace("Complete general options & names of subcommands");
@@ -187,8 +234,7 @@ sub _run_completion {
     }
 }
 
-# returns help text
-sub _run_help {
+sub run_help {
     my ($help, $spec, $cmd, $summary, $argv) = @_;
 
     my $out = "";
@@ -497,241 +543,130 @@ sub run {
 
 =head1 SYNOPSIS
 
-In your module:
-
- package YourModule;
- our %SPEC;
-
- $SPEC{foo} = {
-     summary => 'Foo!',
-     args => {
-         arg  => ...,
-         arg2 => ...
-     },
-     ...
- };
- sub foo {
-    ...
- }
-
- ...
- 1;
-
-In your script:
+In your command-line script:
 
  #!/usr/bin/perl
- use Sub::Spec::CmdLine qw(run);
- run(module=>'YourModule', sub=>'foo');
+ use Perinci::CmdLine;
+ Perinci::CmdLine->new(url => 'Your::Module', ...)->run;
 
-In the command-line:
-
- % script.pl --help
- % script.pl --arg value --arg2 '[an, array, in, yaml, syntax]' ...
-
-For running multiple subs, in your script:
-
- use Sub::Spec::CmdLine qw(run);
- run(subcommands => {
-     foo => { module=>'YourModule', sub=>'foo'},
-     bar => { module=>'YourModule', sub=>'bar'},
-     ...
- });
-
-In the command-line:
-
- % script.pl --help
- % script.pl --list
- % script.pl foo --help
- % script.pl foo --arg value --arg2 ...
- % script.pl bar --blah ...
+See also the L<peri-run> script which provides a command-line interface for
+Perinci::CmdLine.
 
 
 =head1 DESCRIPTION
 
-B<NOTICE>: This module and the L<Sub::Spec> standard is deprecated as of Jan
-2012. L<Rinci> is the new specification to replace Sub::Spec, it is about 95%
-compatible with Sub::Spec, but corrects a few issues and is more generic.
-C<Perinci::*> is the Perl implementation for Rinci and many of its modules can
-handle existing Sub::Spec sub specs. See L<Perinci::CmdLine> which supersedes
-this module.
+Perinci::CmdLine is a command-line application framework. It access functions
+using Riap protocol (L<Perinci::Access>) so you get transparent remote access.
+It utilizes L<Rinci> metadata in the code so the amount of plumbing that you
+have to do is quite minimal.
 
-This module utilize sub specs (as defined by L<Sub::Spec>) to let your subs be
-accessible from the command-line.
-
-This can be used to create a command-line application easily. What you'll get:
+What you'll get:
 
 =over 4
 
 =item * Command-line parsing (currently using Getopt::Long, with some tweaks)
 
-=item * Help message (utilizing information from sub specs)
+=item * Help message (utilizing information from metadata)
 
-=item * Tab completion for bash
-
-=back
-
-This module uses L<Log::Any> logging framework. Use something like
-L<Log::Any::App>, etc to see more logging statements for debugging.
-
-Note: If you use this module, make sure that your sub does not return status
-code above 555, because OS exit code is set to $code-300.
-
-
-=head1 FUNCTIONS
-
-None of the functions are exported by default, but they are exportable.
-
-=head2 format_result($sub_res[, \%opts]) => TEXT
-
-Format result from sub into various formats
-
-Options:
-
-=over 4
-
-=item * format => FORMAT (optional, default 'text')
-
-Format can be 'text' (pretty text or nonpretty text), 'pretty' (pretty text,
-generated by L<Data::Format::Pretty::Console> under interactive=1), 'nopretty'
-(also generated by Data::Format::Pretty::Console under interactive=0), 'yaml',
-'json', 'php' (generated by L<PHP::Serialization>'s serialize()).
-
-=item * default_success_message => STR (optional, default none)
-
-If output format is text ('text', 'pretty', 'nopretty') and result code is 200
-and there is no data returned, this default_success_message is used. Example:
-'Success'.
+=item * Tab completion for bash (including completion from remote code)
 
 =back
 
-=head2 run(%args)
+This module uses L<Log::Any> and L<Log::Any::App> for logging.
 
-Run subroutine(s) from the command line, which essentially comprises these
-steps:
+This module uses L<Moo> for OO.
+
+
+=head1 ATTRIBUTES
+
+=head2 program_name => STR (default from $0)
+
+=head2 url => STR
+
+Required if you only want to run one function. URL should point to a function
+entity.
+
+Alternatively you can provide multiple functions from which the user can select
+using the first argument (see B<subcommands>).
+
+=head2 summary => STR
+
+If unset, will be retrieved from function metadata when needed.
+
+=head2 subcommands => {NAME => {ARGUMENT=>...}, ...} | CODEREF
+
+Should be a hash of subcommands or a coderef which should return a hash of
+subcommands.
+
+Each subcommand specification is also a hash and should contain these keys:
+C<url>, C<summary>. It can also contain these keys: C<tags> (for categorizing
+subcommands).
+
+If subcommands is a coderef, it will be called as a method. The code is expected
+to return subcommands hashref.
+
+=head2 exit => BOOL (default 1)
+
+If set to 0, instead of exiting with exit(), run() will return the exit code
+instead.
+
+=head2 custom_completer => CODEREF
+
+Will be passed to L<Perinci::BashComplete>'s C<bash_complete_riap_func_arg>. See
+its documentation for more details.
+
+=head2 custom_arg_completer => CODEREF | {ARGNAME=>CODEREF, ...}
+
+Will be passed to L<Perinci::BashComplete>. See its documentation for more
+details.
+
+=head2 dash_to_underscore => BOOL (optional, default 1)
+
+If set to 1, subcommand like a-b-c will be converted to a_b_c. This is for
+convenience when typing in command line.
+
+=head2 undo => BOOL (optional, default 0)
+
+UNFINISHED. If set to 1, --undo and --undo-dir will be added to command-line
+options. --undo is used to perform undo: -undo and -undo_data will be passed to
+subroutine, an error will be thrown if subroutine does not have C<undo>
+features. --undo-dir is used to set location of undo data (default C<~/.undo>;
+undo directory will be created if not exists; each subroutine will have its own
+subdir here).
+
+
+=head1 METHODS
+
+=head2 new(%opts) => OBJ
+
+Create an instance.
+
+=head2 run(%args) -> INT
+
+The main routine. It does roughly the following:
 
 =over 4
 
 =item * Parse command-line options in @ARGV (using Sub::Spec::GetArgs::Argv)
 
-Also, display help using Sub::Spec::To::Text::Usage::spec_to_usage() if given
-'--help' or '-h' or '-?'.
+Determine which subcommand is accessed and parse function arguments from
+command-line options. Also handle common options like --help, --yaml.
 
-See L<Sub::Spec::GetArgs::Argv> for details on parsing.
+=item * Call function
 
-=item * Call sub
-
-=item * Format the return value from sub (using format_result())
+=item * Format the return value from function and display it
 
 =item * Exit with appropriate exit code
 
 0 if 200, or CODE-300.
 
-=back
-
-Arguments (* denotes required arguments):
-
-=over 4
-
-=item * summary => STR
-
-Used when displaying help message or version.
-
-=item * module => STR
-
-Currently this must be supplied if you want --version to work, even if you use
-subcommands. --version gets $VERSION from the main module. Not required if you
-specify 'spec'.
-
-=item * sub => STR
-
-Required if you only want to execute one subroutine. Alternatively you can
-provide multiple subroutines from which the user can choose (see 'subcommands').
-
-=item * spec => HASH | CODEREF
-
-Instead of trying to look for the spec using B<module> and B<sub>, use the
-supplied spec.
-
-=item * help => STRING | CODEREF
-
-Instead of generating help using spec_to_usage() from the spec, use the supplied
-help message (or help code, which is expected to return help text).
-
-=item * subcommands => {NAME => {ARGUMENT=>...}, ...} | CODEREF
-
-B<module> and B<sub> should be specified if you only have one sub to run. If you
-have several subs to run, assign each of them to a subcommand, e.g.:
-
- summary     => 'Maintain a directory containing git repos',
- module      => 'Git::Bunch',
- subcommands => {
-   check   => { },
-   backup  => { }, # module defaults to main module argument,
-   sync    => { }, # sub defaults to the same name as subcommand name
- },
-
-Available argument for each subcommand: 'module' (defaults to main B<module>
-argument), 'sub' (defaults to subcommand name), 'summary', 'help', 'category'
-(for arrangement when listing commands), 'run', 'complete_arg', 'complete_args'.
-
-Subcommand argument can be a code reference, in which case it will be called
-with C<%args> containing: 'name' (subcommand name), 'args' (arguments to run()).
-The code is expected to return structure for argument with specified name, or,
-when name is not specified, a hashref containing all subcommand arguments.
-
-=item * run => CODEREF
-
-Instead of running command by invoking subroutine specified by B<module> and
-B<sub>, run this code instead. Code is expected to return a response structure
-([CODE, MESSAGE, DATA]).
-
-=item * exit => BOOL (default 1)
-
-If set to 0, instead of exiting with exit(), return the exit code instead.
-
-=item * load => BOOL (default 1)
-
-If set to 0, do not try to load (require()) the module.
-
-=item * allow_unknown_args => BOOL (default 0)
-
-If set to 1, unknown command-line argument will not result in fatal error.
-
-=item * complete_arg => {ARGNAME => CODEREF, ...}
-
-Under bash completion, when completing argument value, you can supply a code to
-provide its completion. Code will be called with %args containing: word, words,
-arg, args.
-
-=item * complete_args => CODEREF
-
-Under bash completion, when completing argument value, you can supply a code to
-provide its completion. Code will be called with %args containing: word, words,
-arg, args.
-
-=item * custom_completer => CODEREF
-
-To be passed to L<Sub::Spec::BashComplete>'s bash_complete_spec_arg(). This can
-be used e.g. to change bash completion code (e.g. calling
-bash_complete_spec_arg() recursively) based on context.
-
-=item * dash_to_underscore => BOOL (optional, default 0)
-
-If set to 1, subcommand like a-b-c will be converted to a_b_c. This is for
-convenience when typing in command line.
-
-=item * undo => BOOL (optional, default 0)
-
-If set to 1, --undo and --undo-dir will be added to command-line options. --undo
-is used to perform undo: -undo and -undo_data will be passed to subroutine, an
-error will be thrown if subroutine does not have 'undo' features. --undo-dir is
-used to set location of undo data (default ~/.undo; undo directory will be
-created if not exists; each subroutine will have its own subdir here).
+(If C<exit> attribute is set to false, will return with exit code instead of
+directly calling exit().)
 
 =back
 
-run() can also perform completion for bash (if Sub::Spec::BashComplete is
-available). To get bash completion for your B<perlprog>, just type this in bash:
+run() can also perform completion for bash. To get bash completion for your
+B<perlprog>, just type this in bash:
 
  % complete -C /path/to/perlprog perlprog
 
@@ -740,18 +675,13 @@ You can add that line in bash startup file (~/.bashrc, /etc/bash.bashrc, etc).
 
 =head1 FAQ
 
-=head2 How does Sub::Spec::CmdLine compare with other CLI-app frameworks?
+=head2 How does Perinci::CmdLine compare with other CLI-app frameworks?
 
-B<Differences>: Sub::Spec::CmdLine is part of a more general subroutine metadata
-framework. Aside from a command-line app, your sub spec is also usable for other
-stuffs, like creating REST API's, remote subroutines, or documentation.
-Sub::Spec::CmdLine is not OO and does not offer plugins (as of now).
-
-B<Pros>: App::Cmd and App::Rad currently does not offer bash completion feature.
-Sub::Spec::CmdLine offers passing arguments as YAML.
-
-B<Cons>: inadequate documentation/tutorial, no configuration file support yet
-(coming soon).
+Perinci::CmdLine is part of a more general metadata and wrapping framework
+(Perinci::* modules family). Aside from a command-line application, your
+metadata is also usable for other purposes, like providing access over HTTP/TCP,
+documentation. Sub::Spec::CmdLine is not OO. Configuration file support is
+missing (coming soon).
 
 =head2 Why is nonscalar arguments parsed as YAML instead of JSON/etc?
 
@@ -762,7 +692,7 @@ places:
 
 versus:
 
- $ cmd --array '["a", "b", "c"]' --hash '{"foo": "bar"}'
+ $ cmd --array '["a","b","c"]' --hash '{"foo":"bar"}'
 
 Though YAML requires spaces in some places where JSON does not. A flag to parse
 as JSON can be added upon request.
@@ -770,10 +700,9 @@ as JSON can be added upon request.
 
 =head1 SEE ALSO
 
-L<App::Cmd>, L<App::Rad>
+L<Perinci>, L<Rinci>, L<Riap>.
 
-L<Sub::Spec>
-
-L<MooseX::Getopt>
+Other CPAN modules to write command-line applications: L<App::Cmd>, L<App::Rad>,
+L<MooseX::Getopt>.
 
 =cut
