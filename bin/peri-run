@@ -57,7 +57,7 @@ for my $dir (@{ $opts{library} }) { require lib; lib->import($dir) }
 
 my $module = shift @ARGV;
 my $func;
-if ($ARGV[0] =~ /\A\w+\z/) {
+if (defined($ARGV[0] && $ARGV[0] =~ /\A\w+\z/) {
     $func = shift @ARGV;
 }
 
