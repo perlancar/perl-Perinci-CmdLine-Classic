@@ -1,9 +1,10 @@
 Revision history for Perinci-CmdLine
 
-0.38     2012-02-22 (not yet released)
+0.38     2012-02-23
 
          Rename distribution from Sub-Spec-CmdLine to Perinci-CmdLine. Now
-         Rinci/Riap-based (transparent remote access).
+         Rinci/Riap-based (transparent remote access). Refactor into OO. Some
+         features missing for now. Tests not updated yet.
 
 
 0.37     2012-01-20
