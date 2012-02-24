@@ -4,8 +4,6 @@ use 5.010;
 use strict;
 use warnings;
 use Log::Any '$log';
-
-use Perinci::Access;
 use Moo;
 
 # VERSION
@@ -15,6 +13,7 @@ has url => (is => 'rw');
 has summary => (is => 'rw');
 has subcommands => (is => 'rw');
 has exit => (is => 'rw', default=>sub{1});
+has log_any_app => (is => 'rw', default=>sub{1});
 has custom_completer => (is => 'rw');
 has custom_arg_completer => (is => 'rw');
 has dash_to_underscore => (is => 'rw', default=>sub{1});
@@ -22,27 +21,29 @@ has dash_to_underscore => (is => 'rw', default=>sub{1});
 has format => (is => 'rw', default=>sub{'text'});
 
 sub BUILD {
+    require Perinci::Access;
     my ($self, $args) = @_;
     $self->{_pa} = Perinci::Access->new;
 }
 
-sub format_output {
+sub format_result {
     require Data::Format::Pretty;
+    *format_pretty = \&Data::Format::Pretty::format_pretty;
 
     my ($self) = @_;
     my $format = $self->format;
 
     if ($format eq 'yaml') {
-        $self->{_fres} = return format_pretty($self->{_res}, {module=>'YAML'});
-            return;
+        $self->{_fres} = format_pretty($self->{_res}, {module=>'YAML'});
+        return;
     }
     if ($format eq 'json') {
         $self->{_fres} = format_pretty($self->{_res}, {module=>'JSON'});
-            return;
+        return;
     }
     if ($format eq 'php') {
         $self->{_fres} = format_pretty($self->{_res}, {module=>'PHP'});
-            return;
+        return;
     }
     if ($format =~ /^(text|pretty|nopretty)$/) {
         if (!defined($self->{_res}[2])) {
@@ -68,23 +69,48 @@ sub format_output {
     die "BUG: Unknown output format `$format`";
 }
 
-sub display_output {
+sub display_result {
     my ($self) = @_;
     print $self->{_fres};
+}
+
+sub get_subcommand {
+    my ($self, $name) = @_;
+
+    my $scs = $self->subcommands;
+    return undef unless $scs;
+
+    if (ref($scs) eq 'CODE') {
+        return $scs->($self, name=>$name);
+    } else {
+        return $scs->{$name};
+    }
+}
+
+sub list_subcommands {
+    my ($self) = @_;
+    state $cached;
+    return $cached if $cached;
+
+    my $scs = $self->subcommands;
+    my $res;
+    if ($scs) {
+        if (ref($scs) eq 'CODE') {
+            $scs = $scs->($self);
+            die "ERROR: Subcommands code didn't return a hashref\n"
+                unless ref($scs) eq 'HASH';
+        }
+        $res = $scs;
+    } else {
+        $res = {};
+    }
+    $cached = $res;
 }
 
 sub run_list {
     my ($self) = @_;
 
-    my $subcommands = $self->subcommands;
-
-    return unless $subcommands;
-
-    if (ref($subcommands) eq 'CODE') {
-        $subcommands = $subcommands->($self);
-        die "Error: subcommands code didn't return a hashref\n"
-            unless ref($subcommands) eq 'HASH';
-    }
+    my $subcommands = $self->list_subcommands;
 
     # XXX get summary from Riap if not exist
 
@@ -132,8 +158,9 @@ sub run_version {
     my $pkg_url = $self->url;
 
     my $res = $self->{_pa}->request(meta => $pkg_url);
-    die "Can't request 'meta' action on $pkg_url: $res->[0] - $res->[1]\n"
-        unless $res->[0] == 200;
+    die "ERROR: Can't request 'meta' action on $pkg_url: ".
+        "$res->[0] - $res->[1]\n"
+            unless $res->[0] == 200;
 
     my $version = $res->[2]{pkg_version} // "?";
 
@@ -142,64 +169,66 @@ sub run_version {
     0;
 }
 
-sub _run_completion {
-    my %args = @_;
+sub run_completion {
+    # Perinci::BashComplete already required by run()
 
-    my @general_opts;
-    for my $o (keys %{$args{getopts}}) {
-        $o =~ s/^--//;
-        my @o = split /\|/, $o;
-        for (@o) { push @general_opts, length > 1 ? "--$_" : "-$_" }
-    }
+    my ($self) = @_;
 
-    my $spec  = $args{spec};
-    my $subc  = $args{subcommand};
-    my $subcn = $args{subcommand_name};
-    my $words = $args{words};
-    my $cword = $args{cword};
+    my $sc = $self->{_subcommand};
+    my $words = $self->{_comp_parse_res}{words};
+    my $cword = $self->{_comp_parse_res}{cword};
+    my $word  = $words->[$cword] // "";
 
-    # whether we should complete arg names/values or general opts + subcommands
-    # name
+    # determine whether we should complete function arg names/values or just
+    # top-level opts + subcommands name
     my $do_arg;
     {
-        # we can't do arg unless we already get the spec
-        if (!$spec) {
-            $log->trace("not do_arg because there is no spec");
-            last;
-        }
-
-        # single-sub directly complete arg names/values
-        if (!$subc) {
-            $log->trace("do_arg because single sub");
+        if (!$self->subcommands) {
+            $log->trace("do_arg because single command");
             $do_arg++; last;
         }
 
-        # multiple-sub, just typing "CMD subc ^" (space already typed)
-        if ($cword > 0 && $args{space_typed} && $subcn) {
+        my $scn = $sc->{name};
+
+        # whether user typed 'blah blah ^' or 'blah blah^'
+        my $space_typed = !defined($word);
+
+        # e.g: spanel delete-account ^
+        if ($self->subcommands && $cword > 0 && $space_typed) {
             $log->trace("do_arg because last word typed (+space) is ".
                             "subcommand name");
             $do_arg++; last;
         }
 
-        # multiple-sub, already typing subc in past words
-        if ($cword > 0 && !$args{space_typed} && $words->[$cword] ne $subcn) {
+        # e.g: spanel delete-account --yaml --acc^
+        if ($cword > 0 && !$space_typed && $word ne $scn) {
             $log->trace("do_arg because subcommand name has been typed ".
                             "in past words");
             $do_arg++; last;
         }
 
-        $log->tracef("not do_arg, cword=%d, words=%s, subcommand_name=%s, ".
-                         "space_typed=%s",
-                     $cword, $words, $subcn, $args{space_typed});
+        $log->tracef("not do_arg, cword=%d, words=%s, scn=%s, space_typed=%s",
+                     $cword, $words, $scn, $space_typed);
     }
+
+    my @top_opts; # contain --help, -h, --yaml, etc.
+    for my $o (keys %{$self->{_top_getopts}}) {
+        $o =~ s/^--//;
+        my @o = split /\|/, $o;
+        for (@o) { push @top_opts, length > 1 ? "--$_" : "-$_" }
+    }
+
+    my $res;
     if ($do_arg) {
-        $log->trace("Complete subcommand argument names & values");
+        $log->trace("Completing subcommand argument names & values ...");
 
         # remove subcommand name and general options from words so it doesn't
-        # interfere with matching spec args
+        # interfere with matching function args
         my $i = 0;
         while ($i < @$words) {
-            if ($words->[$i] ~~ @general_opts || $words->[$i] eq $subcn) {
+            if ($words->[$i] ~~ @top_opts ||
+                    (defined($self->{_scn_in_argv}) &&
+                         $words->[$i] eq $self->{_scn_in_argv})) {
                 splice @$words, $i, 1;
                 $cword-- unless $cword <= $i;
                 next;
@@ -209,337 +238,248 @@ sub _run_completion {
         }
         $log->tracef("cleaned words=%s, cword=%d", $words, $cword);
 
-        return Perinci::BashComplete::bash_complete_riap_func_arg(
-            meta => $spec,
-                words            => $words,
-                cword            => $cword,
-                arg_sub          => $args{arg_sub},
-                args_sub         => $args{args_sub},
-                custom_completer =>
-                    ($subc ? $subc->{custom_completer} :
-                         undef) // $args{parent_args}{custom_completer}
+        $res = Perinci::BashComplete::bash_complete_riap_func_arg(
+            url=>$sc->{url}, words=>$words, cword=>$cword,
+            custom_completer=>$self->custom_completer,
+            custom_arg_completer => $self->custom_arg_completer
         );
+
     } else {
-        $log->trace("Complete general options & names of subcommands");
-        my $subcommands = $args{parent_args}{subcommands};
-        if (ref($subcommands) eq 'CODE') {
-            $subcommands = $subcommands->(parent_args=>$args{parent_args});
-            die "Error: subcommands code didn't return hashref (2)\n"
-                unless ref($subcommands) eq 'HASH';
-        }
-        return Sub::Spec::BashComplete::_complete_array(
-            $args{word},
-            [@general_opts, keys(%$subcommands)]
-        );
+        $log->trace("Completing top-level options + subcommand name ...");
+        my @ary;
+        push @ary, @top_opts;
+        my $scs = $self->list_subcommands;
+        push @ary, keys %$scs;
+        $res = Perinci::BashComplete::complete_array(
+            word=>$word, array=>\@ary);
     }
+
+    # display completion result for bash
+    print map {Perinci::BashComplete::_add_slashes($_), "\n"} @$res;
+    0;
 }
 
 sub run_help {
-    my ($help, $spec, $cmd, $summary, $argv) = @_;
+    my ($self) = @_;
 
-    my $out = "";
+    my $prog = $self->program_name;
 
-    #$out .= $cmd . ($summary ? " - $summary" : "") . "\n\n";
+    # XXX custom help subroutine
 
-    if ($help) {
-        if (ref($help) eq 'CODE') {
-            $out .= $help->(
-                spec=>$spec, cmd=>$cmd,
-                argv=>$argv,
-            );
-        } else {
-            $out .= $help;
-        }
-    } elsif ($spec) {
-        $out .= spec_to_usage(spec=>$spec, command_name=>$cmd)->[2];
+    my $sc = $self->{_subcommand};
+    if ($sc) {
+        my $res = $self->{_pa}->request(meta => $sc->{url});
+        die "ERROR: Can't retrieve meta on $sc->{url}: $res->[0] - $res->[1]\n"
+            unless $res->[0] == 200;
+        # XXX meta to pod
+        require YAML::Syck;
+        print "Temporary help message for subcommand $sc->{name}:\n";
+        print YAML::Syck::Dump($res->[2]);
     } else {
-            $out .= <<_;
+        say <<_;
 Usage:
   To get general help:
-    $cmd --help (or -h)
+    $prog --help (or -h)
   To list subcommands:
-    $cmd --list (or -l)
+    $prog --list (or -l)
   To show version:
-    $cmd --version (or -v)
+    $prog --version (or -v)
   To get help on a subcommand:
-    $cmd --help SUBCOMMAND
+    $prog SUBCOMMAND --help
   To run a subcommand:
-    $cmd SUBCOMMAND [ARGS ...]
+    $prog SUBCOMMAND [COMMON OPTIONS] [SUBCOMMAND ARGS ...]
 
+Common options:
+  --yaml      Format result as YAML
+  --json      Format result as JSON
+  --pretty    Format result as pretty formatted text
+  --nopretty  Format result as simple formatted text
+  --text      (Default) Select --pretty or --nopretty depends on if run piped
 _
     }
-    $out;
+    0;
+}
+
+sub run_subcommand {
+    require Perinci::Sub::GetArgs::Argv;
+
+    my ($self) = @_;
+    my $sc = $self->{_subcommand};
+
+    my $res = $self->{_pa}->request(meta=>$sc->{url});
+    die "ERROR: Can't get metadata from $sc->{url}: $res->[0] - $res->[1]\n"
+        unless $res->[0] == 200;
+    my $meta = $res->[2];
+
+    # parse argv
+    my %ga_args = (argv=>\@ARGV, meta=>$meta);
+    #OLD CODE:
+    #$ga_args{strict} = 0
+    #    if $subc->{allow_unknown_args} // $args{allow_unknown_args};
+
+    # this allows us to catch --help, --version, etc specified after
+    # subcommand name (if it doesn't collide with any spec arg). for
+    # convenience, e.g.: allowing 'cmd subcmd --help' in addition to 'cmd
+    # --help subcmd'.
+    $ga_args{extra_getopts} = $self->{_top_getopts};
+
+    $res = Perinci::Sub::GetArgs::Argv::get_args_from_argv(%ga_args);
+    die "ERROR: $sc->{name}: $res->[0] - $res->[1]\n"
+            unless $res->[0] == 200;
+    my $args = $res->[2];
+
+    # call function
+    $self->{_res} = $self->{_pa}->request(call => $sc->{url}, {args=>$args});
+    $log->tracef("res=%s", $self->{_res});
+
+    # format & display result
+    $self->format_result();
+    $self->display_result();
+
+    $self->{_res}[0] == 200 ? 0 : $self->{_res}[0] - 300;
 }
 
 sub run {
-    $log->trace("-> CmdLine's run()");
     require Getopt::Long;
 
-    my %args = @_;
-    my $exit = $args{exit} // 1;
+    my ($self) = @_;
 
-    # detect (1) if we're being invoked for bash completion, get ARGV from
-    # COMP_LINE instead since ARGV given by bash is messed up / different
-    my ($comp_words, $comp_cword, $comp_word);
-    if ($ENV{COMP_LINE}) {
-        eval { require Sub::Spec::BashComplete };
-        my $eval_err = $@;
-        if ($eval_err) {
-            die "Can't load Sub::Spec::BashComplete: $eval_err\n";
+    #
+    # load Log::Any::App
+    #
+
+    unless ($ENV{COMP_LINE}) {
+        if ($self->log_any_app) {
+            require Log::Any::App;
+            Log::Any::App::init();
         }
-
-        my $res = Sub::Spec::BashComplete::_parse_request();
-        $comp_words = $res->{words};
-        $comp_cword = $res->{cword};
-        $comp_word  = $comp_words->[$comp_cword] // "";
-
-        @ARGV = @$comp_words;
     }
 
-    my %opts = (format => undef, action => 'run');
+    $log->trace("-> CmdLine's run()");
+
+    #
+    # workaround: detect (1) if we're being invoked for bash completion, get
+    # @ARGV from parsing COMP_LINE/COMP_POINT instead, since @ARGV given by bash
+    # is messed up / different
+    #
+
+    if ($ENV{COMP_LINE}) {
+        require Perinci::BashComplete;
+        my $res = Perinci::BashComplete::_parse_request();
+        @ARGV = @{ $res->{words} };
+        $self->{_comp_parse_res} = $res; # store for run_completion()
+    }
+
+    #
+    # parse @ARGV
+    #
+
     my $old_go_opts = Getopt::Long::Configure(
         "pass_through", "no_ignore_case", "no_permute");
+    my $action = "subcommand";
     my %getopts = (
-        "list"       => sub {
-            $Sub::Spec::GetArgs::Argv::_pa_skip_check_required_args++;
-            $opts{action} = 'list'     },
-        "version"    => sub {
-            $Sub::Spec::GetArgs::Argv::_pa_skip_check_required_args++;
-            $opts{action} = 'version'  },
-        "help"       => sub {
-            $Sub::Spec::GetArgs::Argv::_pa_skip_check_required_args++;
-            $opts{action} = 'help'     },
+        "list|l"     => sub {
+            $Perinci::Sub::GetArgs::Argv::_pa_skip_check_required_args++;
+            $action = 'list';
+        },
+        "version|v"  => sub {
+            $Perinci::Sub::GetArgs::Argv::_pa_skip_check_required_args++;
+            $action = 'version';
+        },
+        "help|h|?"   => sub {
+            $Perinci::Argv::_pa_skip_check_required_args++;
+            $action = 'help';
+        },
 
-        "text"       => sub { $opts{format} = 'text'     },
-        "yaml"       => sub { $opts{format} = 'yaml'     },
-        "json"       => sub { $opts{format} = 'json'     },
-        "pretty"     => sub { $opts{format} = 'pretty'   },
-        "nopretty"   => sub { $opts{format} = 'nopretty' },
+        "text"       => sub { $self->format('text')     },
+        "yaml"       => sub { $self->format('yaml')     },
+        "json"       => sub { $self->format('json')     },
+        "pretty"     => sub { $self->format('pretty')   },
+        "nopretty"   => sub { $self->format('nopretty') },
     );
-    # aliases. we don't use "version|v" etc so the key can be compared with spec
-    # arg in get_args_from_argv()
-    $getopts{l} = $getopts{list};
-    $getopts{v} = $getopts{version};
-    $getopts{h} = $getopts{help};
-    $getopts{'please_help_me|?'} = $getopts{help}; # Go::L doesn't accept '?'
 
     # convenience for Log::Any::App-using apps
-    if (is_loaded('Log::Any::App')) {
+    if ($self->log_any_app) {
         for (qw/quiet verbose debug trace log_level/) {
             $getopts{$_} = sub {};
         }
     }
 
+    # UNFINISHED. check whether we should add undo related command-line
+    # arguments
+
+    #{
+    #    last unless $spec || $args{undo};
+    #    require Sub::Spec::Object;
+    #    my $ssspec = Sub::Spec::Object::ssspec($spec);
+    #    last unless $ssspec->feature('undo');
+    #
+    #    $opts{undo_action}    = 'do';
+    #    $getopts{undo_data}   = sub { $opts{undo_data} = shift };
+    #    $getopts{undo}        = sub { $opts{undo_action} = 'undo' };
+    #    $getopts{redo}        = sub { $opts{undo_action} = 'redo' };
+    #    $getopts{list_undos}  = sub { $opts{undo_action} = 'list_undos' };
+    #    $getopts{clear_undos} = sub { $opts{undo_action} = 'clear_undos' };
+    #}
+
+    # store for other methods, e.g. run_completion()
+    $self->{_top_getopts} = \%getopts;
+
+    $log->tracef("Top-level GetOptions: spec=%s", \%getopts);
     Getopt::Long::GetOptions(%getopts);
+    $log->tracef("result of top-level GetOptions: remaining argv=%s, action=%s",
+                 \@ARGV, $action);
     Getopt::Long::Configure($old_go_opts);
 
-    my $cmd = $args{cmd};
-    if (!$cmd) {
-        $cmd = $0;
-        $cmd =~ s!.+/!!;
-    }
-    my $subcommands = $args{subcommands};
-    my $module;
-    my $sub;
+    #
+    # find out which command to run, store it in $self->{_subcommand}
+    #
 
-    # finding out which module/sub to use
-    my $subc;
-    my $subc_name;
-    my $load;
-    if ($subcommands && @ARGV) {
-        $subc_name = shift @ARGV;
-        $subc_name =~ s/-/_/g if $args{dash_to_underscore};
-        $subc      = ref($subcommands) eq 'CODE' ?
-            $subcommands->(name=>$subc_name, args=>\%args) :
-            $subcommands->{$subc_name};
-        # it's ok if user type incomplete subcommand name under completion
-        unless ($ENV{COMP_LINE}) {
-            $subc or die "Unknown subcommand `$subc_name`, please ".
-                "use $cmd -l to list available subcommands\n";
-        }
-        $module        = $subc->{module}        // $args{module};
-        $sub           = $subc->{sub}           // $subc_name;
-        $load          = $subc->{load}          // $args{load} // 1;
-    } else {
-        $module        = $args{module};
-        $sub           = $args{sub};
-        $load          = $args{load}            // 1;
-    }
-
-    # require module and get spec
-    my $spec;
-    if ($subc && $subc->{spec}) {
-        $spec = ref($subc->{spec}) eq 'CODE' ?
-            $subc->{spec}->(module=>$module, sub=>$sub) :
-                $subc->{spec};
-    } elsif ($args{spec}) {
-        $spec = ref($args{spec}) eq 'CODE' ?
-            $args{spec}->(module=>$module, sub=>$sub) :
-                $args{spec};
-    } elsif ($module) {
-        {
-            my $modulep = $args{module};
-            $modulep =~ s!::!/!g; $modulep .= ".pm";
-            if ($load) {
-                eval { require $modulep };
-                if ($@) {
-                    die $@ unless $ENV{COMP_LINE};
-                    last;
+    if ($self->subcommands) {
+        if (@ARGV) {
+            my $scn = shift @ARGV;
+            $self->{_scn_in_argv} = $scn;
+            $scn =~ s/-/_/g if $self->dash_to_underscore;
+            my $sc = $self->get_subcommand($scn);
+            unless ($sc) {
+                if ($ENV{COMP_LINE}) {
+                    require Object::BlankStr;
+                    die Object::BlankStr->new;
+                } else {
+                    die "ERROR: Unknown subcommand '$scn', use '".
+                        $self->program_name.
+                            " -l' to list available subcommands\n";
                 }
             }
-
-            if ($sub) {
-                no strict 'refs';
-                my $subs = \%{$module."::SPEC"};
-                $spec = $subs->{$sub};
-                die "Can't find spec for sub $module\::$sub\n"
-                    unless $spec || $ENV{COMP_LINE};
-            }
-        }
-    }
-
-    # check whether we should add undo related command-line arguments
-    {
-        last unless $spec || $args{undo};
-        require Sub::Spec::Object;
-        my $ssspec = Sub::Spec::Object::ssspec($spec);
-        last unless $ssspec->feature('undo');
-
-        $opts{undo_action}    = 'do';
-        $getopts{undo_data}   = sub { $opts{undo_data} = shift };
-        $getopts{undo}        = sub { $opts{undo_action} = 'undo' };
-        $getopts{redo}        = sub { $opts{undo_action} = 'redo' };
-        $getopts{list_undos}  = sub { $opts{undo_action} = 'list_undos' };
-        $getopts{clear_undos} = sub { $opts{undo_action} = 'clear_undos' };
-    }
-
-    # now that we have spec, detect (2) if we're being invoked for bash
-    # completion and do completion, and exit.
-    if ($ENV{COMP_LINE}) {
-        # user has typed 'CMD subc ^' instead of just 'CMD subc^', in the latter
-        # case we still need to complete subcommands name.
-        my $space_typed = !defined($comp_words->[$comp_cword]);
-
-        my $complete_arg;
-        my $complete_args;
-        if ($subc) {
-            $complete_arg    = $subc->{complete_arg};
-            $complete_args   = $subc->{complete_args};
-        }
-        $complete_arg      //= $args{complete_arg};
-        $complete_args     //= $args{complete_args};
-        my @res = _run_completion(
-            space_typed     => $space_typed,
-            parent_args     => \%args,
-            spec            => $spec,
-            getopts         => \%getopts,
-            words           => $comp_words,
-            cword           => $comp_cword,
-            word            => $comp_word ,
-            arg_sub         => $complete_arg,
-            args_sub        => $complete_args,
-            subcommand      => $subc,
-            subcommand_name => $subc_name,
-        );
-        $log->tracef("completion result: %s", \@res);
-        print map {Sub::Spec::BashComplete::_add_slashes($_), "\n"} @res;
-        #print map {"$_\n"} @res;
-        if ($exit) { exit 0 } else { return 0 }
-    }
-
-    # parse argv
-    my $args;
-    if ($spec && $opts{action} eq 'run') {
-        my %ga_args = (argv=>\@ARGV, spec=>$spec);
-        $ga_args{strict} = 0
-            if $subc->{allow_unknown_args} // $args{allow_unknown_args};
-
-        # this allows us to catch --help, --version, etc specified after
-        # subcommand name (if it doesn't collide with any spec arg). for
-        # convenience, e.g.: allowing 'cmd subcmd --help' in addition to 'cmd
-        # --help subcmd'.
-        $ga_args{extra_getopts} = \%getopts;
-        $args = get_args_from_argv(%ga_args);
-    }
-
-    # handle --list
-    if ($opts{action} eq 'list') {
-        _run_list($subcommands, \%args);
-        if ($exit) { exit 0 } else { return 0 }
-    }
-
-    # handle --version
-    if ($opts{action} eq 'version') {
-        _run_version($module, $cmd, $args{summary});
-        if ($exit) { exit 0 } else { return 0 }
-    }
-
-    # handle --help
-    if ($opts{action} eq 'help') {
-        if ($spec) {
-            print _run_help(
-                $subc->{help}, $spec,
-                ($subc_name ? "$cmd $subc_name" : $cmd),
-                ($subc ? $subc->{summary} : $args{summary}),
-                 \@ARGV);
-        if ($exit) { exit 0 } else { return 0 }
+            $self->{_subcommand} = $sc;
+            $self->{_subcommand}{name} = $scn;
         } else {
-            print _run_help(
-                $args{help}, undef, $cmd,
-                $subc ? $subc->{summary} : $args{summary},
-                \@ARGV, undef);
+            $action = 'help' if $action eq 'subcommand'; # divert
         }
-        if ($exit) { exit 0 } else { return 0 }
-    }
-
-    die "Please specify a subcommand, ".
-        "use $cmd -l to list available subcommands\n"
-            unless $spec;
-
-    # finally, run!
-    my $res;
-    if ($subc && $subc->{run}) {
-        # use run routine instead if supplied
-        $res = $subc->{run}->(
-            subcommand_name => $subc_name,
-            module   => $module,
-            sub      => $sub,
-            spec     => $spec,
-            sub_args => $args,
-        );
     } else {
-        # run sub
-        {
-            require Sub::Spec::Runner;
-            my $runner = Sub::Spec::Runner->new;
-            $runner->load_modules($load);
-            $runner->undo($opts{undo});
-            $runner->undo_data_dir($opts{undo_dir}) if $opts{undo_dir};
-            eval { $runner->add("$module\::$sub", $args) };
-            my $eval_err = $@;
-            if ($eval_err) {
-                chomp($eval_err);
-                $res = [412, $eval_err];
-                last;
-            }
-            $res = $runner->run(use_last_res=>1);
-        }
+        $self->{_subcommand} = {url=>$self->url, summary=>$self->summary};
+        $self->{_subcommand}{name} = 'main';
     }
+    $log->tracef("action=%s, subcommand=%s",
+                 $action, $self->{_subcommand});
 
-    my $exit_code = $res->[0] == 200 ? 0 : $res->[0] - 300;
+    #
+    # finally invoke appropriate run_*() method
+    #
 
-    # output
-    $log->tracef("res=%s", $res);
-    $log->tracef("opts=%s", \%opts);
-    print format_result($res, $opts{format})
-        unless $spec->{cmdline_suppress_output} && !$exit_code;
-
-    $log->trace("<- CmdLine's run()");
-    if ($exit) { exit $exit_code } else { return $exit_code }
+    my $meth;
+    if ($ENV{COMP_LINE}) {
+        $meth = "run_completion";
+    } else {
+        $meth = "run_$action";
+    }
+    my $exit_code = $self->$meth;
+    $log->tracef("<- CmdLine's run(), exit code=%d", $exit_code);
+    if ($self->exit) { exit $exit_code } else { return $exit_code }
 }
 
 1;
-# ABSTRACT: Access Perl subs via command line
+# ABSTRACT: Rinci/Riap-based command-line application framework
 
 =head1 SYNOPSIS
 
@@ -595,15 +535,18 @@ If unset, will be retrieved from function metadata when needed.
 
 =head2 subcommands => {NAME => {ARGUMENT=>...}, ...} | CODEREF
 
-Should be a hash of subcommands or a coderef which should return a hash of
-subcommands.
+Should be a hash of subcommand specifications or a coderef.
 
-Each subcommand specification is also a hash and should contain these keys:
-C<url>, C<summary>. It can also contain these keys: C<tags> (for categorizing
-subcommands).
+Each subcommand specification is also a hash(ref) and should contain these keys:
+C<url>. It can also contain these keys: C<summary> (will be retrieved from
+function metadata if unset), C<tags> (for categorizing subcommands).
 
-If subcommands is a coderef, it will be called as a method. The code is expected
-to return subcommands hashref.
+Subcommands can also be a coderef, for dynamic list of subcommands. The coderef
+will be called as a method with hash arguments. It can be called in two cases.
+First, if called without argument C<name> (usually when doing --list) it must
+return a hashref of subcommand specifications. If called with argument C<name>
+it must return subcommand specification for subcommand with the requested name
+only.
 
 =head2 exit => BOOL (default 1)
 
@@ -641,36 +584,19 @@ subdir here).
 
 Create an instance.
 
-=head2 run(%args) -> INT
+=head2 run() -> INT
 
-The main routine. It does roughly the following:
+The main routine. Its job is to parse command-line options in @ARGV and
+determine which action method to run. Action is run_command() (for calling
+function) or one of actions for common options like run_help (--help), run_list
+(--list). After that exit with appropriate exit code. (If C<exit> attribute is
+set to false, will return with exit code instead of directly calling exit().)
 
-=over 4
+=head2 run_command() -> INT
 
-=item * Parse command-line options in @ARGV (using Sub::Spec::GetArgs::Argv)
-
-Determine which subcommand is accessed and parse function arguments from
-command-line options. Also handle common options like --help, --yaml.
-
-=item * Call function
-
-=item * Format the return value from function and display it
-
-=item * Exit with appropriate exit code
-
-0 if 200, or CODE-300.
-
-(If C<exit> attribute is set to false, will return with exit code instead of
-directly calling exit().)
-
-=back
-
-run() can also perform completion for bash. To get bash completion for your
-B<perlprog>, just type this in bash:
-
- % complete -C /path/to/perlprog perlprog
-
-You can add that line in bash startup file (~/.bashrc, /etc/bash.bashrc, etc).
+Called by run() after run() decides that a command should be run. Requires
+$self->{_subcommand} to be set by run(). Call function specified in command and
+exit with appropriate exit code (0 if envelope status code is 200, or code-300).
 
 
 =head1 FAQ
@@ -681,7 +607,8 @@ Perinci::CmdLine is part of a more general metadata and wrapping framework
 (Perinci::* modules family). Aside from a command-line application, your
 metadata is also usable for other purposes, like providing access over HTTP/TCP,
 documentation. Sub::Spec::CmdLine is not OO. Configuration file support is
-missing (coming soon).
+missing (coming soon, most probably based on L<Config::Ini::OnDrugs>). Also
+lacking is more documentation and more plugins.
 
 =head2 Why is nonscalar arguments parsed as YAML instead of JSON/etc?
 

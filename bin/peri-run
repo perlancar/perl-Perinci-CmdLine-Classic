@@ -56,27 +56,33 @@ USAGE
 for my $dir (@{ $opts{library} }) { require lib; lib->import($dir) }
 
 my $module = shift @ARGV;
-my $func   = shift @ARGV;
+my $func;
+if ($ARGV[0] =~ /\A\w+\z/) {
+    $func = shift @ARGV;
+}
 
 $module or die "Please specify module. Or use --help to get help.\n";
 
-if ($module =~ /\A\w+*::(?:\w+)*\z/) {
+if ($module =~ /\A\w+::(?:\w+)*\z/) {
     $module =~ s!::!/!;
     $module = "/$module/";
 }
 
+my $me = $0; $me =~ s!.+/!!;
 my $cmd = Perinci::CmdLine->new;
-$cmd->program_name($ENV{PERI_RUN_PROGRAM_NAME}) if $ENV{PERI_RUN_PROGRAM_NAME};
 
 if ($func) {
     $cmd->url("$module$func");
+    $cmd->program_name($ENV{PERI_RUN_PROGRAM_NAME} // "$me $module$func");
 } else {
-    my $scs = {};
+    $cmd->program_name($ENV{PERI_RUN_PROGRAM_NAME} // "$me $module");
     my $pa = $cmd->{_pa};
     my $res = $pa->request(list => $module, {detail=>1});
     die "Can't request 'list' action on $module: $res->[0] - $res->[1]\n"
         unless $res->[0] == 200;
+    my $scs = {};
     for my $e (@{$res->[2]}) {
+        next unless $e->{type} eq 'function';
         my $sub = $e->{uri}; $sub =~ s!.+/!!;
         $scs->{$sub} = {
             url => $e->{uri},
