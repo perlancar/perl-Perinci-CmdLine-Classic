@@ -133,7 +133,7 @@ sub run_list {
     for my $cat (sort keys %percat_subc) {
         print "\n" if $i++;
         if ($has_many_cats) {
-            print "List of ", ucfirst($cat) || "main",
+            print "List of", ucfirst($cat) || "main",
                 " subcommands:\n";
         } else {
             print "List of subcommands:\n";
@@ -155,14 +155,18 @@ sub run_version {
 
     # XXX url does not necessarily a package url, we should URI->new and then
     # cut one path
-    my $pkg_url = $self->url;
+    my $pkg_url = $self->url or
+        die "ERROR: 'url' not set, required for 'version'";
 
     my $res = $self->{_pa}->request(meta => $pkg_url);
-    die "ERROR: Can't request 'meta' action on $pkg_url: ".
-        "$res->[0] - $res->[1]\n"
-            unless $res->[0] == 200;
-
-    my $version = $res->[2]{pkg_version} // "?";
+    my $version;
+    if ($res->[0] == 200) {
+        $version = $res->[2]{pkg_version} // "?";
+    } else {
+        $log->warnf("Can't request 'meta' action on %s: %d - %s",
+                    $pkg_url, $res->[0], $res->[1]);
+        $version = '?';
+    }
 
     say $self->program_name, " version ", $version;
 
@@ -212,7 +216,7 @@ sub run_completion {
     }
 
     my @top_opts; # contain --help, -h, --yaml, etc.
-    for my $o (keys %{$self->{_top_getopts}}) {
+    for my $o (keys %{$self->{_getopts_common}}) {
         $o =~ s/^--//;
         my @o = split /\|/, $o;
         for (@o) { push @top_opts, length > 1 ? "--$_" : "-$_" }
@@ -267,16 +271,18 @@ sub run_help {
     # XXX custom help subroutine
 
     my $sc = $self->{_subcommand};
-    if ($sc) {
+    if ($sc && $sc->{name}) {
         my $res = $self->{_pa}->request(meta => $sc->{url});
-        die "ERROR: Can't retrieve meta on $sc->{url}: $res->[0] - $res->[1]\n"
-            unless $res->[0] == 200;
-        # XXX meta to pod
-        require YAML::Syck;
-        print "Temporary help message for subcommand $sc->{name}:\n";
-        print YAML::Syck::Dump($res->[2]);
-    } else {
-        say <<_;
+        if ($res->[0] == 200) {
+            # XXX meta to pod
+            require YAML::Syck;
+            print "Temporary help message for subcommand $sc->{name}:\n";
+            print YAML::Syck::Dump($res->[2]);
+            return 0;
+        }
+    }
+
+    say <<_;
 Usage:
   To get general help:
     $prog --help (or -h)
@@ -290,46 +296,22 @@ Usage:
     $prog SUBCOMMAND [COMMON OPTIONS] [SUBCOMMAND ARGS ...]
 
 Common options:
-  --yaml      Format result as YAML
-  --json      Format result as JSON
-  --pretty    Format result as pretty formatted text
-  --nopretty  Format result as simple formatted text
-  --text      (Default) Select --pretty or --nopretty depends on if run piped
+  --yaml, -y      Format result as YAML
+  --json, -j      Format result as JSON
+  --pretty, -p    Format result as pretty formatted text
+  --nopretty, -P  Format result as simple formatted text
+  --text         (Default) Select --pretty or --nopretty depends on if run piped
 _
-    }
     0;
 }
 
 sub run_subcommand {
-    require Perinci::Sub::GetArgs::Argv;
-
     my ($self) = @_;
-    my $sc = $self->{_subcommand};
-
-    my $res = $self->{_pa}->request(meta=>$sc->{url});
-    die "ERROR: Can't get metadata from $sc->{url}: $res->[0] - $res->[1]\n"
-        unless $res->[0] == 200;
-    my $meta = $res->[2];
-
-    # parse argv
-    my %ga_args = (argv=>\@ARGV, meta=>$meta);
-    #OLD CODE:
-    #$ga_args{strict} = 0
-    #    if $subc->{allow_unknown_args} // $args{allow_unknown_args};
-
-    # this allows us to catch --help, --version, etc specified after
-    # subcommand name (if it doesn't collide with any spec arg). for
-    # convenience, e.g.: allowing 'cmd subcmd --help' in addition to 'cmd
-    # --help subcmd'.
-    $ga_args{extra_getopts} = $self->{_top_getopts};
-
-    $res = Perinci::Sub::GetArgs::Argv::get_args_from_argv(%ga_args);
-    die "ERROR: $sc->{name}: $res->[0] - $res->[1]\n"
-            unless $res->[0] == 200;
-    my $args = $res->[2];
 
     # call function
-    $self->{_res} = $self->{_pa}->request(call => $sc->{url}, {args=>$args});
+    $self->{_res} = $self->{_pa}->request(
+        call => $self->{_subcommand}{url},
+        {args=>$self->{_args}});
     $log->tracef("res=%s", $self->{_res});
 
     # format & display result
@@ -339,9 +321,143 @@ sub run_subcommand {
     $self->{_res}[0] == 200 ? 0 : $self->{_res}[0] - 300;
 }
 
-sub run {
+sub _parse_common_opts {
     require Getopt::Long;
 
+    my ($self, $phase) = @_;
+    $log->tracef("-> _parse_common_opts(%d)", $phase);
+
+    $Perinci::Sub::GetArgs::Argv::_pa_skip_check_required_args = 0;
+
+    my $old_go_opts = Getopt::Long::Configure(
+        "pass_through", "no_ignore_case", ($phase == 1 ? "no_":"")."permute");
+    my %getopts = (
+        "list|l"     => sub {
+            $Perinci::Sub::GetArgs::Argv::_pa_skip_check_required_args = 1
+                if $phase == 1;
+            unshift @{$self->{_actions}}, 'list';
+        },
+        "version|v"  => sub {
+            unshift @{$self->{_actions}}, 'version';
+            die "ERROR: 'url' not set, required for --version\n"
+                unless $self->url;
+            $Perinci::Sub::GetArgs::Argv::_pa_skip_check_required_args = 1
+                if $phase == 1;
+        },
+        "help|h|?"   => sub {
+            $Perinci::Sub::GetArgs::Argv::_pa_skip_check_required_args = 1
+                if $phase == 1;
+            unshift @{$self->{_actions}}, 'help';
+        },
+
+        "text"       => sub { $self->format('text')     },
+        "yaml|y"     => sub { $self->format('yaml')     },
+        "json|j"     => sub { $self->format('json')     },
+        "pretty|p"   => sub { $self->format('pretty')   },
+        "nopretty|P" => sub { $self->format('nopretty') },
+    );
+
+    # convenience for Log::Any::App-using apps
+    if ($self->log_any_app) {
+        for (qw/quiet verbose debug trace log_level/) {
+            $getopts{$_} = sub {};
+        }
+    }
+
+    # UNFINISHED. check whether we should add undo related command-line
+    # arguments
+
+    #{
+    #    last unless $spec || $args{undo};
+    #    require Sub::Spec::Object;
+    #    my $ssspec = Sub::Spec::Object::ssspec($spec);
+    #    last unless $ssspec->feature('undo');
+    #
+    #    $opts{undo_action}    = 'do';
+    #    $getopts{undo_data}   = sub { $opts{undo_data} = shift };
+    #    $getopts{undo}        = sub { $opts{undo_action} = 'undo' };
+    #    $getopts{redo}        = sub { $opts{undo_action} = 'redo' };
+    #    $getopts{list_undos}  = sub { $opts{undo_action} = 'list_undos' };
+    #    $getopts{clear_undos} = sub { $opts{undo_action} = 'clear_undos' };
+    #}
+
+    # store for other methods, e.g. run_completion()
+    $self->{_getopts_common} = \%getopts;
+
+    $log->tracef("GetOptions spec for parsing common options: %s", \%getopts);
+    Getopt::Long::GetOptions(%getopts);
+    $log->tracef("result of GetOptions for common options: remaining argv=%s, ".
+                     "actions=%s", \@ARGV, $self->{_actions});
+    Getopt::Long::Configure($old_go_opts);
+
+    $log->tracef("<- _parse_common_opts()");
+}
+
+sub _parse_subcommand_opts {
+    require Perinci::Sub::GetArgs::Argv;
+
+    my ($self) = @_;
+    my $sc = $self->{_subcommand};
+    return unless $self->{_subcommand};
+    $log->tracef("-> _parse_subcommand_opts()");
+
+    my $res = $self->{_pa}->request(meta=>$sc->{url});
+    unless ($res->[0] == 200) {
+        $log->warnf("Can't get metadata from %s: %d - %s", $sc->{url},
+                    $res->[0], $res->[1]);
+        $self->{_args} = {};
+        $log->tracef("<- _parse_subcommand_opts() (bailed)");
+        return;
+    }
+    my $meta = $res->[2];
+
+    # parse argv
+    my %ga_args = (argv=>\@ARGV, meta=>$meta,
+                   extra_getopts => $self->{_getopts_common});
+    $res = Perinci::Sub::GetArgs::Argv::get_args_from_argv(%ga_args);
+    die "ERROR: $sc->{name}: Failed parsing arguments: $res->[0] - $res->[1]\n"
+        unless $res->[0] == 200;
+    $self->{_args} = $res->[2];
+    $log->tracef("result of GetArgs for subcommand: remaining argv=%s, args=%s".
+                     ", actions=%s", \@ARGV, $self->{_args}, $self->{_actions});
+
+    $log->tracef("<- _parse_subcommand_opts()");
+}
+
+sub _set_subcommand {
+    my ($self) = @_;
+
+    if ($self->subcommands) {
+        if (@ARGV) {
+            my $scn = shift @ARGV;
+            $self->{_scn_in_argv} = $scn;
+            $scn =~ s/-/_/g if $self->dash_to_underscore;
+            my $sc = $self->get_subcommand($scn);
+            unless ($sc) {
+                if ($ENV{COMP_LINE}) {
+                    require Object::BlankStr;
+                    die Object::BlankStr->new;
+                } else {
+                    die "ERROR: Unknown subcommand '$scn', use '".
+                        $self->program_name.
+                            " -l' to list available subcommands\n";
+                }
+            }
+            $self->{_subcommand} = $sc;
+            $self->{_subcommand}{name} = $scn;
+            push @{$self->{_actions}}, 'subcommand';
+        }
+    } else {
+        $self->{_subcommand} = {url=>$self->url, summary=>$self->summary};
+        $self->{_subcommand}{name} = '';
+        push @{$self->{_actions}}, 'subcommand';
+    }
+    unshift @{$self->{_actions}}, 'completion' if $ENV{COMP_LINE};
+    push @{$self->{_actions}}, 'help' if !@{$self->{_actions}};
+    $log->tracef("subcommand=%s", $self->{_actions}, $self->{_subcommand});
+}
+
+sub run {
     my ($self) = @_;
 
     #
@@ -371,109 +487,45 @@ sub run {
     }
 
     #
-    # parse @ARGV
+    # parse common options from @ARGV, 1st phase (no_permute). This is to allow
+    # function having arguments like --list or --help the chance to catch them.
     #
 
-    my $old_go_opts = Getopt::Long::Configure(
-        "pass_through", "no_ignore_case", "no_permute");
-    my $action = "subcommand";
-    my %getopts = (
-        "list|l"     => sub {
-            $Perinci::Sub::GetArgs::Argv::_pa_skip_check_required_args++;
-            $action = 'list';
-        },
-        "version|v"  => sub {
-            $Perinci::Sub::GetArgs::Argv::_pa_skip_check_required_args++;
-            $action = 'version';
-        },
-        "help|h|?"   => sub {
-            $Perinci::Argv::_pa_skip_check_required_args++;
-            $action = 'help';
-        },
+    $self->{_actions} = []; # first action will be tried first, then 2nd, ...
+    $self->_parse_common_opts(1);
 
-        "text"       => sub { $self->format('text')     },
-        "yaml"       => sub { $self->format('yaml')     },
-        "json"       => sub { $self->format('json')     },
-        "pretty"     => sub { $self->format('pretty')   },
-        "nopretty"   => sub { $self->format('nopretty') },
-    );
+    #
+    # find out which subcommand to run, store it in $self->{_subcommand}
+    #
 
-    # convenience for Log::Any::App-using apps
-    if ($self->log_any_app) {
-        for (qw/quiet verbose debug trace log_level/) {
-            $getopts{$_} = sub {};
-        }
+    $self->_set_subcommand;
+
+    #
+    # parse subcommand options, this is to give change to function arguments
+    # like --help to be parsed into $self->{_args}
+    #
+
+    $self->_parse_subcommand_opts unless $ENV{COMP_LINE};
+
+    # parse common options once again, to sweep unparsed common options after
+    # subcommand argument
+
+    $self->_parse_common_opts(2);
+
+    #
+    # finally invoke the appropriate run_*() action method(s)
+    #
+
+    my $exit_code;
+    while (@{$self->{_actions}}) {
+        my $action = shift @{$self->{_actions}};
+        my $meth = "run_$action";
+        $log->tracef("-> %s()", $meth);
+        $exit_code = $self->$meth;
+        $log->tracef("<- %s(), return=%s", $meth, $exit_code);
+        last if defined $exit_code;
     }
 
-    # UNFINISHED. check whether we should add undo related command-line
-    # arguments
-
-    #{
-    #    last unless $spec || $args{undo};
-    #    require Sub::Spec::Object;
-    #    my $ssspec = Sub::Spec::Object::ssspec($spec);
-    #    last unless $ssspec->feature('undo');
-    #
-    #    $opts{undo_action}    = 'do';
-    #    $getopts{undo_data}   = sub { $opts{undo_data} = shift };
-    #    $getopts{undo}        = sub { $opts{undo_action} = 'undo' };
-    #    $getopts{redo}        = sub { $opts{undo_action} = 'redo' };
-    #    $getopts{list_undos}  = sub { $opts{undo_action} = 'list_undos' };
-    #    $getopts{clear_undos} = sub { $opts{undo_action} = 'clear_undos' };
-    #}
-
-    # store for other methods, e.g. run_completion()
-    $self->{_top_getopts} = \%getopts;
-
-    $log->tracef("Top-level GetOptions: spec=%s", \%getopts);
-    Getopt::Long::GetOptions(%getopts);
-    $log->tracef("result of top-level GetOptions: remaining argv=%s, action=%s",
-                 \@ARGV, $action);
-    Getopt::Long::Configure($old_go_opts);
-
-    #
-    # find out which command to run, store it in $self->{_subcommand}
-    #
-
-    if ($self->subcommands) {
-        if (@ARGV) {
-            my $scn = shift @ARGV;
-            $self->{_scn_in_argv} = $scn;
-            $scn =~ s/-/_/g if $self->dash_to_underscore;
-            my $sc = $self->get_subcommand($scn);
-            unless ($sc) {
-                if ($ENV{COMP_LINE}) {
-                    require Object::BlankStr;
-                    die Object::BlankStr->new;
-                } else {
-                    die "ERROR: Unknown subcommand '$scn', use '".
-                        $self->program_name.
-                            " -l' to list available subcommands\n";
-                }
-            }
-            $self->{_subcommand} = $sc;
-            $self->{_subcommand}{name} = $scn;
-        } else {
-            $action = 'help' if $action eq 'subcommand'; # divert
-        }
-    } else {
-        $self->{_subcommand} = {url=>$self->url, summary=>$self->summary};
-        $self->{_subcommand}{name} = 'main';
-    }
-    $log->tracef("action=%s, subcommand=%s",
-                 $action, $self->{_subcommand});
-
-    #
-    # finally invoke appropriate run_*() method
-    #
-
-    my $meth;
-    if ($ENV{COMP_LINE}) {
-        $meth = "run_completion";
-    } else {
-        $meth = "run_$action";
-    }
-    my $exit_code = $self->$meth;
     $log->tracef("<- CmdLine's run(), exit code=%d", $exit_code);
     if ($self->exit) { exit $exit_code } else { return $exit_code }
 }
@@ -587,16 +639,13 @@ Create an instance.
 =head2 run() -> INT
 
 The main routine. Its job is to parse command-line options in @ARGV and
-determine which action method to run. Action is run_command() (for calling
-function) or one of actions for common options like run_help (--help), run_list
-(--list). After that exit with appropriate exit code. (If C<exit> attribute is
-set to false, will return with exit code instead of directly calling exit().)
+determine which action method (e.g. run_subcommand(), run_help(), etc) to run.
+Action method should return an integer containing exit code. If action method
+returns undef, the next action candidate method will be tried.
 
-=head2 run_command() -> INT
-
-Called by run() after run() decides that a command should be run. Requires
-$self->{_subcommand} to be set by run(). Call function specified in command and
-exit with appropriate exit code (0 if envelope status code is 200, or code-300).
+After that, exit() will be called with the exit code from the action method (or,
+if C<exit> attribute is set to false, routine will return with exit code
+instead).
 
 
 =head1 FAQ

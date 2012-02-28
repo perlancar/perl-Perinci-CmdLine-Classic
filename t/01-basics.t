@@ -6,23 +6,24 @@ use warnings;
 use Log::Any '$log';
 use Test::More 0.96;
 
-use Capture::Tiny      qw(capture);
-use Data::Clone        qw(clone);
-use Sub::Spec::CmdLine qw(run);
+use Capture::Tiny qw(capture);
+use Perinci::CmdLine;
 
-# XXX test require in run()
 # XXX test formats
 
 package Foo;
-our $VERSION = "0.01";
+our $VERSION = "0.123";
 our %SPEC;
 
+$SPEC{':package'} = {v=>1.1};
+
 $SPEC{ok} = {
+    v => 1.1,
     summary => 'Always return ok',
     args => {
-        arg1 => ['str*' => {arg_pos=>0, in=>[qw/a b c d/]}],
-        arg2 => ['str*' => {arg_pos=>1}],
-        arg3 => 'str',
+        arg1 => {schema=>['str*' => {in=>[qw/a b c d/]}], pos=>0, req=>1},
+        arg2 => {schema=>['str*'], pos=>1, req=>1},
+        arg3 => {schema=>'str'},
     },
 };
 sub ok {
@@ -46,50 +47,52 @@ sub want_odd {
     }
 }
 
+$SPEC{f1} = {
+    v => 1.1,
+    summary => 'This function has arguments with names like "help", "list"',
+    args => {
+        help => {schema=>'bool'},
+        list => {schema=>'bool'},
+    },
+};
+sub f1 {
+    my %args = @_;
+    [200, "OK", $args{help} ? "tolong" : $args{list} ? "daftar" : "?"];
+}
+
 package main;
 
 subtest 'completion' => sub {
-    plan skip_all => 'Sub::Spec::BashComplete is not available'
-        unless eval { require Sub::Spec::BashComplete };
-    unless ($Sub::Spec::BashComplete::VERSION >= '0.10') {
-        my $msg = 'Sub::Spec::BashComplete version too old (< 0.10)';
-        if ($ENV{RELEASE_TESTING}) {
-            die $msg;
-        } else {
-            plan skip_all => $msg;
-        }
-    }
-
     test_complete(
         name        => 'arg name (single sub)',
         argv        => [],
-        args        => {module=>'Foo', sub=>'ok'},
+        args        => {url=>'/Foo/ok'},
         comp_line   => 'CMD -',
         comp_point0 => '     ^',
-        result      => [qw(--help -h -\? --arg1 --arg2 --arg3)],
+        result      => [qw(--arg1 --arg2 --arg3 --help -\? -h)],
     );
     test_complete(
         name        => 'arg value from arg spec "in" (single sub)',
         argv        => [],
-        args        => {module=>'Foo', sub=>'ok'},
+        args        => {url=>'/Foo/ok'},
         comp_line   => 'CMD ',
         comp_point0 => '    ^',
         result      => [qw(a b c d)],
     );
     test_complete(
-        name        => 'arg value from "complete_args" (single sub)',
+        name        => 'arg value from "custom_arg_completer" (single sub)',
         argv        => [],
-        args        => {module=>'Foo', sub=>'ok',
-                        complete_args=>sub {qw(e f g h)}},
+        args        => {url=>'/Foo/ok',
+                        custom_arg_completer=>sub {qw(e f g h)}},
         comp_line   => 'CMD arg1 ',
         comp_point0 => '         ^',
         result      => [qw(e f g h)],
     );
     test_complete(
-        name        => 'arg value from "complete_arg" (single sub)',
+        name        => 'arg value from "custom_arg_completer" (single sub) (2)',
         argv        => [],
-        args        => {module=>'Foo', sub=>'ok',
-                        complete_arg=>{arg2=>sub{qw(e f g h)}}},
+        args        => {url=>'/Foo/ok',
+                        custom_arg_completer=>{arg2=>sub{qw(e f g h)}}},
         comp_line   => 'CMD arg1 ',
         comp_point0 => '         ^',
         result      => [qw(e f g h)],
@@ -97,146 +100,136 @@ subtest 'completion' => sub {
 };
 
 test_run(name      => 'single sub',
-         args      => {module=>'Foo', sub=>'ok'},
+         args      => {url=>'/Foo/ok'},
          argv      => [qw/--arg1 1 --arg2 2/],
          exit_code => 0,
          output_re => qr/First argument/,
      );
 
 test_run(name      => 'missing arg = error',
-         args      => {module=>'Foo', sub=>'ok'},
+         args      => {url=>'/Foo/ok'},
          argv      => [qw/--arg3 3/],
          dies      => 1,
      );
 test_run(name      => 'unknown arg = error',
-         args      => {module=>'Foo', sub=>'ok'},
+         args      => {url=>'/Foo/ok'},
          argv      => [qw/--arg4/],
          dies      => 1,
      );
 test_run(name      => 'exit code from sub res',
-         args      => {module=>'Foo', sub=>'want_odd'},
+         args      => {url=>'/Foo/want_odd'},
          argv      => [qw/4/],
          exit_code => 100,
          output_re => qr/hate/,
      );
 
 test_run(name      => 'subcommands',
-         args      => {module=>'Foo', subcommands=>{ok=>{}, want_odd=>{}}},
-         argv      => [qw/want_odd 3/],
+         args      => {subcommands=>{
+             ok=>{url=>'/Foo/ok'},
+             wo=>{url=>'/Foo/want_odd'}}},
+         argv      => [qw/wo 3/],
          exit_code => 0,
      );
 
 test_run(name      => 'unknown subcommand = error',
-         args      => {module=>'Foo', subcommands=>{ok=>{}, want_odd=>{}}},
+         args      => {subcommands=>{
+             ok=>{url=>'/Foo/ok'},
+             wo=>{url=>'/Foo/want_odd'}}},
          argv      => [qw/foo/],
          dies      => 1,
      );
 
 test_run(name      => 'arg: dash_to_underscore=0',
-         args      => {module=>'Foo', subcommands=>{ok=>{}, want_odd=>{}}},
+         args      => {module=>'Foo', dash_to_underscore=>0,
+                       subcommands=>{ok=>{}, want_odd=>{}}},
          argv      => [qw/want-odd 3/],
          dies      => 1,
      );
-test_run(name      => 'arg: dash_to_underscore=1',
-         args      => {dash_to_underscore=>1,
-                       module=>'Foo', subcommands=>{ok=>{}, want_odd=>{}}},
+test_run(name      => 'arg: dash_to_underscore=1 (default)',
+         args      => {subcommands=>{
+             ok=>{url=>'/Foo/ok'},
+             want_odd=>{url=>'/Foo/want_odd'}}},
          argv      => [qw/want-odd 3/],
          exit_code => 0,
      );
 
 for (qw(--help -h -?)) {
-    test_run(name      => "help ($_)",
-             args      => {module=>'Foo', sub=>'ok'},
+    test_run(name      => "general help ($_)",
+             args      => {url=>'/Foo/'},
              argv      => [$_],
              exit_code => 0,
-             output_re => qr/^Options/m,
+             output_re => qr/^Usage:/m,
          );
 }
 
-test_run(name      => "general option (--version) before subcommand name",
-         args      => {module=>'Foo', subcommands=>{ok=>{}, want_odd=>{}}},
+test_run(name      => "common option (--version) before subcommand name",
+         args      => {url=>'/Foo/', subcommands=>{
+             ok=>{url=>'/Foo/ok'},
+             want_odd=>{url=>'/Foo/want_odd'}}},
          argv      => [qw/--version want_odd --num 4/],
          exit_code => 0,
-         output_re => qr/version 0\.01/m,
+         output_re => qr/version 0\.123/m,
      );
-test_run(name      => "general option (--help) after subcommand name",
-         args      => {module=>'Foo', subcommands=>{ok=>{}, want_odd=>{}}},
+test_run(name      => "common option (--help) after subcommand name",
+         args      => {subcommands=>{
+             ok=>{url=>'/Foo/ok'},
+             want_odd=>{url=>'/Foo/want_odd'}}},
          argv      => [qw/want_odd --num 4 --help/],
          exit_code => 0,
-         output_re => qr/^Options/m,
+         output_re => qr/Return error if given/,
+     );
+test_run(name      => "common option (--help) after subcommand name does not ".
+             "override function argument",
+         args      => {subcommands=>{f1=>{url=>'/Foo/f1'}}},
+         argv      => [qw/f1 --help/],
+         exit_code => 0,
+         output_re => qr/^tolong$/m,
      );
 
 for (qw(--version -v)) {
     test_run(name      => "version ($_)",
-             args      => {module=>'Foo', sub=>'ok'},
+             args      => {url=>'/Foo/', subcommands=>{
+                 ok=>{url=>'/Foo/ok'},
+                 want_odd=>{url=>'/Foo/want_odd'}}},
              argv      => [$_],
              exit_code => 0,
-             output_re => qr/version 0\.01/m,
+             output_re => qr/version 0\.123/,
          );
 }
 
 for (qw(--list -l)) {
     test_run(name      => "list ($_)",
-             args      => {module=>'Foo', subcommands=>{ok=>{}, want_odd=>{}}},
+             args      => {subcommands=>{
+                 ok=>{url=>'/Foo/ok'},
+                 want_odd=>{url=>'/Foo/want_odd'}}},
              argv      => [$_],
              exit_code => 0,
          );
 }
 
-my $subc = sub {
-    my %args = @_;
-    my $name = $args{name};
-
-    my $s = {ok=>{}, want_odd=>{}};
-    if ($args{name}) {
-        $s->{$name};
-    } else {
-        $s;
-    }
-};
-test_run(name      => 'coderef subcommands (a)',
-         args      => {module=>'Foo', subcommands=>$subc},
-         argv      => [qw/ok --arg1 1 --arg2 2/],
-         exit_code => 0,
-     );
-test_run(name      => 'coderef subcommands (b)',
-         args      => {module=>'Foo', subcommands=>$subc},
-         argv      => [qw/want_odd 4/],
-         exit_code => 100,
-         output_re => qr/hate/,
-     );
-test_run(name      => 'coderef subcommands (c)',
-         args      => {module=>'Foo', subcommands=>$subc},
-         argv      => [qw/foo/],
-         dies      => 1,
-     );
-# XXX test arg: load_module
-# XXX test arg: run (main / per-subcommand)
-# XXX test arg: help text (main / per-subcommand)
-# XXX test arg: help coderef
-# XXX test arg: spec (main / per-subcommand)
-# XXX test arg: spec coderef
+# XXX test arg: custom general help
+# XXX test arg: per-subcommand help
+# XXX test arg: custom per-subcommand help
 # XXX test arg: complete_arg, complete_args (main / per-subcommand)
-# XXX test arg: allow_unknown_args (main / per-subcommand)
-# XXX test runpm -I (or move to run()?)
 
 # XXX test arg: undo
 
+DONE_TESTING:
 done_testing();
 
 sub test_run {
     my (%args) = @_;
+
+    my $pc = Perinci::CmdLine->new(%{$args{args}}, exit=>0);
 
     local @ARGV = @{$args{argv}};
     my ($stdout, $stderr);
     my $exit_code;
     eval {
         if ($args{output_re}) {
-            ($stdout, $stderr) = capture {
-                $exit_code = run(exit=>0, load=>0, %{$args{args}});
-            };
+            ($stdout, $stderr) = capture { $exit_code = $pc->run };
         } else {
-            $exit_code = run(exit=>0, load=>0, %{$args{args}});
+            $exit_code = $pc->run;
         }
     };
     my $eval_err = $@;
@@ -262,6 +255,8 @@ sub test_run {
 sub test_complete {
     my (%args) = @_;
 
+    my $pc = Perinci::CmdLine->new(%{$args{args}}, exit=>0);
+
     local @ARGV = @{$args{argv}};
     local $ENV{COMP_LINE}  = $args{comp_line};
     local $ENV{COMP_POINT} = index($args{comp_point0}, "^");
@@ -269,7 +264,7 @@ sub test_complete {
     my ($stdout, $stderr);
     my $exit_code;
     ($stdout, $stderr) = capture {
-        $exit_code = run(exit=>0, load=>0, %{$args{args}});
+        $exit_code = $pc->run;
     };
 
     subtest "completion: $args{name}" => sub {
