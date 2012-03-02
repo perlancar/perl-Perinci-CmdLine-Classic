@@ -17,7 +17,7 @@ has log_any_app => (is => 'rw', default=>sub{1});
 has custom_completer => (is => 'rw');
 has custom_arg_completer => (is => 'rw');
 has dash_to_underscore => (is => 'rw', default=>sub{1});
-#has undo => (is=>'rw', default=>sub{0});
+has undo => (is=>'rw', default=>sub{0});
 has format => (is => 'rw', default=>sub{'text'});
 
 sub BUILD {
