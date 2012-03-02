@@ -314,6 +314,10 @@ sub run_subcommand {
         {args=>$self->{_args}});
     $log->tracef("res=%s", $self->{_res});
 
+    # currently only for checking _cmdline.suppress_output_on_success property
+    my $res = $self->{_pa}->request(meta => $self->{_subcommand}{url});
+    if ($res->[2] == 200) { $self->{_meta} = $res->[2] };
+
     # format & display result
     $self->format_result();
     $self->display_result();
