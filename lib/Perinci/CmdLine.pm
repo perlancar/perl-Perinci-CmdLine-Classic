@@ -309,20 +309,23 @@ sub run_subcommand {
     my ($self) = @_;
 
     # call function
-    $self->{_res} = $self->{_pa}->request(
+    my $res = $self->{_res} = $self->{_pa}->request(
         call => $self->{_subcommand}{url},
         {args=>$self->{_args}});
     $log->tracef("res=%s", $self->{_res});
 
-    # currently only for checking _cmdline.suppress_output_on_success property
-    my $res = $self->{_pa}->request(meta => $self->{_subcommand}{url});
-    if ($res->[2] == 200) { $self->{_meta} = $res->[2] };
+    my $resmeta = $res->[3] // {};
+    if (defined($resmeta->{"cmdline.result_importance"}) &&
+            $resmeta->{"cmdline.result_importance"} eq 'low') {
+        $res->[2] = undef;
+        $res->[3] = undef;
+    }
 
     # format & display result
     $self->format_result();
     $self->display_result();
 
-    $self->{_res}[0] == 200 ? 0 : $self->{_res}[0] - 300;
+    $res->[0] == 200 ? 0 : $res->[0] - 300;
 }
 
 sub _parse_common_opts {
