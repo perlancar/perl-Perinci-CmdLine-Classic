@@ -41,10 +41,6 @@ sub format_result {
         $self->{_fres} = format_pretty($self->{_res}, {module=>'JSON'});
         return;
     }
-    if ($format eq 'php') {
-        $self->{_fres} = format_pretty($self->{_res}, {module=>'PHP'});
-        return;
-    }
     if ($format =~ /^(text|pretty|nopretty)$/) {
         if (!defined($self->{_res}[2])) {
             $self->{_fres} = $self->{_res}[0] == 200 ? "" :
