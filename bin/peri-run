@@ -77,6 +77,7 @@ if ($func) {
     $cmd->url("$module$func");
     $cmd->program_name($ENV{PERI_RUN_PROGRAM_NAME} // "$me $module$func");
 } else {
+    $cmd->url("$module");
     $cmd->program_name($ENV{PERI_RUN_PROGRAM_NAME} // "$me $module");
     my $pa = $cmd->{_pa};
     my $res = $pa->request(list => $module, {detail=>1});
