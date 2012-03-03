@@ -1,5 +1,26 @@
 Revision history for Perinci-CmdLine
 
+0.39     2012-03-03
+
+         [ENHANCEMENTS]
+
+         - Add short options for --yaml (-y), --json (-j), --pretty (-p),
+           and --nopretty (-P).
+
+         - Observe function result metadata: 'cmdline.result_importance' (if set
+           to 'low', won't display result).
+
+         [FIXES]
+
+         - Common options (like --yaml, --help, -l) now won't override options
+           for function arguments of the same name.
+
+         [REMOVED]
+
+         - Remove support for PHP serialization output (will be re-added later
+           via --format, which can use any Data::Format::Pretty::* module).
+
+
 0.38     2012-02-23
 
          Rename distribution from Sub-Spec-CmdLine to Perinci-CmdLine. Now
