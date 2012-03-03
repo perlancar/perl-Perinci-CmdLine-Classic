@@ -9,6 +9,8 @@ use warnings;
 use Getopt::Long;
 use Perinci::CmdLine;
 
+# VERSION
+
 my %opts = (
     library => [],
 );
