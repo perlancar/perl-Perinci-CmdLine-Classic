@@ -1,5 +1,12 @@
 Revision history for Perinci-CmdLine
 
+0.41     2012-03-08
+
+         [BUG FIXES]
+
+         - Fix do not empty envelope when 'cmdline.display_result' is false.
+
+
 0.40     2012-03-08
 
          [INCOMPATIBLE CHANGES]
