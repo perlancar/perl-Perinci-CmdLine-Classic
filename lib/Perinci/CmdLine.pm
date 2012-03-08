@@ -306,7 +306,9 @@ sub run_subcommand {
     $log->tracef("res=%s", $self->{_res});
 
     my $resmeta = $self->{_res}->[3] // {};
-    $self->{_res} = undef unless $resmeta->{"cmdline.display_result"}//1;
+    unless ($resmeta->{"cmdline.display_result"}//1) {
+        $self->{_res}[2] = undef;
+    }
     $self->format_result();
 
     # display result
