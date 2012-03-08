@@ -1,5 +1,18 @@
 Revision history for Perinci-CmdLine
 
+0.40     2012-03-08
+
+         [INCOMPATIBLE CHANGES]
+
+         - Observe function result metadata: 'cmdline.display_result' (no longer
+           observe 'cmdline.result_importance').
+
+         [ENHANCEMENTS]
+
+         - Observe function result metadata: 'cmdline.page_result' to send
+           result to PAGER.
+
+
 0.39     2012-03-03
 
          [ENHANCEMENTS]
