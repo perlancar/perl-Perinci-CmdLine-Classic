@@ -65,11 +65,6 @@ sub format_result {
     die "BUG: Unknown output format `$format`";
 }
 
-sub display_result {
-    my ($self) = @_;
-    print $self->{_fres};
-}
-
 sub get_subcommand {
     my ($self, $name) = @_;
 
@@ -305,23 +300,25 @@ sub run_subcommand {
     my ($self) = @_;
 
     # call function
-    my $res = $self->{_res} = $self->{_pa}->request(
+    $self->{_res} = $self->{_pa}->request(
         call => $self->{_subcommand}{url},
         {args=>$self->{_args}});
     $log->tracef("res=%s", $self->{_res});
 
-    my $resmeta = $res->[3] // {};
-    if (defined($resmeta->{"cmdline.result_importance"}) &&
-            $resmeta->{"cmdline.result_importance"} eq 'low') {
-        $res->[2] = undef;
-        $res->[3] = undef;
+    my $resmeta = $self->{_res}->[3] // {};
+    $self->{_res} = undef unless $resmeta->{"cmdline.display_result"}//1;
+    $self->format_result();
+
+    # display result
+    if ($resmeta->{"cmdline.page_result"}) {
+        my $pager = $ENV{PAGER} // "less -FRS"; # XXX check program with 'which'
+        open my($p), "| $pager";
+        print $p $self->{_fres};
+    } else {
+        print $self->{_fres};
     }
 
-    # format & display result
-    $self->format_result();
-    $self->display_result();
-
-    $res->[0] == 200 ? 0 : $res->[0] - 300;
+    $self->{_res}[0] == 200 ? 0 : $self->{_res}[0] - 300;
 }
 
 sub _parse_common_opts {
@@ -418,7 +415,7 @@ sub _parse_subcommand_opts {
     my %ga_args = (argv=>\@ARGV, meta=>$meta,
                    extra_getopts => $self->{_getopts_common});
     $res = Perinci::Sub::GetArgs::Argv::get_args_from_argv(%ga_args);
-    die "ERROR: $sc->{name}: Failed parsing arguments: $res->[0] - $res->[1]\n"
+    die "ERROR: Failed parsing arguments: $res->[0] - $res->[1]\n"
         unless $res->[0] == 200;
     $self->{_args} = $res->[2];
     $log->tracef("result of GetArgs for subcommand: remaining argv=%s, args=%s".
@@ -649,6 +646,31 @@ returns undef, the next action candidate method will be tried.
 After that, exit() will be called with the exit code from the action method (or,
 if C<exit> attribute is set to false, routine will return with exit code
 instead).
+
+
+=head1 TIPS
+
+If you don't want to display function output (for example, function output is a
+detailed data structure which might not be important for end users), you can set
+C<cmdline.display_result> result metadata to false. Example:
+
+ $SPEC{foo} = { ... };
+ sub foo {
+     ...
+     [200, "OK", $data, {"cmdline.display_result"=>0}];
+ }
+
+If you want to filter the result through pager (currently defaults to
+C<$ENV{PAGER}> or C<less -FRS>), you can set C<cmdline.page_result> in result
+metadata to true.
+
+For example:
+
+ $SPEC{doc} = { ... };
+ sub doc {
+     ...
+     [200, "OK", $doc, {"cmdline.page_result"=>1}];
+ }
 
 
 =head1 FAQ
