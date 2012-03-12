@@ -8,7 +8,7 @@ use Moo;
 
 # VERSION
 
-has program_name => (is => 'rw', default=>sub {local $_=$0; s!.+/!!; $_});
+has program_name => (is => 'rw');
 has url => (is => 'rw');
 has summary => (is => 'rw');
 has subcommands => (is => 'rw');
@@ -24,6 +24,13 @@ sub BUILD {
     require Perinci::Access;
     my ($self, $args) = @_;
     $self->{_pa} = Perinci::Access->new;
+    for ($self->{program_name}) {
+        $_ //= $ENV{PERINCI_CMDLINE_PROGRAM_NAME};
+        if (!defined) {
+            my $me = $0; $me =~ s!.+/!!;
+            $_ //= $me;
+        }
+    }
 }
 
 sub format_result {
@@ -255,6 +262,8 @@ sub run_completion {
 }
 
 sub run_help {
+    require Perinci::To::Text;
+
     my ($self) = @_;
 
     my $prog = $self->program_name;
@@ -273,7 +282,17 @@ sub run_help {
         }
     }
 
-    say <<_;
+    my $msg_common_opts = <<_;
+Common options:
+  --yaml, -y      Format result as YAML
+  --json, -j      Format result as JSON
+  --pretty, -p    Format result as pretty formatted text
+  --nopretty, -P  Format result as simple formatted text
+  --text         (Default) Select --pretty or --nopretty depends on if run piped
+_
+
+    if ($self->subcommands) {
+        print <<_;
 Usage:
   To get general help:
     $prog --help (or -h)
@@ -286,13 +305,12 @@ Usage:
   To run a subcommand:
     $prog SUBCOMMAND [COMMON OPTIONS] [SUBCOMMAND ARGS ...]
 
-Common options:
-  --yaml, -y      Format result as YAML
-  --json, -j      Format result as JSON
-  --pretty, -p    Format result as pretty formatted text
-  --nopretty, -P  Format result as simple formatted text
-  --text         (Default) Select --pretty or --nopretty depends on if run piped
 _
+        print $msg_common_opts;
+    } else {
+        print $msg_common_opts;
+    }
+
     0;
 }
 
