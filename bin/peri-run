@@ -22,10 +22,12 @@ GetOptions(
     'subcommand|s=s' => $opts{subcommands},
 );
 
+my $me = $0; $me =~ s!.+/!!;
+
 my $oscs = $opts{subcommands};
 if ($opts{help} || !@ARGV && !@$oscs) {
     print <<USAGE;
-Run a Perl module (or any package over Riap) on the command-line
+$me - Run a Perl module (or any package over Riap) on the command-line
 
 Usage:
 
