@@ -1,6 +1,6 @@
 package Perinci::CmdLine::I18N;
 
-use base 'Perinci::To::Text::I18N';
+use parent 'Perinci::To::Text::I18N';
 
 # VERSION
 

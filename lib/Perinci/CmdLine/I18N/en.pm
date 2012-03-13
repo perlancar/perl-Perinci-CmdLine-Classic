@@ -12,6 +12,11 @@ our %Lexicon = %{ Locale::Maketext::Lexicon::Gettext->parse(<DATA>) };
 # ABSTRACT: English translation for Perinci::CmdLine
 __DATA__
 
+# version
+
+msgid  "%1 version %2"
+msgstr "%1 version %2"
+
 # usage
 
 msgid  "Show version"

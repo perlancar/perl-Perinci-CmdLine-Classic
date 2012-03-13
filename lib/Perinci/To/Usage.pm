@@ -31,8 +31,6 @@ sub BUILD {
         'examples',
         'links',
     ];
-
-    $self->{loc_class} //= "Perinci::CmdLine::I18N";
 }
 
 sub gen_summary {
@@ -82,7 +80,7 @@ sub parse_subcommands {
 sub gen_subcommands {
     my ($self) = @_;
     my $cmd = $self->cmdline;
-    my $scs = $cmd->subcommands;
+    my $scs = $cmd->get_subcommands;
     my $pff = $self->_parse->{functions};
 
     return unless keys %$scs;

@@ -19,6 +19,18 @@ has custom_arg_completer => (is => 'rw');
 has dash_to_underscore => (is => 'rw', default=>sub{1});
 has undo => (is=>'rw', default=>sub{0});
 has format => (is => 'rw', default=>sub{'text'});
+has doc => (
+    is => 'rw',
+    lazy => 1,
+    default=>sub {
+        require Perinci::To::Usage;
+
+        my $self = shift;
+        my $doc = Perinci::To::Usage->new(url=>$self->url, cmdline=>$self);
+        $doc->loc_class("Perinci::CmdLine::I18N");
+        $doc;
+    }
+); # store Perinci::To::Usage object, through which we access localize handle
 
 sub BUILD {
     require Perinci::Access;
@@ -31,6 +43,19 @@ sub BUILD {
             $_ //= $me;
         }
     }
+}
+
+sub loc {
+    my $self = shift;
+    $self->doc->lh->maketext(@_);
+}
+
+sub _init_doc {
+    require Perinci::To::Usage;
+
+    my ($self) = @_;
+    return if $self->doc;
+    $self->doc(Perinci::To::Usage->new(url=>$self->url, cmdline=>$self));
 }
 
 sub format_result {
@@ -149,24 +174,18 @@ sub run_list {
 sub run_version {
     my ($self) = @_;
 
-    # get from pkg_version property
-
-    # XXX url does not necessarily a package url, we should URI->new and then
-    # cut one path
-    my $pkg_url = $self->url or
-        die "ERROR: 'url' not set, required for 'version'";
-
-    my $res = $self->{_pa}->request(meta => $pkg_url);
-    my $version;
+    my $url = $self->{_subcommand} ? $self->{_subcommand}{url} : $self->url;
+    my $res = $self->{_pa}->request(meta => $url);
+    my $ver;
     if ($res->[0] == 200) {
-        $version = $res->[2]{pkg_version} // "?";
+        $ver = $res->[2]{entity_version} // "?";
     } else {
         $log->warnf("Can't request 'meta' action on %s: %d - %s",
-                    $pkg_url, $res->[0], $res->[1]);
-        $version = '?';
+                    $url, $res->[0], $res->[1]);
+        $ver = '?';
     }
 
-    say $self->program_name, " version ", $version;
+    say $self->loc("[_1] version [_2]", $self->program_name, $ver);
 
     0;
 }
