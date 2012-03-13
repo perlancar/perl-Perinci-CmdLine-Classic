@@ -114,7 +114,7 @@ if (@ARGV && !@$oscs) {
 
 } elsif (@$oscs) {
 
-    # one or more subcommand URL is specified.
+    # one or more subcommand URLs are specified.
 
     my $scs = {};
     for my $url (@$oscs) {
