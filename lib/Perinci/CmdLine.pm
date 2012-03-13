@@ -680,7 +680,11 @@ if C<exit> attribute is set to false, routine will return with exit code
 instead).
 
 
-=head1 TIPS
+=head1 RESULT METADATA
+
+This module interprets the following result metadata keys:
+
+=head2 cmdline.display_result => BOOL
 
 If you don't want to display function output (for example, function output is a
 detailed data structure which might not be important for end users), you can set
@@ -691,6 +695,8 @@ C<cmdline.display_result> result metadata to false. Example:
      ...
      [200, "OK", $data, {"cmdline.display_result"=>0}];
  }
+
+=head2 cmdline.page_result => BOOL
 
 If you want to filter the result through pager (currently defaults to
 C<$ENV{PAGER}> or C<less -FRS>), you can set C<cmdline.page_result> in result
@@ -703,6 +709,11 @@ For example:
      ...
      [200, "OK", $doc, {"cmdline.page_result"=>1}];
  }
+
+=head2 cmdline.pager => STR
+
+Instruct Perinci::CmdLine to use specified pager instead of C<$ENV{PAGER}> or
+the default C<less> or C<more>.
 
 
 =head1 FAQ
