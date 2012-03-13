@@ -262,7 +262,7 @@ sub run_completion {
 }
 
 sub run_help {
-    require Perinci::To::Text;
+    #require Perinci::To::Usage;
 
     my ($self) = @_;
 
@@ -315,6 +315,8 @@ _
 }
 
 sub run_subcommand {
+    require File::Which;
+
     my ($self) = @_;
 
     # call function
@@ -331,7 +333,17 @@ sub run_subcommand {
 
     # display result
     if ($resmeta->{"cmdline.page_result"}) {
-        my $pager = $ENV{PAGER} // "less -FRS"; # XXX check program with 'which'
+        my $pager = $resmeta->{"cmdline.pager"} //
+            $ENV{PAGER};
+        unless (defined $pager) {
+            $pager = "less -FRS" if File::Which::which("less");
+        }
+        unless (defined $pager) {
+            $pager = "more" if File::Which::which("more");
+        }
+        unless (defined $pager) {
+            die "Can't determine PAGER";
+        }
         open my($p), "| $pager";
         print $p $self->{_fres};
     } else {
