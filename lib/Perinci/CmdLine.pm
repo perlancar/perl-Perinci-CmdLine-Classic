@@ -699,6 +699,21 @@ if C<exit> attribute is set to false, routine will return with exit code
 instead).
 
 
+=head1 BASH COMPLETION
+
+To do bash completion, first create your script, e.g. C<myscript>, that uses
+Perinci::CmdLine:
+
+ #!/usr/bin/perl
+ use Perinci::CmdLine;
+ Perinci::CmdLine->new(...)->run;
+
+then execute this in C<bash> (or put it in bash startup files like
+C</etc/bash.bashrc> or C<~/.bashrc> for future sessions):
+
+ % complete -C myscript myscript; # myscript must be in PATH
+
+
 =head1 RESULT METADATA
 
 This module interprets the following result metadata keys:
