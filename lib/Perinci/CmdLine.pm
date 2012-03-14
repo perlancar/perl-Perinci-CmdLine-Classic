@@ -136,7 +136,8 @@ sub run_list {
 
     my $subcommands = $self->list_subcommands;
 
-    # XXX get summary from Riap if not exist
+    # XXX get summary from Riap if not exist, but this results in multiple Riap
+    # requests.
 
     my %percat_subc; # (cat1 => {subcmd1=>..., ...}, ...)
     while (my ($scn, $sc) = each %$subcommands) {
