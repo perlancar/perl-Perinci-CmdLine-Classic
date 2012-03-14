@@ -27,44 +27,58 @@ my $me = $0; $me =~ s!.+/!!;
 my $oscs = $opts{subcommands};
 if ($opts{help} || !@ARGV && !@$oscs) {
     print <<USAGE;
-$me - Run a Perl module (or any package over Riap) on the command-line
+$me - Run commands (from any Riap function) on the command-line
 
 Usage:
 
-    $0 --help
-    $0 [options] <module-URL-or-name> --list
-    $0 [options] <module-URL-or-name> <func-name> [--help | [func-args]]
-    $0 [options] -s <function-URL> ...
+    $me --help
+    $me [COMMON_OPTIONS] <COMMAND_SPEC> [SUBCOMMAND] <ACTION_SPEC>
 
-Options:
+'COMMON_OPTIONS' include: '--library' ('-I') to add directory to Perl search dir
+(a la Perl's '-I'), can be specified multiple times.
 
-* --library (-I) _DIR_
+'COMMAND_SPEC' is either a single command spec or multiple subcommands spec. For
+single command, you can specify a Riap function URL (e.g. '/Foo/Bar/func'). For
+multiple subcommands, you can specify a Riap package URL (e.g. '/Foo/Bar/') or a
+Perl module name (e.g. 'Foo::Bar'), in which case $me will list all functions in
+the module/package and add them as subcommands. Alternatively, you can specify
+each subcommand separately using '--subcommand' ('-s'). For example, the command
+below specifies two subcommands called 'func1' and 'altname':
 
-Add a directory to Perl search dir (a la Perl's -I). Can be specified multiple
-times.
+    $me -s /Foo/Bar/func1 -s "/Foo/Bar/func2 altname"
 
-* --subcommand (-s) _URL_
+'SUBCOMMAND' is subcommand name, required only when you specify multiple
+subcommands. And not required for action like '--list' and '--version'.
 
-Instead of specifying a single module URL (and let $0 lists all functions in the
-module as subcommand), specify each subcommand's URL. URL is URL to a Riap
-function. Currently name of subcommand is automatically taken from last part of
-URL path.
+'ACTION_SPEC' is either '--help' to get help message on the command or
+subcommand, '--list' to list subcommands, '--version' to get version, or command
+(function) arguments.
 
 Examples:
 
-    $0 Foo::Bar -l
-    $0 http://example.org/api/Foo/Bar/ baz --yaml --arg 12
-    $0 -s /Foo/Bar/func1 -s /Foo/Baz/func2 func1 --arg 12
+* List all subcommands (functions) in a module:
+
+    $me Foo::Bar -l
+
+* Show usage for a subcommand (function):
+
+    $me Foo::Bar func1 --help
+    $me /Foo/Bar/func1 -h
+
+* Execute a command and display the result as YAML:
+
+    $me http://example.org/api/Foo/Bar/func --yaml --arg 12
+
+* Execute a subcommand:
+
+    $me -s "/Foo/Bar/func1 sc1" -s "/Foo/Baz/func1 sc2" sc2 --arg 12
 
 Notes:
 
-* module-URL-or-name is a Perl moule name ('Foo::Bar') or URL accepted by
-  Perinci::Access (e.g. '/Foo/Bar/' or 'riap+tcp://localhost:5000/Foo/Bar/').
+* This is just a simple generic front-end for 'Perinci::CmdLine'. For more
+  options/customizations, use or subclass the module directly.
 
-* This is currently a pretty minimal front-end. For more options, use
-  Perinci::CmdLine directly.
-
-Todo:
+TODO:
 
 * HTTP authentication parameters
 
@@ -78,27 +92,31 @@ my $cmd = Perinci::CmdLine->new;
 
 if (@ARGV && !@$oscs) {
 
-    # module URL is specified. we expect another argument being the function
-    # name, or else we add every function in the module as subcommand.
+    # a single URL is specified.
 
-    my $module = shift @ARGV;
-    my $func;
-    if (defined($ARGV[0]) && $ARGV[0] =~ /\A\w+\z/) {
-        $func = shift @ARGV;
-    }
+    my $url = shift @ARGV;
+    my $type;
 
-    if ($module =~ /\A\w+::(?:\w+)*\z/) {
-        $module =~ s!::!/!;
-        $module = "/$module/";
-    }
+    my $pa = $cmd->{_pa};
 
-    if ($func) {
-        $cmd->url("$module$func");
+    # Perl module (Foo::Bar) is specified, change it to /Foo/Bar/
+    if ($url =~ /\A\w+::(?:\w+)*\z/) {
+        $url =~ s!::!/!;
+        $url = "/$url/";
+        $type = 'package';
     } else {
-        $cmd->url("$module");
-        my $pa = $cmd->{_pa};
-        my $res = $pa->request(list => $module, {detail=>1});
-        die "Can't request 'list' action on $module: $res->[0] - $res->[1]\n"
+        # try to find out the entity type
+        my $res = $pa->request(info => $url);
+        die "Can't 'info' $url: $res->[0] - $res->[1]\n"
+            unless $res->[0] == 200;
+        $type = $res->[2]{type} // '';
+        die "Please specify URL to a function or package, not '$type': $url\n"
+            unless $type eq 'function' || $type eq 'package';
+    }
+    $cmd->url($url);
+    if ($type eq 'package') {
+        my $res = $pa->request(list => $url, {detail=>1});
+        die "Can't 'list' $url: $res->[0] - $res->[1]\n"
             unless $res->[0] == 200;
         my $scs = {};
         for my $e (@{$res->[2]}) {
@@ -117,14 +135,19 @@ if (@ARGV && !@$oscs) {
     # one or more subcommand URLs are specified.
 
     my $scs = {};
-    for my $url (@$oscs) {
-        my $i = 1;
-        my $leaf = $url; $leaf =~ s!.+/(.+)!$1!; $leaf ||= "func";
-        my $name;
-        while (1) {
-            $name = $leaf . ($i > 1 ? $i : "");
-            last unless $scs->{$name};
-            $i++;
+    for my $item (@$oscs) {
+        my ($url, $name);
+        if ($item =~ /\s/) {
+            ($url, $name) = split /\s+/, $item, 2;
+        } else {
+            $url = $item;
+            my $i = 1;
+            my $leaf = $url; $leaf =~ s!.+/(.+)!$1!; $leaf ||= "func";
+            while (1) {
+                $name = $leaf . ($i > 1 ? $i : "");
+                last unless $scs->{$name};
+                $i++;
+            }
         }
         $scs->{$name} = {url => $url};
     }
@@ -138,55 +161,11 @@ if (@ARGV && !@$oscs) {
 
 $cmd->run;
 
-# ABSTRACT: Run Perl module (or any package over Riap) on the command-line
+#ABSTRACT: Run commands (from any Riap function) on the command-line
 
 =head1 SYNOPSIS
 
-From command-line:
-
- % peri-run Foo::Bar
- % peri-run http://example.com/api/Foo/Bar/
-
-Or save this in C<foobar> somewhere in PATH:
-
- #!/bin/bash
- export PERI_RUN_PROGRAM_NAME=`basename $0`
- peri-run Foo::Bar
-
-You can now do:
-
- % foobar --help; # show help
-
- % foobar --list; # list all subcommands, which are subroutines in Foo::Bar
-
- % foobar sub1 --arg1 ... --arg2 ...; # execute sub1
-
- % foobar --yaml sub1 ...; # execute sub1 and return output as YAML
-
- % foobar --help sub1; # show help usage for sub1
-
- % foobar --version
-
- % complete -C foobar foobar
- % foobar <TAB>; # tab completion will now work
-
-
-=head1 DESCRIPTION
-
-One of the lazy ways of writing a command-line application is by not writing it.
-You just write your module functions, following a few conventions outlined in
-L<Perinci::Access::InProcess>. Later you "export" your module as a command-line
-application with B<peri-run> and get these features for free (among others):
-options parsing, --help message, output formatting, and bash shell completion.
-
-To make bash completion work, you need to execute the 'complete' command (shown
-in Synopsis) first, either from your bash startup script (~/.bashrc,
-/etc/bash.bashrc, etc).
-
-Currently B<peri-run> offers only few options; it's just a quick way to run your
-module. For more customization (e.g. only export some functions, rename
-subcommands, run two or more modules, custom actions and behaviours via plugins,
-etc), use Perinci::CmdLine directly.
+Type C<peri-run --help> for more help.
 
 
 =head1 SEE ALSO
