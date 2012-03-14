@@ -80,7 +80,7 @@ sub parse_subcommands {
 sub gen_subcommands {
     my ($self) = @_;
     my $cmd = $self->cmdline;
-    my $scs = $cmd->get_subcommands;
+    my $scs = $cmd->list_subcommands;
     my $pff = $self->_parse->{functions};
 
     return unless keys %$scs;
