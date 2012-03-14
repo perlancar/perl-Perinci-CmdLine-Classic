@@ -76,7 +76,8 @@ sub format_result {
     if ($format =~ /^(text|pretty|nopretty)$/) {
         if (!defined($self->{_res}[2])) {
             $self->{_fres} = $self->{_res}[0] == 200 ? "" :
-                "ERROR $self->{_res}[0]: $self->{_res}[1]\n";
+                "ERROR $self->{_res}[0]: $self->{_res}[1]" .
+                    ($self->{_res}[1] =~ /\n\z/ ? "" : "\n");
             return;
         }
         my $r = $self->{_res}[0] == 200 ? $self->{_res}[2] : $self->{_res};
