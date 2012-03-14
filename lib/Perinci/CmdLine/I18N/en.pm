@@ -12,6 +12,14 @@ our %Lexicon = %{ Locale::Maketext::Lexicon::Gettext->parse(<DATA>) };
 # ABSTRACT: English translation for Perinci::CmdLine
 __DATA__
 
+# list
+
+msgid  "There are no subcommands"
+msgstr "There are no subcommands"
+
+msgid  "List of available %1 subcommands"
+msgstr "List of available %1 subcommands"
+
 # version
 
 msgid  "%1 version %2"

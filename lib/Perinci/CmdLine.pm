@@ -134,6 +134,11 @@ sub list_subcommands {
 sub run_list {
     my ($self) = @_;
 
+    if (!$self->subcommands) {
+        say $self->loc("There are no subcommands") . ".";
+        return 0;
+    }
+
     my $subcommands = $self->list_subcommands;
 
     # XXX get summary from Riap if not exist, but this results in multiple Riap
@@ -158,15 +163,16 @@ sub run_list {
     for my $cat (sort keys %percat_subc) {
         print "\n" if $i++;
         if ($has_many_cats) {
-            print "List of", ucfirst($cat) || "main",
-                " subcommands:\n";
+            say $self->loc("List of available [_1] subcommands",
+                           ucfirst($cat) || "main") . ":";
         } else {
-            print "List of subcommands:\n";
+            say $self->loc("List of available subcommands") . ":";
         }
         my $subc = $percat_subc{$cat};
         for my $scn (sort keys %$subc) {
             my $sc = $subc->{$scn};
-            say "  $scn", ($sc->{summary} ? " - $sc->{summary}" : "");
+            my $summary = $self->doc->_get_langprop($sc, "summary");
+            say "  $scn", $summary ? " - $summary" : "";
         }
     }
 

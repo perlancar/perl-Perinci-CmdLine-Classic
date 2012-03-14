@@ -12,6 +12,14 @@ our %Lexicon = %{ Locale::Maketext::Lexicon::Gettext->parse(<DATA>) };
 # ABSTRACT: Indonesian translation for Perinci::CmdLine
 __DATA__
 
+# list
+
+msgid  "There are no subcommands"
+msgstr "Tidak ada subperintah"
+
+msgid  "List of available %1 subcommands"
+msgstr "Daftar subperintah kategori '%1'"
+
 # version
 
 msgid  "%1 version %2"
