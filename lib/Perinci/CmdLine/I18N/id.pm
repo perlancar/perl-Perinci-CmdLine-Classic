@@ -93,6 +93,9 @@ msgstr "Subperintah"
 msgid  "Usage"
 msgstr "Cara pakai"
 
+msgid  "Options"
+msgstr "Opsi"
+
 msgid  "For general help, type '%1'"
 msgstr "Untuk pesan bantuan umum, ketik '%1'"
 

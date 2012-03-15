@@ -48,6 +48,7 @@ has _pa => (
 
 sub BUILD {
     my ($self, $args) = @_;
+    #$self->{indent} = $args->{indent} // "    ";
 }
 
 sub format_result {
@@ -282,6 +283,19 @@ sub run_completion {
 
 sub before_generate_doc {
     my ($self) = @_;
+
+    my $sc = $self->{_subcommand};
+    my $url = $sc ? $sc->{url} : $self->url;
+    if ($url) {
+        my $res = $self->_pa->request(info => $url);
+        die "ERROR: Can't info '$url': $res->[0] - $res->[1]\n"
+            unless $res->[0] == 200;
+        $self->{_info} = $res->[2];
+        $res = $self->_pa->request(meta => $url);
+        die "ERROR: Can't meta '$url': $res->[0] - $res->[1]\n"
+            unless $res->[0] == 200;
+        $self->{_meta} = $res->[2];
+    }
 }
 
 sub doc_parse_summary {
@@ -292,12 +306,7 @@ sub doc_parse_summary {
     $self->doc_parse->{name} = $self->program_name .
         ($sc && length($sc->{name}) ? " $sc->{name}" : "");
 
-    my $url = $sc ? $sc->{url} : $self->url;
-    if ($url) {
-        my $res = $self->{_meta} = $self->_pa->request(meta => $url);
-        die "ERROR: Can't meta '$url': $res->[0] - $res->[1]\n"
-            unless $res->[0] == 200;
-        $self->{_meta} = $res->[2];
+    if ($self->{_meta}) {
         $self->doc_parse->{summary} =
             $self->langprop($self->{_meta}, "summary");
     }
@@ -360,10 +369,52 @@ _
     $self->add_doc_lines($self->loc($text), "");
 }
 
-sub doc_parse_options {
-}
+sub doc_parse_options {}
 
 sub doc_gen_options {
+    my ($self) = @_;
+    my $info = $self->{_info};
+    my $meta = $self->{_meta};
+    my $args_p = $meta->{args};
+    return unless $info || $info->{type} ne 'function' || !$args_p || !%$args_p;
+
+    $self->add_doc_lines($self->loc("Options") . ":\n", "");
+
+    # XXX categorize
+    for my $an (sort {
+        ($args_p->{$a}{pos} // 99) <=> ($args_p->{$b}{pos} // 99) ||
+            $a cmp $b
+    } keys %$args_p) {
+        my $a = $args_p->{$an};
+        my $s = $a->{schema} || [any=>{}];
+        my $ane = $an; $ane =~ s/_/-/g; $ane =~ s/\W/-/g;
+        $ane = "no$ane" if $s->[0] eq 'bool' && $s->[1]{default};
+        my $text = sprintf(
+            "  --%s [%s]%s\n",
+            $ane,
+            Perinci::ToUtil::sah2human_short($s),
+            (defined($a->{pos}) ? " (" .
+                 $self->loc("or as argument #[_1]", $a->{pos}+1) . ")" : ""));
+        $self->add_doc_lines($text);
+        my $in;
+        if ($s->[1]{in} && @{ $s->[1]{in} }) {
+            $in = dump1($s->[1]{in});
+        }
+        my $summary     = $self->langprop($a, "summary");
+        my $description = $self->langprop($a, "description");
+        if ($in || $summary || $description || $in) {
+            $self->inc_indent(2);
+            $self->add_doc_lines(
+                "",
+                ucfirst($self->loc("value in")). ": $in")
+                if $in;
+            $self->add_doc_lines("", $summary . ".") if $summary;
+            $self->add_doc_lines("", $description) if $description;
+            $self->dec_indent(2);
+            $self->add_doc_lines("");
+        }
+    }
+    $self->add_doc_lines("");
 }
 
 sub doc_parse_description {

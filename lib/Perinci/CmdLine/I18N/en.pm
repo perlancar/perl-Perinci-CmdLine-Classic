@@ -93,6 +93,9 @@ msgstr "Subcommands"
 msgid  "Usage"
 msgstr "Usage"
 
+msgid  "Options"
+msgstr "Options"
+
 msgid  "For general help, type '%1'"
 msgstr "For general help, type '%1'"
 
