@@ -105,7 +105,8 @@ if (@ARGV && !@$oscs) {
             unless $type eq 'function' || $type eq 'package';
     }
     $cmd->url($url);
-    $cmd->program_name("$me $url") if !defined;
+    $cmd->program_name("$me $url")
+        unless defined($ENV{PERINCI_CMDLINE_PROGRAM_NAME});
     if ($type eq 'package') {
         my $res = $cmd->_pa->request(list => $url, {detail=>1});
         die "Can't 'list' $url: $res->[0] - $res->[1]\n"
