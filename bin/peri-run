@@ -30,56 +30,49 @@ if ($opts{help} || !@ARGV && !@$oscs) {
 $me - Run commands (from any Riap function) on the command-line
 
 Usage:
+  $me --help
+  $me [common options] <command def> [subcommand] [action]
 
-    $me --help
-    $me [COMMON_OPTIONS] <COMMAND_SPEC> [SUBCOMMAND] <ACTION_SPEC>
-
-'COMMON_OPTIONS' include: '--library' ('-I') to add directory to Perl search dir
+*Common options* include: '--library' ('-I') to add directory to Perl search dir
 (a la Perl's '-I'), can be specified multiple times.
 
-'COMMAND_SPEC' is either a single command spec or multiple subcommands spec. For
-single command, you can specify a Riap function URL (e.g. '/Foo/Bar/func'). For
-multiple subcommands, you can specify a Riap package URL (e.g. '/Foo/Bar/') or a
-Perl module name (e.g. 'Foo::Bar'), in which case $me will list all functions in
-the module/package and add them as subcommands. Alternatively, you can specify
-each subcommand separately using '--subcommand' ('-s'). For example, the command
-below specifies two subcommands called 'func1' and 'altname':
+*Command def* is either a single command definition or multiple subcommands
+definition. To define a single command, you can specify a Riap function URL
+(e.g. '/Foo/Bar/func'). For multiple subcommands, you can specify a Riap package
+URL (e.g. '/Foo/Bar/') or a Perl module name (e.g. 'Foo::Bar'), in which case
+all functions in the module/package will be listed and added as subcommands.
+Alternatively, you can specify each subcommand separately using '--subcommand'
+('-s'). For example, the command below specifies two subcommands called 'func1'
+and 'altname':
 
-    $me -s /Foo/Bar/func1 -s "/Foo/Bar/func2 altname"
+  $me -s /Foo/Bar/func1 -s "/Foo/Bar/func2 altname"
 
-'SUBCOMMAND' is subcommand name, required only when you specify multiple
-subcommands. And not required for action like '--list' and '--version'.
+*Subcommand* picks a subcommand name, required only when you specify multiple
+subcommands. And not required for actions like '--list' and '--version'.
 
-'ACTION_SPEC' is either '--help' to get help message on the command or
-subcommand, '--list' to list subcommands, '--version' to get version, or command
-(function) arguments.
+*action* is either '--help' to get help message on the command or subcommand,
+'--list' to list subcommands, '--version' to get version, or zero or more
+command (function) arguments.
 
 Examples:
-
-* List all subcommands (functions) in a module:
-
+  List all subcommands (functions) in a module:
     $me Foo::Bar -l
 
-* Show usage for a subcommand (function):
-
+  Show usage for a subcommand (function):
     $me Foo::Bar func1 --help
     $me /Foo/Bar/func1 -h
 
-* Execute a command and display the result as YAML:
-
+  Execute a command and display the result as YAML:
     $me http://example.org/api/Foo/Bar/func --yaml --arg 12
 
-* Execute a subcommand:
-
+  Execute a subcommand:
     $me -s "/Foo/Bar/func1 sc1" -s "/Foo/Baz/func1 sc2" sc2 --arg 12
 
 Notes:
-
 * This is just a simple generic front-end for 'Perinci::CmdLine'. For more
   options/customizations, use or subclass the module directly.
 
 TODO:
-
 * HTTP authentication parameters
 
 USAGE
@@ -97,8 +90,6 @@ if (@ARGV && !@$oscs) {
     my $url = shift @ARGV;
     my $type;
 
-    my $pa = $cmd->{_pa};
-
     # Perl module (Foo::Bar) is specified, change it to /Foo/Bar/
     if ($url =~ /\A\w+::(?:\w+)*\z/) {
         $url =~ s!::!/!;
@@ -106,7 +97,7 @@ if (@ARGV && !@$oscs) {
         $type = 'package';
     } else {
         # try to find out the entity type
-        my $res = $pa->request(info => $url);
+        my $res = $cmd->_pa->request(info => $url);
         die "Can't 'info' $url: $res->[0] - $res->[1]\n"
             unless $res->[0] == 200;
         $type = $res->[2]{type} // '';
@@ -114,8 +105,9 @@ if (@ARGV && !@$oscs) {
             unless $type eq 'function' || $type eq 'package';
     }
     $cmd->url($url);
+    $cmd->program_name("$me $url") if !defined;
     if ($type eq 'package') {
-        my $res = $pa->request(list => $url, {detail=>1});
+        my $res = $cmd->_pa->request(list => $url, {detail=>1});
         die "Can't 'list' $url: $res->[0] - $res->[1]\n"
             unless $res->[0] == 200;
         my $scs = {};
