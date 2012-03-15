@@ -376,7 +376,7 @@ sub doc_gen_options {
     my $info = $self->{_info};
     my $meta = $self->{_meta};
     my $args_p = $meta->{args};
-    return unless $info || $info->{type} ne 'function' || !$args_p || !%$args_p;
+    return if !$info || $info->{type} ne 'function' || !$args_p || !%$args_p;
 
     $self->add_doc_lines($self->loc("Options") . ":\n", "");
 
