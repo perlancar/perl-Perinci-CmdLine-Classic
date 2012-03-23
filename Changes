@@ -1,5 +1,12 @@
 Revision history for Perinci-CmdLine
 
+0.43     2012-03-23
+
+         [ENHANCEMENTS]
+
+         - Show default argument value in --help message.
+
+
 0.42     2012-03-16
 
          [ENHANCEMENTS]
