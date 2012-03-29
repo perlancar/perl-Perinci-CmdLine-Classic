@@ -218,7 +218,7 @@ DONE_TESTING:
 done_testing();
 
 sub test_run {
-    my (%args) = @_;
+    my %args = @_;
 
     my $pc = Perinci::CmdLine->new(%{$args{args}}, exit=>0);
 
