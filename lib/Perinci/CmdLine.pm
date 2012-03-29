@@ -566,7 +566,7 @@ sub _parse_common_opts {
 
     # convenience for Log::Any::App-using apps
     if ($self->log_any_app) {
-        for (qw/quiet verbose debug trace log_level/) {
+        for (qw/quiet verbose debug trace log-level/) {
             $getopts{$_} = sub {};
         }
     }
