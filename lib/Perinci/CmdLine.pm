@@ -63,7 +63,7 @@ sub format_result {
         return;
     }
     if ($format eq 'json') {
-        $self->{_fres} = format_pretty($self->{_res}, {module=>'JSON'});
+        $self->{_fres} = format_pretty($self->{_res}, {module=>'CompactJSON'});
         return;
     }
     if ($format =~ /^(text|pretty|nopretty)$/) {
