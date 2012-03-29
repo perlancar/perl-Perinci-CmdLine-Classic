@@ -91,7 +91,6 @@ sub format_result {
 
     my $format    = $self->format;
     my $formats   = $self->formats;
-    use Data::Dump; dd $formats; dd $format;
     my $formatter = $formats->{$format};
     die "ERROR: Unknown output format '$format', please choose one of: ".
         join(", ", sort keys(%$formats))."\n" unless $formatter;
