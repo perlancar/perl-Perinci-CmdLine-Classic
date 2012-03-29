@@ -1,5 +1,23 @@
 Revision history for Perinci-CmdLine
 
+0.44     2012-03-29
+
+         [ENHANCEMENTS]
+
+         - Make it easy to add more output formats: added --format and formats()
+           attribute.
+
+         [INCOMPATIBLE CHANGE]
+
+         - --json now outputs compact JSON instead of pretty ones. To
+           pretty-print the output one can pipe it to a formatter program.
+
+         [FIXES]
+
+         - Bash completion: list of common options was incomplete (but we still
+           can't complete common option's value like --format <tab>).
+
+
 0.43     2012-03-23
 
          [ENHANCEMENTS]
