@@ -274,8 +274,22 @@ sub run_completion {
         }
         $log->tracef("cleaned words=%s, cword=%d", $words, $cword);
 
+        # convert %getopts' ('help|h|?' => ..., ...) to ['--help', '-h', '-?',
+        # ...]. XXX this should be moved to another module to remove
+        # duplication, as Perinci::Sub::GetArgs::Argv also does something
+        # similar.
+        my $common_opts = [];
+        for my $k (keys %{$self->{_getopts_common}}) {
+            $k =~ s/^--?//;
+            $k =~ s/^([\w-]+(?:\|[\w-]+)*)(?:\W.*)?/$1/;
+            for (split /\|/, $k) {
+                push @$common_opts, (length == 1 ? "-$_" : "--$_");
+            }
+        }
+
         $res = Perinci::BashComplete::bash_complete_riap_func_arg(
             url=>$sc->{url}, words=>$words, cword=>$cword,
+            common_opts => $common_opts,
             custom_completer=>$self->custom_completer,
             custom_arg_completer => $self->custom_arg_completer
         );
