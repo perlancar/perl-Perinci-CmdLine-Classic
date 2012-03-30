@@ -1,5 +1,16 @@
 Revision history for Perinci-CmdLine
 
+0.45     2012-03-30
+
+         [REFACTORING]
+
+         - Split formatting to Perinci::Result::Format (in Perinci dist).
+
+         [INCOMPATIBLE CHANGE]
+
+         - Rename --pretty (-p) and --nopretty (-P) to --text and --text-simple.
+
+
 0.44     2012-03-29
 
          [ENHANCEMENTS]
