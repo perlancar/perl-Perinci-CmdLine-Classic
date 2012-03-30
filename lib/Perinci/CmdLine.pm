@@ -36,7 +36,6 @@ has custom_completer => (is => 'rw');
 has custom_arg_completer => (is => 'rw');
 has dash_to_underscore => (is => 'rw', default=>sub{1});
 has undo => (is=>'rw', default=>sub{0});
-has formats => (is => 'rw');
 
 has format => (is => 'rw', default=>sub{'text'});
 has _pa => (
@@ -51,57 +50,19 @@ has _pa => (
 sub BUILD {
     my ($self, $args) = @_;
     #$self->{indent} = $args->{indent} // "    ";
-
-    if (!$self->{formats}) {
-        my $format_text = sub {
-            require Data::Format::Pretty;
-
-            my ($format, $res) = @_;
-            if (!defined($res->[2])) {
-                return $res->[0] == 200 ? "" :
-                    "ERROR $res->[0]: $res->[1]" .
-                        ($res->[1] =~ /\n\z/ ? "" : "\n");
-            }
-            my $r = $res->[0] == 200 ? $res->[2] : $res;
-            if ($format eq 'text') {
-                return Data::Format::Pretty::format_pretty(
-                    $r, {module=>'Console'});
-            }
-            if ($format eq 'pretty') {
-                return Data::Format::Pretty::format_pretty(
-                    $r, {module=>'Text'});
-            }
-            if ($format eq 'nopretty') {
-                return Data::Format::Pretty::format_pretty(
-                    $r, {module=>'SimpleText'});
-            }
-        };
-        $self->{formats} = {
-            yaml     => 'YAML',
-            json     => 'CompactJSON',
-            text     => $format_text,
-            pretty   => $format_text,
-            nopretty => $format_text,
-        };
-    };
 }
 
 sub format_result {
+    require Perinci::Result::Format;
+
     my ($self) = @_;
+    my $format = $self->format;
 
-    my $format    = $self->format;
-    my $formats   = $self->formats;
-    my $formatter = $formats->{$format};
     die "ERROR: Unknown output format '$format', please choose one of: ".
-        join(", ", sort keys(%$formats))."\n" unless $formatter;
+        join(", ", sort keys(%$Perinci::Result::Format::Formats))."\n"
+            unless $Perinci::Result::Format::Formats{$format};
 
-    if (ref($formatter) eq 'CODE') {
-        $self->{_fres} = $formatter->($format, $self->{_res});
-    } else {
-        require Data::Format::Pretty;
-        $self->{_fres} = Data::Format::Pretty::format_pretty(
-            $self->{_res}, {module=>$formatter});
-    }
+    $self->{_fres} = Perinci::Result::Format::format($self->{_res}, $format);
 }
 
 sub get_subcommand {
@@ -280,7 +241,7 @@ sub run_completion {
         my $common_opts = [];
         for my $k (keys %{$self->{_getopts_common}}) {
             $k =~ s/^--?//;
-            $k =~ s/^([\w-]+(?:\|[\w-]+)*)(?:\W.*)?/$1/;
+            $k =~ s/^([\w?-]+(?:\|[\w?-]+)*)(?:\W.*)?/$1/;
             for (split /\|/, $k) {
                 push @$common_opts, (length == 1 ? "-$_" : "--$_");
             }
@@ -389,9 +350,9 @@ Common options:
 
     --yaml, -y      Format result as YAML
     --json, -j      Format result as JSON
-    --pretty, -p    Format result as pretty formatted text
-    --nopretty, -P  Format result as simple formatted text
-    --text         (Default) Select --pretty, or --nopretty when run piped
+    --text-pretty   Format result as pretty formatted text
+    --text-simple   Format result as simple formatted text
+    --text         (Default) Use --text-pretty, or --text-simple when run piped
     --format=FMT    Choose output format
 _
     $self->add_doc_lines($self->loc($text), "");
@@ -556,12 +517,12 @@ sub _parse_common_opts {
             unshift @{$self->{_actions}}, 'help';
         },
 
-        "text"       => sub { $self->format('text')     },
-        "yaml|y"     => sub { $self->format('yaml')     },
-        "json|j"     => sub { $self->format('json')     },
-        "pretty|p"   => sub { $self->format('pretty')   },
-        "nopretty|P" => sub { $self->format('nopretty') },
-        "format=s"   => sub { $self->format($_[1])      },
+        "yaml|y"      => sub { $self->format('yaml')          },
+        "json|j"      => sub { $self->format('json')          },
+        "text-pretty" => sub { $self->format('text-pretty')   },
+        "text-simple" => sub { $self->format('text-nopretty') },
+        "text"        => sub { $self->format('text')          },
+        "format=s"     => sub { $self->format($_[1])          },
     );
 
     # convenience for Log::Any::App-using apps
@@ -943,14 +904,7 @@ as JSON can be added upon request.
 
 =head2 How to add support for new output format (e.g. XML, HTML)?
 
-First make sure that Data::Format::Pretty::<FORMAT> module is available for your
-format. Look on CPAN. If it's not, i't also not hard to create one.
-
-Then, in your subclass' BUILD (or elsewhere), add a key to C<formats> hash
-attribute:
-
- # this means format named 'xml' will be handled by Data::Format::Pretty::XML
- $self->formats->{xml} = 'XML';
+See L<Perinci::Format>.
 
 
 =head1 SEE ALSO

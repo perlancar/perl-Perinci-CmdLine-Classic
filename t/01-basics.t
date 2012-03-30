@@ -69,10 +69,12 @@ subtest 'completion' => sub {
         args        => {url=>'/Foo/ok'},
         comp_line   => 'CMD -',
         comp_point0 => '     ^',
-        result      => [qw(--arg1 --arg2 --arg3 --debug --format --help
-                           --json --list --log-level --nopretty --pretty
-                           --quiet --text --trace --verbose --version
-                           --yaml -P -h -j -l -p -v -y)],
+        result      => [qw(
+                           --arg1 --arg2 --arg3 --debug --format --help --json
+                           --list --log-level --quiet --text --text-pretty
+                           --text-simple --trace --verbose --version --yaml
+                           -\? -h -j -l -v -y
+                      )],
     );
     test_complete(
         name        => 'arg value from arg spec "in" (single sub)',
