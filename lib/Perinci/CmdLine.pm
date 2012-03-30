@@ -800,13 +800,6 @@ features. --undo-dir is used to set location of undo data (default C<~/.undo>;
 undo directory will be created if not exists; each subroutine will have its own
 subdir here).
 
-=head2 formats => HASH
-
-A hash containing mapping of format names and Data::Format::Pretty:: formatter
-module. By default, these formats are defined: C<yaml> => 'YAML', C<json> =>
-'CompactJSON', C<text> => 'Console', C<pretty> => 'Text', C<nopretty> =>
-'SimpleText'.
-
 
 =head1 METHODS
 
