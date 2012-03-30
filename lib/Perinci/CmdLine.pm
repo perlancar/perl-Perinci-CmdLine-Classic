@@ -517,12 +517,12 @@ sub _parse_common_opts {
             unshift @{$self->{_actions}}, 'help';
         },
 
-        "yaml|y"      => sub { $self->format('yaml')          },
-        "json|j"      => sub { $self->format('json')          },
-        "text-pretty" => sub { $self->format('text-pretty')   },
-        "text-simple" => sub { $self->format('text-nopretty') },
-        "text"        => sub { $self->format('text')          },
-        "format=s"     => sub { $self->format($_[1])          },
+        "yaml|y"      => sub { $self->format('yaml')        },
+        "json|j"      => sub { $self->format('json')        },
+        "text-pretty" => sub { $self->format('text-pretty') },
+        "text-simple" => sub { $self->format('text-simple') },
+        "text"        => sub { $self->format('text')        },
+        "format=s"     => sub { $self->format($_[1])        },
     );
 
     # convenience for Log::Any::App-using apps
