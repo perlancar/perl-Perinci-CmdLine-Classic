@@ -385,7 +385,8 @@ sub doc_gen_options {
             $ane,
             Perinci::ToUtil::sah2human_short($s),
             (defined($a->{pos}) ? " (" .
-                 $self->loc("or as argument #[_1]", $a->{pos}+1) . ")" : ""),
+                 $self->loc("or as argument #[_1]",
+                            ($a->{pos}+1).($a->{greedy} ? "+":"")) . ")" : ""),
             $def,
         );
         $self->add_doc_lines($text);
