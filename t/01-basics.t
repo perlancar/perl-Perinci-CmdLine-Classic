@@ -60,6 +60,18 @@ sub f1 {
     [200, "OK", $args{help} ? "tolong" : $args{list} ? "daftar" : "?"];
 }
 
+$SPEC{f2} = {
+    v => 1.1,
+    summary => 'This function has required positional argument',
+    args => {
+        a1 => {schema=>'str*', req=>1, pos=>0},
+    },
+};
+sub f2 {
+    my %args = @_;
+    [200, "OK", $args{a1}];
+}
+
 package main;
 
 subtest 'completion' => sub {
@@ -196,6 +208,12 @@ test_run(name      => "common option (--help) overrides function argument",
 #         exit_code => 0,
 #         output_re => qr/^tolong$/m,
 #     );
+test_run(name      => "common option (--help) bypass required argument check",
+         args      => {url=>'/Foo/f2'},
+         argv      => [qw/--help/],
+         exit_code => 0,
+         output_re => qr/^Usage:/m,
+     );
 
 for (qw(--version -v)) {
     test_run(name      => "version ($_)",
@@ -221,7 +239,6 @@ for (qw(--list -l)) {
 # XXX test arg: custom general help
 # XXX test arg: per-subcommand help
 # XXX test arg: custom per-subcommand help
-# XXX test arg: complete_arg, complete_args (main / per-subcommand)
 
 # XXX test arg: undo
 

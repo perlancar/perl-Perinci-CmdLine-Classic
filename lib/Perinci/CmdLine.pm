@@ -495,26 +495,30 @@ sub _parse_common_opts {
     my ($self, $phase) = @_;
     $log->tracef("-> _parse_common_opts(%d)", $phase);
 
-    $Perinci::Sub::GetArgs::Argv::_pa_skip_check_required_args = 0;
-
     my $old_go_opts = Getopt::Long::Configure(
         "pass_through", "no_ignore_case", ($phase == 1 ? "no_":"")."permute");
     my %getopts = (
         "list|l"     => sub {
-            $Perinci::Sub::GetArgs::Argv::_pa_skip_check_required_args = 1
-                if $phase == 1;
+            if ($phase == 1) {
+                $Perinci::Sub::GetArgs::Argv::_pa_skip_check_required_args = 1;
+                $self->{_pa_skip_check_required_args} = 1;
+            }
             unshift @{$self->{_actions}}, 'list';
         },
         "version|v"  => sub {
             unshift @{$self->{_actions}}, 'version';
             die "ERROR: 'url' not set, required for --version\n"
                 unless $self->url;
-            $Perinci::Sub::GetArgs::Argv::_pa_skip_check_required_args = 1
-                if $phase == 1;
+            if ($phase == 1) {
+                $Perinci::Sub::GetArgs::Argv::_pa_skip_check_required_args = 1;
+                $self->{_pa_skip_check_required_args} = 1;
+            }
         },
         "help|h|?"   => sub {
-            $Perinci::Sub::GetArgs::Argv::_pa_skip_check_required_args = 1
-                if $phase == 1;
+            if ($phase == 1) {
+                $Perinci::Sub::GetArgs::Argv::_pa_skip_check_required_args = 1;
+                $self->{_pa_skip_check_required_args} = 1;
+            }
             unshift @{$self->{_actions}}, 'help';
         },
 
@@ -523,7 +527,7 @@ sub _parse_common_opts {
         "text-pretty" => sub { $self->format('text-pretty') },
         "text-simple" => sub { $self->format('text-simple') },
         "text"        => sub { $self->format('text')        },
-        "format=s"     => sub { $self->format($_[1])        },
+        "format=s"    => sub { $self->format($_[1])         },
     );
 
     # convenience for Log::Any::App-using apps
@@ -559,7 +563,7 @@ sub _parse_common_opts {
                      "actions=%s", \@ARGV, $self->{_actions});
     Getopt::Long::Configure($old_go_opts);
 
-    $log->tracef("<- _parse_common_opts()");
+    $log->tracef("<- _parse_common_opts(%s)", $phase);
 }
 
 sub _parse_subcommand_opts {
@@ -581,6 +585,8 @@ sub _parse_subcommand_opts {
     my $meta = $res->[2];
 
     # parse argv
+    $Perinci::Sub::GetArgs::Argv::_pa_skip_check_required_args = 1
+        if $self->{_pa_skip_check_required_args};
     my %ga_args = (argv=>\@ARGV, meta=>$meta,
                    extra_getopts => $self->{_getopts_common});
     $res = Perinci::Sub::GetArgs::Argv::get_args_from_argv(%ga_args);
