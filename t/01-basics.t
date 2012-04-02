@@ -82,6 +82,7 @@ subtest 'completion' => sub {
         comp_line   => 'CMD -',
         comp_point0 => '     ^',
         result      => [qw(
+                           --action
                            --arg1 --arg2 --arg3 --debug --format --help --json
                            --list --log-level --quiet --text --text-pretty
                            --text-simple --trace --verbose --version --yaml
@@ -201,13 +202,14 @@ test_run(name      => "common option (--help) overrides function argument",
          exit_code => 0,
          output_re => qr/^Usage:/m,
      );
-# currently fail, but works OK on the command line
-#test_run(name      => "specifying function argument --help",
-#         args      => {subcommands=>{f1=>{url=>'/Foo/f1'}}},
-#         argv      => [qw/f1 -- --help/],
-#         exit_code => 0,
-#         output_re => qr/^tolong$/m,
-#     );
+test_run(name      => "common option (--help) does not override ".
+             "function argument when using --action=subcommand",
+         args      => {subcommands=>{f1=>{url=>'/Foo/f1'}}},
+         argv      => [qw/f1 --help --action=subcommand/],
+         exit_code => 0,
+         output_re => qr/^tolong/m,
+     );
+goto DONE_TESTING;
 test_run(name      => "common option (--help) bypass required argument check",
          args      => {url=>'/Foo/f2'},
          argv      => [qw/--help/],
