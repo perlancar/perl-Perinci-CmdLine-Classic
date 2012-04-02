@@ -445,7 +445,7 @@ sub run_help {
         'links',
     ];
     $Text::Wrap::columns = 80;
-    say $self->generate_doc();
+    print $self->generate_doc();
     0;
 }
 
