@@ -209,7 +209,6 @@ test_run(name      => "common option (--help) does not override ".
          exit_code => 0,
          output_re => qr/^tolong/m,
      );
-goto DONE_TESTING;
 test_run(name      => "common option (--help) bypass required argument check",
          args      => {url=>'/Foo/f2'},
          argv      => [qw/--help/],
