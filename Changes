@@ -1,5 +1,18 @@
 Revision history for Perinci-CmdLine
 
+0.47     2012-04-03
+
+         [FIXES]
+
+         - Better handle case when common options like --help, --list, --version
+           clash with function arguments with the same name. Now the behavior is
+           to invoke common action (like help, version), unless
+           --action=subcommand is specified, where it will set function
+           arguments instead. Note that this is a non-issue when none of the
+           function arguments happen to have names of 'help', 'list', 'version',
+           etc.
+
+
 0.46     2012-03-30
 
          No functional changes. Fix typo.
