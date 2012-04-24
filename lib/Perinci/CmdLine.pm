@@ -770,8 +770,8 @@ In your command-line script:
 To run this program:
 
  % foo --help ;# display help message
- % foo --baz blah ;# run function and display the result
- % foo        ;# fail because required argument 'bar' not specified
+ % foo --bar aa ;# run function and display the result
+ % foo --baz x  ;# fail because required argument 'bar' not specified
  % foo --version ;# display version
 
 To do bash tab completion:
