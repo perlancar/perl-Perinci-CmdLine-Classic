@@ -741,8 +741,45 @@ sub run {
 In your command-line script:
 
  #!/usr/bin/perl
+ use 5.010;
  use Perinci::CmdLine;
- Perinci::CmdLine->new(url => '/Your/Module/', ...)->run;
+
+ our %SPEC;
+ $SPEC{foo} = {
+     v => 1.1,
+     summary => 'Does foo to your computer',
+     args => {
+         bar => {
+             summary=>'Barrr',
+             req=>1,
+             schema=>['str*', {in=>[qw/aa bb cc/]}],
+         },
+         baz => {
+             summary=>'Bazzz',
+             schema=>'str',
+         },
+     },
+ };
+ sub foo {
+      my %args = @_;
+     [200, "OK", $args{bar} . ($args{baz} ? "and $args{baz}" : "")];
+ }
+
+ Perinci::CmdLine->new(url => '/main/foo')->run;
+
+To run this program:
+
+ % foo --help ;# display help message
+ % foo --baz blah ;# run function and display the result
+ % foo        ;# fail because required argument 'bar' not specified
+ % foo --version ;# display version
+
+To do bash tab completion:
+
+ % complete -C foo foo ;# can be put in ~/.bashrc
+ % foo <tab> ;# completes to --help, --version, --bar, --baz and others
+ % foo --b<tab> ;# completes to --bar and --baz
+ % foo --bar <tab> ;# completes to aa, bb, cc
 
 See also the L<peri-run> script which provides a command-line interface for
 Perinci::CmdLine.
@@ -759,9 +796,9 @@ What you'll get:
 
 =over 4
 
-=item * Command-line parsing (currently using Getopt::Long, with some tweaks)
+=item * Command-line options parsing
 
-=item * Help message (utilizing information from metadata)
+=item * Help message (utilizing information from metadata, supports translation)
 
 =item * Tab completion for bash (including completion from remote code)
 
