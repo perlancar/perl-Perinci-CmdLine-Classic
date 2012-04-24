@@ -742,6 +742,7 @@ In your command-line script:
 
  #!/usr/bin/perl
  use 5.010;
+ use Log::Any '$log';
  use Perinci::CmdLine;
 
  our %SPEC;
@@ -761,7 +762,8 @@ In your command-line script:
      },
  };
  sub foo {
-      my %args = @_;
+     my %args = @_;
+     $log->debugf("Arguments are %s", \%args);
      [200, "OK", $args{bar} . ($args{baz} ? "and $args{baz}" : "")];
  }
 
@@ -770,9 +772,11 @@ In your command-line script:
 To run this program:
 
  % foo --help ;# display help message
- % foo --bar aa ;# run function and display the result
- % foo --baz x  ;# fail because required argument 'bar' not specified
+ % LANG=id_ID foo --help ;# display help message in Indonesian
  % foo --version ;# display version
+ % foo --bar aa ;# run function and display the result
+ % foo --bar aa --debug ;# turn on debug output
+ % foo --baz x  ;# fail because required argument 'bar' not specified
 
 To do bash tab completion:
 
