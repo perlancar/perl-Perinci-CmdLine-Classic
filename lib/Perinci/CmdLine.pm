@@ -742,7 +742,7 @@ In your command-line script:
 
  #!/usr/bin/perl
  use Perinci::CmdLine;
- Perinci::CmdLine->new(url => 'Your::Module', ...)->run;
+ Perinci::CmdLine->new(url => '/Your/Module/', ...)->run;
 
 See also the L<peri-run> script which provides a command-line interface for
 Perinci::CmdLine.
