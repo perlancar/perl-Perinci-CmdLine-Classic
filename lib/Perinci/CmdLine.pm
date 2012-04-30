@@ -528,7 +528,7 @@ sub gen_common_opts {
     );
 
     # convenience for Log::Any::App-using apps
-    if ($self->log_any_app) {
+    if ($self->log_any_app // 1) {
         for (qw/quiet verbose debug trace log-level/) {
             push @getopts, $_ => sub {};
         }
