@@ -31,7 +31,7 @@ has url => (is => 'rw');
 has summary => (is => 'rw');
 has subcommands => (is => 'rw');
 has exit => (is => 'rw', default=>sub{1});
-has log_any_app => (is => 'rw', default=>sub{1});
+has log_any_app => (is => 'rw');
 has custom_completer => (is => 'rw');
 has custom_arg_completer => (is => 'rw');
 has dash_to_underscore => (is => 'rw', default=>sub{1});
@@ -656,23 +656,26 @@ sub _set_subcommand {
     }
     unshift @{$self->{_actions}}, 'completion' if $ENV{COMP_LINE};
     push @{$self->{_actions}}, 'help' if !@{$self->{_actions}};
+
+    unless ($ENV{COMP_LINE}) {
+        $self->_load_log_any_app if
+            $self->log_any_app // $self->{_subcommand}{log_any_app} // 1;
+    }
+
     $log->tracef("actions=%s, subcommand=%s",
                  $self->{_actions}, $self->{_subcommand});
 }
 
+sub _load_log_any_app {
+    my ($self) = @_;
+    # Log::Any::App::init can already avoid being run twice
+    #return unless $self->{_log_any_app_loaded}
+    require Log::Any::App;
+    Log::Any::App::init();
+}
+
 sub run {
     my ($self) = @_;
-
-    #
-    # load Log::Any::App
-    #
-
-    unless ($ENV{COMP_LINE}) {
-        if ($self->log_any_app) {
-            require Log::Any::App;
-            Log::Any::App::init();
-        }
-    }
 
     $log->trace("-> CmdLine's run()");
 
@@ -834,8 +837,11 @@ If unset, will be retrieved from function metadata when needed.
 Should be a hash of subcommand specifications or a coderef.
 
 Each subcommand specification is also a hash(ref) and should contain these keys:
-C<url>. It can also contain these keys: C<summary> (will be retrieved from
-function metadata if unset), C<tags> (for categorizing subcommands).
+C<url>. It can also contain these keys: C<summary> (str, will be retrieved from
+function metadata if unset), C<tags> (array of str, for categorizing
+subcommands), C<log_any_app> (bool, whether to load Log::Any::App, default is
+true, for subcommands that need fast startup you can try turning this off for
+said subcommands).
 
 Subcommands can also be a coderef, for dynamic list of subcommands. The coderef
 will be called as a method with hash arguments. It can be called in two cases.
