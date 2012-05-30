@@ -979,7 +979,7 @@ as JSON can be added upon request.
 
 =head2 How to add support for new output format (e.g. XML, HTML)?
 
-See L<Perinci::Format>.
+See L<Perinci::Result::Format>.
 
 
 =head1 SEE ALSO
