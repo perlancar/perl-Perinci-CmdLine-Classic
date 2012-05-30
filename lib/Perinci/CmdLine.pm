@@ -794,7 +794,7 @@ Perinci::CmdLine.
 
 =head1 DESCRIPTION
 
-Perinci::CmdLine is a command-line application framework. It access functions
+Perinci::CmdLine is a command-line application framework. It accesses functions
 using Riap protocol (L<Perinci::Access>) so you get transparent remote access.
 It utilizes L<Rinci> metadata in the code so the amount of plumbing that you
 have to do is quite minimal.
@@ -956,9 +956,12 @@ the default C<less> or C<more>.
 Perinci::CmdLine is part of a more general metadata and wrapping framework
 (Perinci::* modules family). Aside from a command-line application, your
 metadata is also usable for other purposes, like providing access over HTTP/TCP,
-documentation. Sub::Spec::CmdLine is not OO. Configuration file support is
-missing (coming soon, most probably based on L<Config::Ini::OnDrugs>). Also
-lacking is more documentation and more plugins.
+documentation, etc.
+
+Configuration file support is missing (coming soon, most probably will be based
+on L<Config::Ini::OnDrugs>).
+
+Also lacking is more documentation and more plugins.
 
 =head2 Why is nonscalar arguments parsed as YAML instead of JSON/etc?
 
