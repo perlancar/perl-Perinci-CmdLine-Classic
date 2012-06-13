@@ -1,7 +1,5 @@
 #!/usr/bin/perl
 
-package peri_run; # to make PodWeaver happy
-
 use 5.010;
 use strict;
 use warnings;
@@ -155,6 +153,7 @@ if (@ARGV && !@$oscs) {
 $cmd->run;
 
 #ABSTRACT: Run commands (from any Riap function) on the command-line
+#PODNAME: peri-run
 
 =head1 SYNOPSIS
 
