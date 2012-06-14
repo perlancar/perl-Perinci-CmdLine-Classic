@@ -1,6 +1,6 @@
 Revision history for Perinci-CmdLine
 
-0.47     2012-04-03
+0.47     2012-04-03 (SHARYANTO)
 
          [FIXES]
 
@@ -13,12 +13,12 @@ Revision history for Perinci-CmdLine
            etc.
 
 
-0.46     2012-03-30
+0.46     2012-03-30 (SHARYANTO)
 
          No functional changes. Fix typo.
 
 
-0.45     2012-03-30
+0.45     2012-03-30 (SHARYANTO)
 
          [REFACTORING]
 
@@ -30,7 +30,7 @@ Revision history for Perinci-CmdLine
            --text-simple.
 
 
-0.44     2012-03-29
+0.44     2012-03-29 (SHARYANTO)
 
          [ENHANCEMENTS]
 
@@ -48,14 +48,14 @@ Revision history for Perinci-CmdLine
            can't complete common option's value like --format <tab>).
 
 
-0.43     2012-03-23
+0.43     2012-03-23 (SHARYANTO)
 
          [ENHANCEMENTS]
 
          - Show default argument value in --help message.
 
 
-0.42     2012-03-16
+0.42     2012-03-16 (SHARYANTO)
 
          [ENHANCEMENTS]
 
@@ -68,14 +68,14 @@ Revision history for Perinci-CmdLine
          - Allow choosing PAGER via result metadata key 'cmdline.pager'.
 
 
-0.41     2012-03-08
+0.41     2012-03-08 (SHARYANTO)
 
          [BUG FIXES]
 
          - Fix do not empty envelope when 'cmdline.display_result' is false.
 
 
-0.40     2012-03-08
+0.40     2012-03-08 (SHARYANTO)
 
          [INCOMPATIBLE CHANGES]
 
@@ -88,7 +88,7 @@ Revision history for Perinci-CmdLine
            result to PAGER.
 
 
-0.39     2012-03-03
+0.39     2012-03-03 (SHARYANTO)
 
          [ENHANCEMENTS]
 
@@ -109,37 +109,37 @@ Revision history for Perinci-CmdLine
            via --format, which can use any Data::Format::Pretty::* module).
 
 
-0.38     2012-02-23
+0.38     2012-02-23 (SHARYANTO)
 
          Rename distribution from Sub-Spec-CmdLine to Perinci-CmdLine. Now
          Rinci/Riap-based (transparent remote access). Refactor into OO. Some
          features missing for now. Tests not updated yet.
 
 
-0.37     2012-01-20
+0.37     2012-01-20 (SHARYANTO)
 
          No functional changes. Mark deprecation.
 
 
-0.36     2011-08-25
+0.36     2011-08-25 (SHARYANTO)
 
          No functional changes. gen_usage() split to its own dist:
          Sub-Spec-To-Text. Update to Sub::Spec 0.15.
 
 
-0.35     2011-08-11
+0.35     2011-08-11 (SHARYANTO)
 
          Uses Data::Format::Pretty for result formatting. JSON output is now
          pretty-printed by default.
 
 
-0.34     2011-08-03
+0.34     2011-08-03 (SHARYANTO)
 
          No functional changes. Fixed test script to adjust to new
          Object::BlankStr [CT]. Updated dependencies.
 
 
-0.33     2011-07-26
+0.33     2011-07-26 (SHARYANTO)
 
          [INCOMPATIBLE CHANGES]
 
@@ -151,14 +151,14 @@ Revision history for Perinci-CmdLine
          Localize Getopt::Long::Configure() effect.
 
 
-0.32     2011-07-10
+0.32     2011-07-10 (SHARYANTO)
 
          [BUG FIXES]
 
          * runpm: fix -I.
 
 
-0.31     2011-07-10
+0.31     2011-07-10 (SHARYANTO)
 
          [ENHANCEMENTS]
 
@@ -168,7 +168,7 @@ Revision history for Perinci-CmdLine
            dashes instead of underscores.
 
 
-0.30     2011-06-05
+0.30     2011-06-05 (SHARYANTO)
 
          [INCOMPATIBLE CHANGES]
 
@@ -176,7 +176,7 @@ Revision history for Perinci-CmdLine
            nonscalar arguments.
 
 
-0.29     2011-06-01
+0.29     2011-06-01 (SHARYANTO)
 
          No functional changes.
 
@@ -185,14 +185,14 @@ Revision history for Perinci-CmdLine
          - Update to latest version of Sub::Spec::Runner.
 
 
-0.28     2011-04-14
+0.28     2011-04-14 (SHARYANTO)
 
          [BUG FIXES]
 
          - Remove extra name line in usage message.
 
 
-0.27     2011-04-14
+0.27     2011-04-14 (SHARYANTO)
 
          [ENHANCEMENTS]
 
@@ -207,54 +207,54 @@ Revision history for Perinci-CmdLine
            not available).
 
 
-0.26     2011-03-04
+0.26     2011-03-04 (SHARYANTO)
 
          Require Sub::Spec::Runner 0.09.
 
 
-0.25     2011-02-28
+0.25     2011-02-28 (SHARYANTO)
 
          On non-success response from sub, print output (error message) even if
          spec enables cmdline_suppress_output.
 
 
-0.24     2011-02-28
+0.24     2011-02-28 (SHARYANTO)
 
          Now based on Sub::Spec::Runner for dependency checking before run.
 
 
-0.23     2011-02-23
+0.23     2011-02-23 (SHARYANTO)
 
          Fix dependency (Sub::Spec version).
 
          Don't add error message when Getopt::Long already prints to stderr.
 
 
-0.22     2011-02-22
+0.22     2011-02-22 (SHARYANTO)
 
          Use Sub::Spec::Utils.
 
 
-0.21     2011-02-21
+0.21     2011-02-21 (SHARYANTO)
 
          Add some more documentation.
 
          Requires recent versions of Test::More & Sub::Spec::BashComplete.
 
 
-0.20     2011-02-18
+0.20     2011-02-18 (SHARYANTO)
 
          Escape completion output since BashComplete now doesn't.
 
          Added some doc.
 
 
-0.19     2011-02-18
+0.19     2011-02-18 (SHARYANTO)
 
          Provide runpm script.
 
 
-0.18     2011-02-18
+0.18     2011-02-18 (SHARYANTO)
 
          run(): More fixes for completion.
 
@@ -263,19 +263,19 @@ Revision history for Perinci-CmdLine
          Fix test [CT].
 
 
-0.17     2011-02-17
+0.17     2011-02-17 (SHARYANTO)
 
          run(): Fixed stupid parenthesis bug.
 
 
-0.16     2011-02-17
+0.16     2011-02-17 (SHARYANTO)
 
          run(): A couple more fixes for bash completion.
 
          parse_argv(): Also add --nofoo for bool cmdline_aliases.
 
 
-0.15     2011-02-17
+0.15     2011-02-17 (SHARYANTO)
 
          Yet more fixes for bash completion.
 
@@ -286,12 +286,12 @@ Revision history for Perinci-CmdLine
          Sub::Spec::BashComplete.
 
 
-0.14     2011-02-17
+0.14     2011-02-17 (SHARYANTO)
 
          Fixes for bash completion.
 
 
-0.13     2011-02-17
+0.13     2011-02-17 (SHARYANTO)
 
        [INCOMPATIBLE CHANGES]
 
@@ -311,7 +311,7 @@ Revision history for Perinci-CmdLine
          gen_usage(): Add option: 'options_name'.
 
 
-0.12     2011-02-16
+0.12     2011-02-16 (SHARYANTO)
 
          Fixes for bash completion.
 
@@ -320,12 +320,12 @@ Revision history for Perinci-CmdLine
          Other bug fixes.
 
 
-0.11     2011-02-16
+0.11     2011-02-16 (SHARYANTO)
 
          Add support for bash completion (requires Sub::Spec::BashComplete).
 
 
-0.10     2011-02-16
+0.10     2011-02-16 (SHARYANTO)
 
          Add strict=>0 option in parse_argv(), for use by
          Sub::Spec::BashComplete.
@@ -333,54 +333,54 @@ Revision history for Perinci-CmdLine
          Some small refactoring.
 
 
-0.09     2011-02-15
+0.09     2011-02-15 (SHARYANTO)
 
          Add --version.
 
 
-0.08     2011-02-15
+0.08     2011-02-15 (SHARYANTO)
 
          Fixes for subcommands support.
 
          Respect spec clause: cmdline_suppress_output.
 
 
-0.07     2011-02-11
+0.07     2011-02-11 (SHARYANTO)
 
          Formatting fix: missing newline in error message.
 
 
-0.06     2011-02-11
+0.06     2011-02-11 (SHARYANTO)
 
          Add 'cmd' option to gen_usage().
 
          Formatting tweaks.
 
 
-0.05     2011-02-11
+0.05     2011-02-11 (SHARYANTO)
 
          Remove 'required_args'.
 
 
-0.04     2011-02-10
+0.04     2011-02-10 (SHARYANTO)
 
          Formatting fixes.
 
 
-0.03     2011-02-10
+0.03     2011-02-10 (SHARYANTO)
 
          Formatting tweaks.
 
          Fix schema clause ('in', not 'choices').
 
 
-0.02     2011-02-09
+0.02     2011-02-09 (SHARYANTO)
 
          Incompatible change: rename arg_order to arg_pos.
 
          Documentation.
 
 
-0.01     2011-02-09
+0.01     2011-02-09 (SHARYANTO)
 
          First release.
