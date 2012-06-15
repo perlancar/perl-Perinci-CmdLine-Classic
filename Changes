@@ -1,5 +1,12 @@
 Revision history for Perinci-CmdLine
 
+0.48     2012-06-15 (SHARYANTO)
+
+         [ENHANCEMENTS]
+
+         - Add module: Perinci::CmdLine::Easy
+
+
 0.47     2012-04-03 (SHARYANTO)
 
          [FIXES]
