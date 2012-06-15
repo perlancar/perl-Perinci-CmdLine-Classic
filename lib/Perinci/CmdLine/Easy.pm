@@ -9,6 +9,8 @@ require Exporter;
 our @ISA       = qw(Exporter);
 our @EXPORT_OK = qw(run_cmdline_app);
 
+# VERSION
+
 our %SPEC;
 
 $SPEC{run_cmdline_app} = {
