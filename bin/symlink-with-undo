@@ -12,6 +12,7 @@ Perinci::CmdLine->new(url=>'/Setup/File/Symlink/setup_symlink', undo=>1)->run;
 
 1;
 # ABSTRACT: Create symlink, with undo/redo capability
+# PODNAME: symlink-with-undo
 
 =head1 SYNOPSIS
 
