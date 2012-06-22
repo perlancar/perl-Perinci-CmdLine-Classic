@@ -924,6 +924,8 @@ What you'll get:
 
 =item * Tab completion for bash (including completion from remote code)
 
+=item * Undo/redo/history
+
 =back
 
 This module uses L<Log::Any> and L<Log::Any::App> for logging.
