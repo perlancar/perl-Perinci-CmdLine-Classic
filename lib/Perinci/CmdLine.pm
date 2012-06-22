@@ -99,7 +99,7 @@ sub format_and_display_result {
 
     my $format = $self->format;
     die "ERROR: Unknown output format '$format', please choose one of: ".
-        join(", ", sort keys(%$Perinci::Result::Format::Formats))."\n"
+        join(", ", sort keys(%Perinci::Result::Format::Formats))."\n"
             unless $Perinci::Result::Format::Formats{$format};
     $self->{_fres} = Perinci::Result::Format::format($self->{_res}, $format);
 
