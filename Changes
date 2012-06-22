@@ -1,5 +1,13 @@
 Revision history for Perinci-CmdLine
 
+0.52     2012-06-22 (SHARYANTO) (not yet released)
+
+         [FIXES]
+
+         - Fix typo that cause list of known result formats to be empty in error
+           message when passed --format=BOGUS
+
+
 0.51     2012-06-22 (SHARYANTO)
 
          [ENHANCEMENTS]
