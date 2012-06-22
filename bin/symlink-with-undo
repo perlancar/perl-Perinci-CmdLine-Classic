@@ -6,9 +6,12 @@ use warnings;
 
 use Perinci::CmdLine;
 
+# VERSION
+
 Perinci::CmdLine->new(url=>'/Setup/File/Symlink/setup_symlink', undo=>1)->run;
 
 1;
+# ABSTRACT: Create symlink, with undo/redo capability
 
 =head1 SYNOPSIS
 
