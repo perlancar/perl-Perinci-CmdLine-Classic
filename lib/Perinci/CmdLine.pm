@@ -419,9 +419,9 @@ _
     $text = <<_;
 Undo options:
 
-    --undo <ID>     Undo previous action (use --list-history to get IDs)
-    --redo <ID>     Redo previous undo action (use --list-history to get IDs)
-    --list-history  List actions history
+    --undo <ID>     Undo previous action (use --history to get IDs)
+    --redo <ID>     Redo previous undo action (use --history to get IDs)
+    --history       List actions history
     --clear-history Clear actions history
 _
     $self->add_doc_lines($self->loc($text), "") if $self->undo;
@@ -558,7 +558,7 @@ sub run_subcommand {
     $self->{_res}[0] == 200 ? 0 : $self->{_res}[0] - 300;
 }
 
-sub run_list_history {
+sub run_history {
     my $self = shift;
     my $res = $self->_pa->request(list_txs => "/", {detail=>1});
     $log->tracef("list_txs res=%s", $res);
@@ -644,7 +644,7 @@ sub gen_common_opts {
     }
 
     if ($self->undo) {
-        push @getopts, "list-history" => sub {
+        push @getopts, "history" => sub {
             unshift @{$self->{_actions}}, 'list_history';
             $self->{_check_required_args} = 0;
         };
@@ -996,7 +996,7 @@ use undo:
 
 =item * These command-line options will be recognized
 
-C<--undo>, C<--redo>, C<--list-history>, C<--clear-history>.
+C<--undo>, C<--redo>, C<--history>, C<--clear-history>.
 
 =item * Transactions will be used
 

@@ -23,20 +23,19 @@ Perinci::CmdLine->new(url=>'/Setup/File/Symlink/setup_symlink', undo=>1)->run;
  $ symlink-with-undo --symlink /tmp/l1 --target target2
 
  # list history
- $ symlink-with-undo --list-history
+ $ symlink-with-undo --history
 
- # undo last action (get actual <id> from previous command), now symlink points
- # back to 'target1'
- $ symlink-with-undo --undo <id>
+ # undo last action, now symlink points back to 'target1'
+ $ symlink-with-undo --undo
 
  # undo again, now symlink '/tmp/l1' is removed
- $ symlink-with-undo --undo <id>
+ $ symlink-with-undo --undo
 
  # redo, now symlink '/tmp/l1' is recreated and points to 'target1'
- $ symlink-with-undo --undo <id>
+ $ symlink-with-undo --redo
 
  # redo, now symlink '/tmp/l1' points to 'target2'
- $ symlink-with-undo --redo <id>
+ $ symlink-with-undo --redo
 
  # forget history
  $ symlink-with-undo --clear-history
