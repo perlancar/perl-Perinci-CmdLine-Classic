@@ -6,7 +6,7 @@ use warnings;
 use Data::Dump::OneLine qw(dump1);
 use Log::Any '$log';
 use Moo;
-use Perinci::Object;
+#use Perinci::Object;
 use Perinci::ToUtil;
 
 # VERSION
@@ -36,14 +36,48 @@ has custom_completer => (is => 'rw');
 has custom_arg_completer => (is => 'rw');
 has dash_to_underscore => (is => 'rw', default=>sub{1});
 has undo => (is=>'rw', default=>sub{0});
+has undo_dir => (
+    is => 'rw',
+    lazy => 1,
+    default => sub {
+        my $self = shift;
+        my $dir = $ENV{HOME} . "/." . $self->program_name;
+        mkdir $dir unless -d $dir;
+        $dir .= "/.undo";
+        mkdir $dir unless -d $dir;
+        $dir;
+    }
+);
 
 has format => (is => 'rw', default=>sub{'text'});
 has _pa => (
     is => 'rw',
     lazy => 1,
     default => sub {
+        my $self = shift;
+
         require Perinci::Access;
-        Perinci::Access->new;
+        my %args;
+        if ($self->undo) {
+            require Perinci::Access::InProcess;
+            my $pai = Perinci::Access::InProcess->new(
+                use_tx => 1,
+                custom_tx_manager => sub {
+                    my $pa = shift;
+                    require Perinci::Tx::Manager;
+                    state $txm = Perinci::Tx::Manager->new(
+                        data_dir => $self->undo_dir,
+                        pa => $pa,
+                    );
+                    $txm;
+                },
+            );
+            $args{handlers} = {
+                pl   => $pai,
+                riap => $pai,
+            };
+        }
+        Perinci::Access->new(%args);
     }
 );
 
@@ -52,17 +86,42 @@ sub BUILD {
     #$self->{indent} = $args->{indent} // "    ";
 }
 
-sub format_result {
+sub format_and_display_result {
     require Perinci::Result::Format;
 
-    my ($self) = @_;
-    my $format = $self->format;
+    my $self = shift;
+    return unless $self->{_res};
 
+    my $resmeta = $self->{_res}->[3] // {};
+    unless ($resmeta->{"cmdline.display_result"}//1) {
+        $self->{_res}[2] = undef;
+    }
+
+    my $format = $self->format;
     die "ERROR: Unknown output format '$format', please choose one of: ".
         join(", ", sort keys(%$Perinci::Result::Format::Formats))."\n"
             unless $Perinci::Result::Format::Formats{$format};
-
     $self->{_fres} = Perinci::Result::Format::format($self->{_res}, $format);
+
+    # display result
+    if ($resmeta->{"cmdline.page_result"}) {
+        my $pager = $resmeta->{"cmdline.pager"} //
+            $ENV{PAGER};
+        unless (defined $pager) {
+            $pager = "less -FRS" if File::Which::which("less");
+        }
+        unless (defined $pager) {
+            $pager = "more" if File::Which::which("more");
+        }
+        unless (defined $pager) {
+            die "Can't determine PAGER";
+        }
+        $log->tracef("Paging output using %s", $pager);
+        open my($p), "| $pager";
+        print $p $self->{_fres};
+    } else {
+        print $self->{_fres};
+    }
 }
 
 sub get_subcommand {
@@ -356,6 +415,16 @@ Common options:
     --format=FMT    Choose output format
 _
     $self->add_doc_lines($self->loc($text), "");
+
+    $text = <<_;
+Undo options:
+
+    --undo <ID>     Undo previous action (use --list-history to get IDs)
+    --redo <ID>     Redo previous undo action (use --list-history to get IDs)
+    --list-history  List actions history
+    --clear-history Clear actions history
+_
+    $self->add_doc_lines($self->loc($text), "") if $self->undo;
 }
 
 sub doc_parse_options {}
@@ -453,40 +522,80 @@ sub run_subcommand {
     require File::Which;
 
     my ($self) = @_;
+    my $tx_id;
+
+    # begin transaction (if using undo)
+    if ($self->undo) {
+        require UUID::Random;
+        $tx_id = UUID::Random::generate();
+        $tx_id =~ s/-.+//; # 32bit suffices for small number of txs
+        my $summary = join(" ", @{ $self->{_orig_argv} });
+        my $res = $self->_pa->request(
+            begin_tx => "/", {tx_id=>$tx_id, summary=>$summary});
+        if ($res->[0] != 200) {
+            $self->{_res} = [$res->[0],
+                             "Can't start transaction '$tx_id': $res->[1]"];
+            return 1;
+        }
+    }
 
     # call function
     $self->{_res} = $self->_pa->request(
         call => $self->{_subcommand}{url},
-        {args=>$self->{_args}});
-    $log->tracef("res=%s", $self->{_res});
+        {args=>$self->{_args}, tx_id=>$tx_id});
+    $log->tracef("call res=%s", $self->{_res});
 
-    my $resmeta = $self->{_res}->[3] // {};
-    unless ($resmeta->{"cmdline.display_result"}//1) {
-        $self->{_res}[2] = undef;
-    }
-    $self->format_result();
-
-    # display result
-    if ($resmeta->{"cmdline.page_result"}) {
-        my $pager = $resmeta->{"cmdline.pager"} //
-            $ENV{PAGER};
-        unless (defined $pager) {
-            $pager = "less -FRS" if File::Which::which("less");
+    # commit transaction (if using undo)
+    if ($self->undo && $self->{_res}[0] =~ /\A(?:200|304)\z/) {
+        my $res = $self->_pa->request(commit_tx => "/", {tx_id=>$tx_id});
+        if ($res->[0] != 200) {
+            $self->{_res} = [$res->[0],
+                             "Can't commi transaction '$tx_id': $res->[1]"];
+            return 1;
         }
-        unless (defined $pager) {
-            $pager = "more" if File::Which::which("more");
-        }
-        unless (defined $pager) {
-            die "Can't determine PAGER";
-        }
-        $log->tracef("Paging output using %s", $pager);
-        open my($p), "| $pager";
-        print $p $self->{_fres};
-    } else {
-        print $self->{_fres};
     }
 
     $self->{_res}[0] == 200 ? 0 : $self->{_res}[0] - 300;
+}
+
+sub run_list_history {
+    my $self = shift;
+    my $res = $self->_pa->request(list_txs => "/", {detail=>1});
+    $log->tracef("list_txs res=%s", $res);
+    return 1 unless $res->[0] == 200;
+    $res->[2] = [sort {($b->{tx_end_time}//0) <=> ($a->{tx_end_time}//0)}
+                     @{$res->[2]}];
+    my @txs;
+    for my $tx (@{$res->[2]}) {
+        next unless $tx->{tx_status} =~ /[CUX]/;
+        push @txs, {
+            id      => $tx->{tx_id},
+            time    => scalar(localtime $tx->{tx_end_time}),
+            status  => $tx->{tx_status} eq 'X' ? 'error' :
+                $tx->{tx_status} eq 'U' ? 'undone' : '',
+            summary => $tx->{tx_summary},
+        };
+    }
+    $self->{_res} = [200, "OK", \@txs];
+    0;
+}
+
+sub run_clear_history {
+    my $self = shift;
+    $self->{_res} = $self->_pa->request(discard_all_txs => "/");
+    $self->{_res}[0] == 200 ? 0 : 1;
+}
+
+sub run_undo {
+    my $self = shift;
+    $self->{_res} = $self->_pa->request(undo => "/", {tx_id=>$self->{_tx_id}});
+    $self->{_res}[0] == 200 ? 0 : 1;
+}
+
+sub run_redo {
+    my $self = shift;
+    $self->{_res} = $self->_pa->request(redo => "/", {tx_id=>$self->{_tx_id}});
+    $self->{_res}[0] == 200 ? 0 : 1;
 }
 
 sub gen_common_opts {
@@ -534,22 +643,26 @@ sub gen_common_opts {
         }
     }
 
-    # UNFINISHED. check whether we should add undo related command-line
-    # arguments
-
-    #{
-    #    last unless $spec || $args{undo};
-    #    require Sub::Spec::Object;
-    #    my $ssspec = Sub::Spec::Object::ssspec($spec);
-    #    last unless $ssspec->feature('undo');
-    #
-    #    $opts{undo_action}    = 'do';
-    #    push @getopts, undo_data => sub { $opts{undo_data} = shift };
-    #    push @getopts, undo      => sub { $opts{undo_action} = 'undo' };
-    #    push @getopts, redo      => sub { $opts{undo_action} = 'redo' };
-    #    push @getopts, list_undos=> sub { $opts{undo_action} = 'list_undos' };
-    #    push @getopts, clear_undos=>sub { $opts{undo_action} = 'clear_undos' };
-    #}
+    if ($self->undo) {
+        push @getopts, "list-history" => sub {
+            unshift @{$self->{_actions}}, 'list_history';
+            $self->{_check_required_args} = 0;
+        };
+        push @getopts, "clear-history" => sub {
+            unshift @{$self->{_actions}}, 'clear_history';
+            $self->{_check_required_args} = 0;
+        };
+        push @getopts, "undo=s" => sub {
+            unshift @{$self->{_actions}}, 'undo';
+            $self->{_tx_id} = $_[1];
+            $self->{_check_required_args} = 0;
+        };
+        push @getopts, "redo=s" => sub {
+            unshift @{$self->{_actions}}, 'redo';
+            $self->{_tx_id} = $_[1];
+            $self->{_check_required_args} = 0;
+        };
+    }
 
     $log->tracef("GetOptions spec for parsing common options: %s", \@getopts);
     $log->tracef("<- gen_common_opts()");
@@ -561,6 +674,7 @@ sub parse_common_opts {
     my ($self) = @_;
 
     my @orig_ARGV = @ARGV;
+    $self->{_orig_argv} = \@orig_ARGV;
 
     my $old_go_opts = Getopt::Long::Configure(
         "pass_through", "no_ignore_case");
@@ -731,6 +845,7 @@ sub run {
         $log->tracef("<- %s(), return=%s", $meth, $exit_code);
         last if defined $exit_code;
     }
+    $self->format_and_display_result;
 
     $log->tracef("<- CmdLine's run(), exit code=%s", $exit_code);
     if ($self->exit) { exit $exit_code } else { return $exit_code }
@@ -872,12 +987,30 @@ convenience when typing in command line.
 
 =head2 undo => BOOL (optional, default 0)
 
-UNFINISHED. If set to 1, --undo and --undo-dir will be added to command-line
-options. --undo is used to perform undo: -undo and -undo_data will be passed to
-subroutine, an error will be thrown if subroutine does not have C<undo>
-features. --undo-dir is used to set location of undo data (default C<~/.undo>;
-undo directory will be created if not exists; each subroutine will have its own
-subdir here).
+Whether to enable undo/redo functionality. Some things to note if you intend to
+use undo:
+
+=over 4
+
+=item * These command-line options will be recognized
+
+C<--undo>, C<--redo>, C<--list-history>, C<--clear-history>.
+
+=item * Transactions will be used
+
+use_tx=>1 will be passed to L<Perinci::Access>, which will cause it to
+initialize the transaction manager. Riap requests begin_tx and commit_tx will
+enclose the call request to function.
+
+=item * Called function will need to support transaction and undo
+
+Function which do not meet qualifications will refuse to be called.
+
+=back
+
+=head2 undo_dir => STR (optional, default ~/.<program_name>/.undo)
+
+Where to put undo data. This is actually the transaction manager's data dir.
 
 
 =head1 METHODS
