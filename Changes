@@ -1,5 +1,13 @@
 Revision history for Perinci-CmdLine
 
+0.51     2012-06-22 (SHARYANTO)
+
+         [ENHANCEMENTS]
+
+         - Don't use transactions when dry run, so transaction list is not full
+           with dry run calls.
+
+
 0.50     2012-06-22 (SHARYANTO)
 
          [ENHANCEMENTS]
