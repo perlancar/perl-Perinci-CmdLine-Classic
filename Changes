@@ -1,5 +1,15 @@
 Revision history for Perinci-CmdLine
 
+0.50     2012-06-22 (SHARYANTO)
+
+         [ENHANCEMENTS]
+
+         - Interpret --dry-run (or environment DRY_RUN=1) and pass -dry_run=>1
+           to functions that have the dry_run feature.
+
+         - Don't treat 304 status as error (still return exit code 0).
+
+
 0.49     2012-06-22 (SHARYANTO)
 
          [ENHANCEMENTS]
