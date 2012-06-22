@@ -89,6 +89,13 @@ msgstr ""
 "    --history       Daftar sejarah tindakan sebelumnya\n"
 "    --clear-history Bersihkan daftar sejarah tindakan\n"
 
+msgid  "Special options"
+msgstr "Opsi khusus"
+
+# --dry-run
+msgid  "Run in simulation mode (can also be set via environment DRY_RUN=1)"
+msgstr "Modus simulasi (juga bisa lewat variabel lingkungan DRY_RUN=1)"
+
 msgid  "Show version"
 msgstr "Tampilkan versi"
 

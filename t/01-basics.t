@@ -72,6 +72,17 @@ sub f2 {
     [200, "OK", $args{a1}];
 }
 
+$SPEC{sp1} = {
+    v => 1.1,
+    summary => 'This function supports dry run',
+    args => {},
+    features => {dry_run=>1},
+};
+sub sp1 {
+    my %args = @_;
+    [200, "OK", "dry_run=".($args{-dry_run} ? 1:0)];
+}
+
 package main;
 
 subtest 'completion' => sub {
@@ -114,6 +125,14 @@ subtest 'completion' => sub {
         comp_line   => 'CMD arg1 ',
         comp_point0 => '         ^',
         result      => [qw(e f g h)],
+    );
+    test_complete(
+        name        => '--dry-run',
+        argv        => [],
+        args        => {url=>'/Foo/sp1'},
+        comp_line   => 'CMD --dr',
+        comp_point0 => '        ^',
+        result      => [qw(--dry-run)],
     );
 };
 
@@ -241,6 +260,29 @@ for (qw(--list -l)) {
 # XXX test arg: custom general help
 # XXX test arg: per-subcommand help
 # XXX test arg: custom per-subcommand help
+
+{
+    local $ENV{DRY_RUN} = 0;
+    test_run(name      => 'dry-run (0)',
+         args      => {url=>'/Foo/sp1'},
+         argv      => [],
+         exit_code => 0,
+         output_re => qr/dry_run=0/m,
+     );
+    test_run(name      => 'dry-run (1)',
+         args      => {url=>'/Foo/sp1'},
+         argv      => [qw/--dry-run/],
+         exit_code => 0,
+         output_re => qr/dry_run=1/m,
+     );
+    $ENV{DRY_RUN} = 1;
+    test_run(name      => 'dry-run (via env)',
+         args      => {url=>'/Foo/sp1'},
+         argv      => [],
+         exit_code => 0,
+         output_re => qr/dry_run=1/m,
+     );
+}
 
 # XXX test arg: undo
 

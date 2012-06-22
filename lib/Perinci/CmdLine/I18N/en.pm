@@ -89,6 +89,13 @@ msgstr ""
 "    --history       List actions history\n"
 "    --clear-history Clear actions history\n"
 
+msgid  "Special options"
+msgstr "Special options"
+
+# --dry-run
+msgid  "Run in simulation mode (can also be set via environment DRY_RUN=1)"
+msgstr "Run in simulation mode (can also be set via environment DRY_RUN=1)"
+
 msgid  "Show version"
 msgstr "Show version"
 
