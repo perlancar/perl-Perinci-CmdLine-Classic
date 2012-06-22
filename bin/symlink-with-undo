@@ -1,0 +1,54 @@
+#!/usr/bin/perl
+
+use 5.010;
+use strict;
+use warnings;
+
+use Perinci::CmdLine;
+
+Perinci::CmdLine->new(url=>'/Setup/File/Symlink/setup_symlink', undo=>1)->run;
+
+1;
+
+=head1 SYNOPSIS
+
+ # create a symlink
+ $ symlink-with-undo --symlink /tmp/l1 --target target1
+
+ # this will replace symlink's target
+ $ symlink-with-undo --symlink /tmp/l1 --target target2
+
+ # list history
+ $ symlink-with-undo --list-history
+
+ # undo last action (get actual <id> from previous command), now symlink points
+ # back to 'target1'
+ $ symlink-with-undo --undo <id>
+
+ # undo again, now symlink '/tmp/l1' is removed
+ $ symlink-with-undo --undo <id>
+
+ # redo, now symlink '/tmp/l1' is recreated and points to 'target1'
+ $ symlink-with-undo --undo <id>
+
+ # redo, now symlink '/tmp/l1' points to 'target2'
+ $ symlink-with-undo --redo <id>
+
+ # forget history
+ $ symlink-with-undo --clear-history
+
+ # display help for more options
+ $ symlink-with-undo --help
+
+
+=head1 DESCRIPTION
+
+This script is just a command-line interface to L<Setup::File::Symlink> to
+demonstrate undo capability via command-line.
+
+
+=head1 SEE ALSO
+
+L<Perinci::CmdLine>
+
+L<Setup::File::Symlink>
