@@ -563,17 +563,18 @@ sub run_history {
     my $res = $self->_pa->request(list_txs => "/", {detail=>1});
     $log->tracef("list_txs res=%s", $res);
     return 1 unless $res->[0] == 200;
-    $res->[2] = [sort {($b->{tx_end_time}//0) <=> ($a->{tx_end_time}//0)}
+    $res->[2] = [sort {($b->{tx_commit_time}//0) <=> ($a->{tx_commit_time}//0)}
                      @{$res->[2]}];
     my @txs;
     for my $tx (@{$res->[2]}) {
         next unless $tx->{tx_status} =~ /[CUX]/;
         push @txs, {
-            id      => $tx->{tx_id},
-            time    => scalar(localtime $tx->{tx_end_time}),
-            status  => $tx->{tx_status} eq 'X' ? 'error' :
+            id          => $tx->{tx_id},
+            start_time  => scalar(localtime $tx->{tx_start_time}),
+            commit_time => scalar(localtime $tx->{tx_commit_time}),
+            status      => $tx->{tx_status} eq 'X' ? 'error' :
                 $tx->{tx_status} eq 'U' ? 'undone' : '',
-            summary => $tx->{tx_summary},
+            summary     => $tx->{tx_summary},
         };
     }
     $self->{_res} = [200, "OK", \@txs];
@@ -588,13 +589,13 @@ sub run_clear_history {
 
 sub run_undo {
     my $self = shift;
-    $self->{_res} = $self->_pa->request(undo => "/", {tx_id=>$self->{_tx_id}});
+    $self->{_res} = $self->_pa->request(undo => "/");
     $self->{_res}[0] == 200 ? 0 : 1;
 }
 
 sub run_redo {
     my $self = shift;
-    $self->{_res} = $self->_pa->request(redo => "/", {tx_id=>$self->{_tx_id}});
+    $self->{_res} = $self->_pa->request(redo => "/");
     $self->{_res}[0] == 200 ? 0 : 1;
 }
 
@@ -645,21 +646,21 @@ sub gen_common_opts {
 
     if ($self->undo) {
         push @getopts, "history" => sub {
-            unshift @{$self->{_actions}}, 'list_history';
+            unshift @{$self->{_actions}}, 'history';
             $self->{_check_required_args} = 0;
         };
         push @getopts, "clear-history" => sub {
             unshift @{$self->{_actions}}, 'clear_history';
             $self->{_check_required_args} = 0;
         };
-        push @getopts, "undo=s" => sub {
+        push @getopts, "undo" => sub {
             unshift @{$self->{_actions}}, 'undo';
-            $self->{_tx_id} = $_[1];
+            #$self->{_tx_id} = $_[1];
             $self->{_check_required_args} = 0;
         };
-        push @getopts, "redo=s" => sub {
+        push @getopts, "redo" => sub {
             unshift @{$self->{_actions}}, 'redo';
-            $self->{_tx_id} = $_[1];
+            #$self->{_tx_id} = $_[1];
             $self->{_check_required_args} = 0;
         };
     }
