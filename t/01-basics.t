@@ -17,6 +17,14 @@ our %SPEC;
 
 $SPEC{':package'} = {v=>1.1};
 
+$SPEC{noop} = {
+    v => 1.1,
+    summary => 'Always return noop',
+};
+sub noop {
+    [304, "Nothing done"];
+}
+
 $SPEC{ok} = {
     v => 1.1,
     summary => 'Always return ok',
@@ -283,6 +291,12 @@ for (qw(--list -l)) {
          output_re => qr/dry_run=1/m,
      );
 }
+
+test_run(name      => 'noop',
+         args      => {url=>'/Foo/noop'},
+         argv      => [],
+         exit_code => 0,
+     );
 
 # XXX test arg: undo
 

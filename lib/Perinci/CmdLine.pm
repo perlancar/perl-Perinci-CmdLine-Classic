@@ -571,12 +571,12 @@ sub run_subcommand {
         my $res = $self->_pa->request(commit_tx => "/", {tx_id=>$tx_id});
         if ($res->[0] != 200) {
             $self->{_res} = [$res->[0],
-                             "Can't commi transaction '$tx_id': $res->[1]"];
+                             "Can't commit transaction '$tx_id': $res->[1]"];
             return 1;
         }
     }
 
-    $self->{_res}[0] == 200 ? 0 : $self->{_res}[0] - 300;
+    $self->{_res}[0] =~ /\A(?:200|304)\z/ ? 0 : $self->{_res}[0] - 300;
 }
 
 sub run_history {
