@@ -722,7 +722,7 @@ sub parse_subcommand_opts {
 
     my ($self) = @_;
     my $sc = $self->{_subcommand};
-    return unless $self->{_subcommand};
+    return unless $sc && $sc->{url};
     $log->tracef("-> parse_subcommand_opts()");
 
     my $res = $self->_pa->request(meta=>$sc->{url});
