@@ -31,7 +31,7 @@ has url => (is => 'rw');
 has summary => (is => 'rw');
 has subcommands => (is => 'rw');
 has exit => (is => 'rw', default=>sub{1});
-has log_any_app => (is => 'rw');
+has log_any_app => (is => 'rw', default=>sub{$ENV{LOG} // 1});
 has custom_completer => (is => 'rw');
 has custom_arg_completer => (is => 'rw');
 has dash_to_underscore => (is => 'rw', default=>sub{1});
@@ -664,7 +664,7 @@ sub gen_common_opts {
     );
 
     # convenience for Log::Any::App-using apps
-    if ($self->log_any_app // 1) {
+    if ($self->log_any_app) {
         for (qw/quiet verbose debug trace log-level/) {
             push @getopts, $_ => sub {};
         }
@@ -811,7 +811,7 @@ sub _set_subcommand {
 
     unless ($ENV{COMP_LINE}) {
         $self->_load_log_any_app if
-            $self->log_any_app // $self->{_subcommand}{log_any_app} // 1;
+            $self->{_subcommand}{log_any_app} // $self->log_any_app;
     }
 
     $log->tracef("actions=%s, subcommand=%s",
@@ -1009,6 +1009,12 @@ only.
 
 If set to 0, instead of exiting with exit(), run() will return the exit code
 instead.
+
+=head2 log_any_app => BOOL
+
+Whether to load L<Log::Any::App>. Default is yes, or to look at LOG environment
+variable. For faster startup, you might want to disable this or just use LOG=0
+when running your scripts.
 
 =head2 custom_completer => CODEREF
 
