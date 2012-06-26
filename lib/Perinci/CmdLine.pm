@@ -255,7 +255,7 @@ sub run_completion {
             $do_arg++; last;
         }
 
-        # e.g: spanel delete-account --yaml --acc^
+        # e.g: spanel delete-account --format=yaml --acc^
         if ($cword > 0 && !$space_typed && $word ne $scn) {
             $log->trace("do_arg because subcommand name has been typed ".
                             "in past words");
@@ -266,7 +266,7 @@ sub run_completion {
                      $cword, $words, $scn, $space_typed);
     }
 
-    my @top_opts; # contain --help, -h, --yaml, etc.
+    my @top_opts; # contain --help, -h, etc.
     for my $o (keys %{{@{ $self->{_getopts_common} }}}) {
         $o =~ s/^--//;
         my @o = split /\|/, $o;
@@ -407,11 +407,6 @@ sub doc_gen_common_options {
     my $text = <<_;
 Common options:
 
-    --yaml, -y      Format result as YAML
-    --json, -j      Format result as JSON
-    --text-pretty   Format result as pretty formatted text
-    --text-simple   Format result as simple formatted text
-    --text         (Default) Use --text-pretty, or --text-simple when run piped
     --format=FMT    Choose output format
 _
     $self->add_doc_lines($self->loc($text), "");
@@ -655,11 +650,6 @@ sub gen_common_opts {
             $self->{_check_required_args} = 0;
         },
 
-        "yaml|y"      => sub { $self->format('yaml')        },
-        "json|j"      => sub { $self->format('json')        },
-        "text-pretty" => sub { $self->format('text-pretty') },
-        "text-simple" => sub { $self->format('text-simple') },
-        "text"        => sub { $self->format('text')        },
         "format=s"    => sub { $self->format($_[1])         },
     );
 

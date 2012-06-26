@@ -102,10 +102,10 @@ subtest 'completion' => sub {
         comp_point0 => '     ^',
         result      => [qw(
                            --action
-                           --arg1 --arg2 --arg3 --debug --format --help --json
-                           --list --log-level --quiet --text --text-pretty
-                           --text-simple --trace --verbose --version --yaml
-                           -\? -h -j -l -v -y
+                           --arg1 --arg2 --arg3 --debug --format --help
+                           --list --log-level --quiet
+                           --trace --verbose --version
+                           -\? -h -l -v
                       )],
     );
     test_complete(
