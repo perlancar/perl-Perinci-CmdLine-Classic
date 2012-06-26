@@ -61,7 +61,7 @@ Examples:
     $me /Foo/Bar/func1 -h
 
   Execute a command and display the result as YAML:
-    $me http://example.org/api/Foo/Bar/func --yaml --arg 12
+    $me http://example.org/api/Foo/Bar/func --format=yaml --arg 12
 
   Execute a subcommand:
     $me -s "/Foo/Bar/func1 sc1" -s "/Foo/Baz/func1 sc2" sc2 --arg 12
