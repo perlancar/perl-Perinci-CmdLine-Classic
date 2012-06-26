@@ -4,10 +4,13 @@ Revision history for Perinci-CmdLine
 
          [INCOMPATIBLE CHANGES]
 
-         - Remove options --text, --yaml, --text-pretty, --text-nopretty,
-           --json; use --format for now. This is to reduce the possibility of
-           collision with function argument options (especially things like --text
-           are common as function arguments).
+         - Remove options --yaml, --json, --text, --text-pretty, --text-simple;
+           use --format for now. This is to reduce the possibility of collision
+           with function argument options (especially things like --text are
+           common as function arguments).
+
+           In general Perinci::CmdLine should introduce as few command-line
+           options as possible to avoid collisions.
 
          [FIXES]
 
