@@ -103,6 +103,22 @@ subtest 'completion' => sub {
         result      => [qw(
                            --action
                            --arg1 --arg2 --arg3 --debug --format --help
+                           --log-level --quiet
+                           --trace --verbose --version
+                           -\? -h -v
+                      )],
+    );
+    test_complete(
+        name        => 'arg name (with subcommands)',
+        argv        => [],
+        args      => {subcommands=>{
+            ok=>{url=>'/Foo/ok'},
+            wo=>{url=>'/Foo/want_odd'}}},
+        comp_line   => 'CMD -',
+        comp_point0 => '     ^',
+        result      => [qw(
+                           --action
+                           --arg1 --arg2 --arg3 --debug --format --help
                            --list --log-level --quiet
                            --trace --verbose --version
                            -\? -h -l -v

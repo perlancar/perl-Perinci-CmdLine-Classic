@@ -635,10 +635,6 @@ sub gen_common_opts {
                 $self->{_force_subcommand} = 1;
             }
         },
-        "list|l"     => sub {
-            unshift @{$self->{_actions}}, 'list';
-            $self->{_check_required_args} = 0;
-        },
         "version|v"  => sub {
             die "ERROR: 'url' not set, required for --version\n"
                 unless $self->url;
@@ -652,6 +648,15 @@ sub gen_common_opts {
 
         "format=s"    => sub { $self->format($_[1])         },
     );
+
+    if ($self->subcommands) {
+        push @getopts, (
+            "list|l"     => sub {
+                unshift @{$self->{_actions}}, 'list';
+                $self->{_check_required_args} = 0;
+            },
+        );
+    }
 
     # convenience for Log::Any::App-using apps
     if ($self->log_any_app) {
