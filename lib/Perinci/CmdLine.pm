@@ -244,7 +244,7 @@ sub run_completion {
             $do_arg++; last;
         }
 
-        my $scn = $sc->{name};
+        my $scn = $sc->{name} // "";
 
         # whether user typed 'blah blah ^' or 'blah blah^'
         my $space_typed = !defined($word);
