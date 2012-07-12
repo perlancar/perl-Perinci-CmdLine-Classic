@@ -777,8 +777,7 @@ sub _set_subcommand {
             my $sc = $self->get_subcommand($scn);
             unless ($sc) {
                 if ($ENV{COMP_LINE}) {
-                    require Object::BlankStr;
-                    die Object::BlankStr->new;
+                    goto L1;
                 } else {
                     die "ERROR: Unknown subcommand '$scn', use '".
                         $self->program_name.
@@ -802,6 +801,7 @@ sub _set_subcommand {
             push @{$self->{_actions}}, 'subcommand';
         }
     }
+  L1:
     unshift @{$self->{_actions}}, 'completion' if $ENV{COMP_LINE};
     push @{$self->{_actions}}, 'help' if !@{$self->{_actions}};
 
