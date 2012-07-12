@@ -80,6 +80,18 @@ sub f2 {
     [200, "OK", $args{a1}];
 }
 
+$SPEC{f2r} = {
+    v => 1.1,
+    summary => 'This function has required positional argument',
+    args => {
+        a1 => {schema=>'str*', req=>1, pos=>0},
+    },
+};
+sub f2r {
+    my %args = @_;
+    [200, "OK", scalar(reverse $args{a1})];
+}
+
 $SPEC{sp1} = {
     v => 1.1,
     summary => 'This function supports dry run',
@@ -124,6 +136,25 @@ subtest 'completion' => sub {
                            -\? -h -l -v
                       )],
     );
+    test_complete(
+        name        => 'arg name (with subcommands + default_subcommand)',
+        argv        => [],
+        args      => {subcommands=>{
+            ok=>{url=>'/Foo/ok'},
+            wo=>{url=>'/Foo/want_odd'}},
+                  default_subcommand=>'wo'},
+        comp_line   => 'CMD -',
+        comp_point0 => '     ^',
+        result      => [qw(
+                           --action
+                           --cmd
+                           --debug --format --help
+                           --list --log-level --quiet
+                           --trace --verbose --version
+                           -\? -h -l -v
+                      )],
+    );
+
     test_complete(
         name        => 'arg value from arg spec "in" (single sub)',
         argv        => [],
@@ -198,6 +229,25 @@ test_run(name      => 'unknown subcommand = error',
              wo=>{url=>'/Foo/want_odd'}}},
          argv      => [qw/foo/],
          dies      => 1,
+     );
+
+test_run(name      => 'default_subcommand (1)',
+         args      => {subcommands=>{
+             f2=>{url=>'/Foo/f2'},
+             f2r=>{url=>'/Foo/f2r'}},
+                       default_subcommand=>'f2'},
+         argv      => [qw/mirror/],
+         output_re => qr/mirror/,
+         exit_code => 0,
+     );
+test_run(name      => 'default_subcommand (2, other subcommand via --cmd)',
+         args      => {subcommands=>{
+             f2=>{url=>'/Foo/f2'},
+             f2r=>{url=>'/Foo/f2r'}},
+                       default_subcommand=>'f2'},
+         argv      => [qw/--cmd=f2r mirror/],
+         output_re => qr/rorrim/,
+         exit_code => 0,
      );
 
 test_run(name      => 'arg: dash_to_underscore=0',

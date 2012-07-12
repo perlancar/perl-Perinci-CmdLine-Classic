@@ -27,6 +27,7 @@ msgstr "%1 version %2"
 
 # usage
 
+# help when there is no subcommands
 msgid  ""
 "Usage:\n"
 "\n"
@@ -40,6 +41,7 @@ msgstr ""
 "    %1 --version (or -v)\n"
 "    %1 [common options] [options]\n"
 
+# help when there is subcommands
 msgid  ""
 "Usage:\n"
 "\n"
@@ -54,6 +56,24 @@ msgstr ""
 "    %1 --version (or -v)\n"
 "    %1 --list (or -l)\n"
 "    %1 SUBCOMMAND [common options] [options]\n"
+
+# help when there is subcommands + default_subcommand
+msgid  ""
+"Usage:\n"
+"\n"
+"    %1 --help (or -h, -?)\n"
+"    %1 --version (or -v)\n"
+"    %1 --list (or -l)\n"
+"    %1 (common options) (options)\n"
+"    %1 --cmd=OTHER_SUBCOMMAND (common options) (options)\n"
+msgstr ""
+"Usage:\n"
+"\n"
+"    %1 --help (or -h, -?)\n"
+"    %1 --version (or -v)\n"
+"    %1 --list (or -l)\n"
+"    %1 [common options] [options]\n"
+"    %1 --cmd=OTHER_SUBCOMMAND [common options] [options]\n"
 
 msgid  ""
 "Common options:\n"

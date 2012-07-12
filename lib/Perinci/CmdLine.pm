@@ -30,6 +30,7 @@ has program_name => (
 has url => (is => 'rw');
 has summary => (is => 'rw');
 has subcommands => (is => 'rw');
+has default_subcommand => (is => 'rw');
 has exit => (is => 'rw', default=>sub{1});
 has log_any_app => (is => 'rw', default=>sub{$ENV{LOG} // 1});
 has custom_completer => (is => 'rw');
@@ -380,7 +381,18 @@ sub doc_gen_usage {
     my ($self) = @_;
     my $text;
     if ($self->subcommands) {
-        $text = <<_;
+        if (defined $self->default_subcommand) {
+            $text = <<_;
+Usage:
+
+    [_1] --help (or -h, -?)
+    [_1] --version (or -v)
+    [_1] --list (or -l)
+    [_1] (common options) (options)
+    [_1] --cmd=OTHER_SUBCOMMAND (common options) (options)
+_
+        } else {
+            $text = <<_;
 Usage:
 
     [_1] --help (or -h, -?)
@@ -388,6 +400,7 @@ Usage:
     [_1] --list (or -l)
     [_1] SUBCOMMAND (common options) (options)
 _
+        }
     } else {
         $text = <<_;
 Usage:
@@ -629,26 +642,26 @@ sub gen_common_opts {
     $log->tracef("-> gen_common_opts()");
 
     my @getopts = (
-        "action=s"   => sub {
+        "action=s" => sub {
             # 'action=subcommand' can be used to override --help (or --list,
             # --version) if one of function arguments happens to be 'help',
-            # 'list', or 'version'. currently udocumented.
+            # 'list', or 'version'. currently this is undocumented.
             if ($_[1] eq 'subcommand') {
                 $self->{_force_subcommand} = 1;
             }
         },
-        "version|v"  => sub {
+        "version|v" => sub {
             die "ERROR: 'url' not set, required for --version\n"
                 unless $self->url;
             unshift @{$self->{_actions}}, 'version';
             $self->{_check_required_args} = 0;
         },
-        "help|h|?"   => sub {
+        "help|h|?" => sub {
             unshift @{$self->{_actions}}, 'help';
             $self->{_check_required_args} = 0;
         },
 
-        "format=s"    => sub { $self->format($_[1])         },
+        "format=s" => sub { $self->format($_[1]) },
     );
 
     if ($self->subcommands) {
@@ -658,6 +671,15 @@ sub gen_common_opts {
                 $self->{_check_required_args} = 0;
             },
         );
+        if (defined $self->default_subcommand) {
+            push @getopts, (
+                "cmd=s" => sub {
+                    # 'cmd=SUBCOMMAND_NAME' can be used to select other
+                    # subcommands when default_subcommand is in effect.
+                    $self->{_selected_subcommand} = $_[1];
+                },
+            );
+        }
     }
 
     # convenience for Log::Any::App-using apps
@@ -771,27 +793,34 @@ sub _set_subcommand {
     my ($self) = @_;
 
     if ($self->subcommands) {
-        if (@ARGV) {
-            my $scn = shift @ARGV;
+        my $scn;
+        if (defined $self->{_selected_subcommand}) {
+            $scn = $self->{_selected_subcommand};
+        } elsif (defined $self->default_subcommand) {
+            $scn = $self->default_subcommand;
+        } elsif (@ARGV) {
+            $scn = shift @ARGV;
             $self->{_scn_in_argv} = $scn;
             $scn =~ s/-/_/g if $self->dash_to_underscore;
-            my $sc = $self->get_subcommand($scn);
-            unless ($sc) {
-                if ($ENV{COMP_LINE}) {
-                    goto L1;
-                } else {
-                    die "ERROR: Unknown subcommand '$scn', use '".
-                        $self->program_name.
-                            " -l' to list available subcommands\n";
-                }
-            }
-            $self->{_subcommand} = $sc;
-            $self->{_subcommand}{name} = $scn;
-            if ($self->{_force_subcommand}) {
-                unshift @{$self->{_actions}}, 'subcommand';
+        } else {
+            goto L1;
+        }
+        my $sc = $self->get_subcommand($scn);
+        unless ($sc) {
+            if ($ENV{COMP_LINE}) {
+                goto L1;
             } else {
-                push @{$self->{_actions}}, 'subcommand';
+                die "ERROR: Unknown subcommand '$scn', use '".
+                    $self->program_name.
+                        " -l' to list available subcommands\n";
             }
+        }
+        $self->{_subcommand} = $sc;
+        $self->{_subcommand}{name} = $scn;
+        if ($self->{_force_subcommand}) {
+            unshift @{$self->{_actions}}, 'subcommand';
+        } else {
+            push @{$self->{_actions}}, 'subcommand';
         }
     } else {
         $self->{_subcommand} = {url=>$self->url, summary=>$self->summary};
@@ -1001,6 +1030,11 @@ First, if called without argument C<name> (usually when doing --list) it must
 return a hashref of subcommand specifications. If called with argument C<name>
 it must return subcommand specification for subcommand with the requested name
 only.
+
+=head2 default_subcommand => NAME
+
+If set, subcommand will always be set to this instead of from the first
+argument. To use other subcommands, you will have to use --cmd option.
 
 =head2 exit => BOOL (default 1)
 
