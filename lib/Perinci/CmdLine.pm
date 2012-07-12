@@ -270,6 +270,7 @@ sub run_completion {
     my @top_opts; # contain --help, -h, etc.
     for my $o (keys %{{@{ $self->{_getopts_common} }}}) {
         $o =~ s/^--//;
+        $o =~ s/=.+$//;
         my @o = split /\|/, $o;
         for (@o) { push @top_opts, length > 1 ? "--$_" : "-$_" }
     }

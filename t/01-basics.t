@@ -118,7 +118,7 @@ subtest 'completion' => sub {
         comp_point0 => '     ^',
         result      => [qw(
                            --action
-                           --arg1 --arg2 --arg3 --debug --format --help
+                           --debug --format --help
                            --list --log-level --quiet
                            --trace --verbose --version
                            -\? -h -l -v
