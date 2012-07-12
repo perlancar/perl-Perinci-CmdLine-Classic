@@ -208,7 +208,8 @@ sub run_list {
 sub run_version {
     my ($self) = @_;
 
-    my $url = $self->{_subcommand} ? $self->{_subcommand}{url} : $self->url;
+    my $url = $self->{_subcommand} && $self->{_subcommand}{url} ?
+        $self->{_subcommand}{url} : $self->url;
     my $res = $self->_pa->request(meta => $url);
     my $ver;
     if ($res->[0] == 200) {
