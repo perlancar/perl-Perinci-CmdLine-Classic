@@ -1,5 +1,27 @@
 Revision history for Perinci-CmdLine
 
+0.53     2012-07-12 (SHARYANTO)
+
+         [ENHANCEMENTS]
+
+         - Add 'default_subcommand' attribute. If set, subcommand name will be
+           taken from this instead of first command-line argument. To access
+           other subcommands, users will need to give --cmd command-line option.
+
+         - Common options --list will only be added if there are subcommands
+           defined.
+
+         [BUG FIXES]
+
+         - A couple of fixes to tab completion and perl undef warnings.
+
+         [OTHER]
+
+         - Example script 'symlink-with-undo' renamed to 'u-symlink' (to make it
+           consistent with the upcoming 'u-trash' script; see
+           File::Trash::Undoable).
+
+
 0.52     2012-06-26 (SHARYANTO)
 
          [INCOMPATIBLE CHANGES]
