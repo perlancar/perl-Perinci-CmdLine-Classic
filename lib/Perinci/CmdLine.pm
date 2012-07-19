@@ -1164,9 +1164,9 @@ the default C<less> or C<more>.
 =head2 How does Perinci::CmdLine compare with other CLI-app frameworks?
 
 The most important difference is that Perinci::CmdLine accesses your code
-through L<Riap> protocol, not directly. This means that aside from Perl code,
-Perinci::CmdLine can also provide CLI for code in other languages. For a very
-rough demo, download and run this PHP Riap::TCP server
+through L<Riap> protocol, not directly. This means that aside from local Perl
+code, Perinci::CmdLine can also provide CLI for code in remote hosts/languages.
+For a very rough demo, download and run this PHP Riap::TCP server
 https://github.com/sharyanto/php-Phinci/blob/master/demo/phi-tcpserve-terbilang.php
 on your system. After that, try running:
 
