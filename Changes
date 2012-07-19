@@ -1,5 +1,13 @@
 Revision history for Perinci-CmdLine
 
+0.54     2012-07-19 (SHARYANTO)
+
+         No functional changes. Add dependencies to
+         Perinci::Access::TCP::{Server,Client} for convenience. Requires
+         Perinci::Sub::GetArgs::Argv 0.18 which supports parsing nonscalar
+         arguments as JSON as well as YAML, also for convenience.
+
+
 0.53     2012-07-12 (SHARYANTO)
 
          [ENHANCEMENTS]
