@@ -1163,15 +1163,35 @@ the default C<less> or C<more>.
 
 =head2 How does Perinci::CmdLine compare with other CLI-app frameworks?
 
-Perinci::CmdLine is part of a more general metadata and wrapping framework
-(Perinci::* modules family). Aside from a command-line application, your
-metadata is also usable for other purposes, like providing access over HTTP/TCP,
-documentation, etc.
+The most important difference is that Perinci::CmdLine accesses your code
+through L<Riap> protocol, not directly. This means that aside from Perl code,
+Perinci::CmdLine can also provide CLI interface for code in other languages. For
+a very rough demo, download and run this PHP Riap::TCP server
+https://github.com/sharyanto/php-Phinci/blob/master/demo/phi-tcpserve-terbilang.php
+on your system. After that, try running:
 
-Configuration file support is missing (coming soon, most probably will be based
-on L<Config::Ini::OnDrugs>).
+ % peri-run riap+tcp://localhost:9090/terbilang --help
+ % peri-run riap+tcp://localhost:9090/terbilang 1234
 
-Also lacking is more documentation and more plugins.
+Everything from help message, calling, argument checking, tab completion works
+for remote code as well as local Perl code.
+
+Aside from this difference, there are several others:
+
+=over 4
+
+=item * Non-OO, function-centric
+
+If you want OO, there are already several frameworks out there for you, e.g.
+L<App::Cmd>, L<App::Rad>, L<MooX::Cmd>, etc.
+
+=item * Configuration file support is currently missing
+
+Coming soon, most probably will be based on L<Config::Ini::OnDrugs>.
+
+=item * Also lacking is more documentation and more plugins
+
+=back
 
 =head2 Why is nonscalar arguments parsed as YAML instead of JSON/etc?
 
