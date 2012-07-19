@@ -984,6 +984,14 @@ What you'll get:
 
 =item * Command-line options parsing
 
+Non-scalar arguments (array, hash, other nested) can also be passed as JSON or
+YAML (both will be attempted). For example, the C<tags> argument is defined as
+'array':
+
+ % mycmd --tags '[foo, bar, baz]' ; # interpreted as YAML
+ % mycmd --tags '["foo","bar"]'   ; # interpreted as JSON
+ % mycmd --tags '[foo, bar, baz'  ; # fails both
+
 =item * Help message (utilizing information from metadata, supports translation)
 
 =item * Tab completion for bash (including completion from remote code)
@@ -1192,20 +1200,6 @@ Coming soon, most probably will be based on L<Config::Ini::OnDrugs>.
 =item * Also lacking is more documentation and more plugins
 
 =back
-
-=head2 Why is nonscalar arguments parsed as YAML instead of JSON/etc?
-
-I think YAML is nicer in command-line because quotes are optional in a few
-places:
-
- $ cmd --array '[a, b, c]' --hash '{foo: bar}'
-
-versus:
-
- $ cmd --array '["a","b","c"]' --hash '{"foo":"bar"}'
-
-Though YAML requires spaces in some places where JSON does not. A flag to parse
-as JSON can be added upon request.
 
 =head2 How to add support for new output format (e.g. XML, HTML)?
 
