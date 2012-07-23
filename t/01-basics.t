@@ -467,8 +467,17 @@ subtest 'cmdline_src' => sub {
         argv => [$filename],
         dies => 1,
     );
-
-    # XXX test cmdline_src stdin (how to refill stdin?)
+    ($fh, $filename) = tempfile();
+    write_file($filename, 'bar');
+    open $fh, '<', $filename;
+    local *STDIN = $fh;
+    test_run(
+        name => 'stdin',
+        args => {url=>'/Foo/cmdline_src_stdin'},
+        argv => [],
+        exit_code => 0,
+        output_re => qr/a1=bar/,
+    );
 
     done_testing;
 };
