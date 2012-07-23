@@ -1167,6 +1167,11 @@ Instruct Perinci::CmdLine to use specified pager instead of C<$ENV{PAGER}> or
 the default C<less> or C<more>.
 
 
+=head1 ENVIRONMENT
+
+B<PERINCI_CMDLINE_PROGRAM_NAME>. Can be used to set CLI program name.
+
+
 =head1 FAQ
 
 =head2 How does Perinci::CmdLine compare with other CLI-app frameworks?
