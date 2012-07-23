@@ -141,3 +141,9 @@ msgstr "Untuk pesan bantuan subperintah tertentu, ketik '%1'"
 msgid  "or as argument #%1"
 msgstr "atau sebagai argumen #%1"
 
+msgid  "or from stdin"
+msgstr "atau dari masukan standar"
+
+msgid  "or from stdin/files"
+msgstr "atau dari berkas/masukan standar"
+

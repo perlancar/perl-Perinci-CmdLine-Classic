@@ -459,14 +459,22 @@ sub doc_gen_options {
         $ane = "no$ane" if $s->[0] eq 'bool' && $s->[1]{default};
         my $def = defined($s->[1]{default}) ?
             " (default: ".dump1($s->[1]{default}).")" : "";
+        my $src = $a->{cmdline_src} // "";
         my $text = sprintf(
-            "  --%s [%s]%s%s\n",
+            "  --%s [%s]%s\n",
             $ane,
             Perinci::ToUtil::sah2human_short($s),
-            (defined($a->{pos}) ? " (" .
-                 $self->loc("or as argument #[_1]",
-                            ($a->{pos}+1).($a->{greedy} ? "+":"")) . ")" : ""),
-            $def,
+            join(
+                "",
+                (defined($a->{pos}) ? " (" .
+                     $self->loc("or as argument #[_1]",
+                                ($a->{pos}+1).($a->{greedy} ? "+":"")).")":""),
+                ($src eq 'stdin' ?
+                     " (" . $self->loc("or from stdin") . ")" : ""),
+                ($src eq 'stdin_or_files' ?
+                     " (" . $self->loc("or from stdin/files") . ")" : ""),
+                $def
+            ),
         );
         $self->add_doc_lines($text);
         my $in;

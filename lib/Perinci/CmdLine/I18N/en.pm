@@ -141,3 +141,9 @@ msgstr "For help on a subcommand, type '%1'"
 msgid  "or as argument #%1"
 msgstr "or as argument #%1"
 
+msgid  "or from stdin"
+msgstr "or from stdin"
+
+msgid  "or from stdin/files"
+msgstr "or from stdin/files"
+
