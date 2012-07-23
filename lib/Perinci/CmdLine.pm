@@ -1210,6 +1210,31 @@ Coming soon, most probably will be based on L<Config::Ini::OnDrugs>.
 
 See L<Perinci::Result::Format>.
 
+=head2 How to accept input from STDIN (or files)?
+
+If you specify 'cmdline_src' to 'stdin' to a 'str' argument, the argument's
+value will be retrieved from standard input if not specified. Example:
+
+ use Perinci::CmdLine;
+ $SPEC{cmd} = {
+     v => 1.1,
+     args => {
+         arg => {
+             schema => 'str*',
+             cmdline_src => 'stdin',
+         },
+     },
+ };
+ sub cmd {
+     my %args = @_;
+     [200, "OK", "arg is $args{arg}"];
+ }
+ Perinci::CmdLine->new(url=>'/main/cmd')->run;
+
+When run from command line:
+
+ % cmd --arg v1
+
 
 =head1 SEE ALSO
 
