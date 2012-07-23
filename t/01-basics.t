@@ -7,6 +7,8 @@ use Log::Any '$log';
 use Test::More 0.96;
 
 use Capture::Tiny qw(capture);
+use File::Slurp;
+use File::Temp qw(tempfile);
 use Perinci::CmdLine;
 
 # XXX test formats
@@ -101,6 +103,67 @@ $SPEC{sp1} = {
 sub sp1 {
     my %args = @_;
     [200, "OK", "dry_run=".($args{-dry_run} ? 1:0)];
+}
+
+$SPEC{cmdline_src_unknown} = {
+    v => 1.1,
+    summary => 'This function has arg with unknown cmdline_src value',
+    args => {
+        a1 => {schema=>'str*', cmdline_src=>'foo'},
+    },
+};
+sub cmdline_src_unknown {
+    my %args = @_;
+    [200, "OK", "a1=$args{a1}"];
+}
+
+$SPEC{cmdline_src_nonstr} = {
+    v => 1.1,
+    summary => 'This function has non-str arg with cmdline_src',
+    args => {
+        a1 => {schema=>'int*', cmdline_src=>'stdin'},
+    },
+};
+sub cmdline_src_nonstr {
+    my %args = @_;
+    [200, "OK", "a1=$args{a1}"];
+}
+
+$SPEC{cmdline_src_stdin} = {
+    v => 1.1,
+    summary => 'This function has arg with cmdline_src=stdin',
+    args => {
+        a1 => {schema=>'str*', cmdline_src=>'stdin'},
+    },
+};
+sub cmdline_src_stdin {
+    my %args = @_;
+    [200, "OK", "a1=$args{a1}"];
+}
+
+$SPEC{cmdline_src_stdin_or_files} = {
+    v => 1.1,
+    summary => 'This function has arg with cmdline_src=stdin_or_files',
+    args => {
+        a1 => {schema=>'str*', cmdline_src=>'stdin_or_files'},
+    },
+};
+sub cmdline_src_stdin_or_files {
+    my %args = @_;
+    [200, "OK", "a1=$args{a1}"];
+}
+
+$SPEC{cmdline_src_multi} = {
+    v => 1.1,
+    summary => 'This function has multiple args with cmdline_src',
+    args => {
+        a1 => {schema=>'str*', cmdline_src=>'stdin_or_files'},
+        a2 => {schema=>'str*', cmdline_src=>'stdin_or_files'},
+    },
+};
+sub cmdline_src_multi {
+    my %args = @_;
+    [200, "OK", "a1=$args{a1}\na2=$args{a2}"];
 }
 
 package main;
@@ -364,6 +427,52 @@ test_run(name      => 'noop',
          exit_code => 0,
      );
 
+subtest 'cmdline_src' => sub {
+    test_run(
+        name => 'unknown value',
+        args => {url=>'/Foo/cmdline_src_unknown'},
+        argv => [],
+        dies => 1,
+    );
+    test_run(
+        name => 'arg type not str',
+        args => {url=>'/Foo/cmdline_src_nonstr'},
+        argv => [],
+        dies => 1,
+    );
+
+    my ($fh, $filename) = tempfile();
+    write_file($filename, 'foo');
+    test_run(
+        name => 'cmdline opt takes precedence',
+        args => {url=>'/Foo/cmdline_src_stdin_or_files'},
+        argv => ['--a1', 'bar', $filename],
+        exit_code => 0,
+        output_re => qr/a1=bar/,
+    );
+    test_run(
+        name => 'stdin_or_files',
+        args => {url=>'/Foo/cmdline_src_stdin_or_files'},
+        argv => [$filename],
+        exit_code => 0,
+        output_re => qr/a1=foo/,
+        posttest  => sub {
+            my ($argv) = @_;
+            is_deeply($argv, [], 'argv is spent by diamond op');
+        },
+    );
+    test_run(
+        name => 'multiple',
+        args => {url=>'/Foo/cmdline_src_multi'},
+        argv => [$filename],
+        dies => 1,
+    );
+
+    # XXX test cmdline_src stdin (how to refill stdin?)
+
+    done_testing;
+};
+
 # XXX test arg: undo
 
 DONE_TESTING:
@@ -400,6 +509,10 @@ sub test_run {
         if ($args{output_re}) {
             like($stdout // "", $args{output_re}, "output_re")
                 or diag("output is $stdout");
+        }
+
+        if ($args{posttest}) {
+            $args{posttest}->(\@ARGV);
         }
     };
 }

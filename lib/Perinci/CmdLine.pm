@@ -768,9 +768,36 @@ sub parse_subcommand_opts {
     # parse argv
     $Perinci::Sub::GetArgs::Argv::_pa_skip_check_required_args = 1
         if $self->{_pa_skip_check_required_args};
+    my $src_seen;
     my %ga_args = (
-        argv=>\@ARGV, meta=>$meta,
+        argv                => \@ARGV,
+        meta                => $meta,
         check_required_args => $self->{_check_required_args} // 1,
+        allow_extra_elems   => 1,
+        on_missing_required_args => sub {
+            my %a = @_;
+            my ($a, $aa, $as) = ($a{arg}, $a{args}, $a{spec});
+            my $src = $as->{cmdline_src};
+            if ($src) {
+                die "ERROR: Invalid 'cmdline_src' value for argument '$a': ".
+                    "$src\n" unless $src =~ /\A(stdin|stdin_or_files)\z/;
+                die "ERROR: Sorry, argument '$a' is set cmdline_src=$src, ".
+                    "but type is not 'str', only str is supported for now\n"
+                        unless $as->{schema}[0] eq 'str';
+                die "ERROR: Only one argument can be specified cmdline_src"
+                    if $src_seen++;
+                if ($src eq 'stdin') {
+                    $log->trace("Getting argument '$a' value from stdin ...");
+                    local $/;
+                    $aa->{$a} = <STDIN>;
+                } elsif ($src eq 'stdin_or_files') {
+                    $log->trace("Getting argument '$a' value from ".
+                                    "stdin_or_files ...");
+                    local $/;
+                    $aa->{$a} = <>;
+                }
+            }
+        },
     );
     if ($self->{_force_subcommand}) {
         $ga_args{extra_getopts_before} = $self->{_getopts_common};
