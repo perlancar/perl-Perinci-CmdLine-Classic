@@ -1,5 +1,10 @@
 Revision history for Perinci-CmdLine
 
+0.55     2012-07-23 (SHARYANTO)
+
+         Support 'cmdline_src' arg spec key (Rinci 1.1.20+).
+
+
 0.54     2012-07-19 (SHARYANTO)
 
          No functional changes. Add dependencies to
