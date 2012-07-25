@@ -1,5 +1,11 @@
 Revision history for Perinci-CmdLine
 
+0.56     2012-07-25 (SHARYANTO)
+
+         No functional changes. Increase dep version
+         Data::Format::Pretty::Console 0.16.
+
+
 0.55     2012-07-23 (SHARYANTO)
 
          Support 'cmdline_src' arg spec key (Rinci 1.1.20+).
