@@ -1,5 +1,10 @@
 Revision history for Perinci-CmdLine
 
+0.57     2012-07-26 (SHARYANTO)
+
+         - Add 'extra_opts' attribute.
+
+
 0.56     2012-07-25 (SHARYANTO)
 
          No functional changes. Increase dep version
