@@ -31,6 +31,7 @@ has url => (is => 'rw');
 has summary => (is => 'rw');
 has subcommands => (is => 'rw');
 has default_subcommand => (is => 'rw');
+has extra_opts => (is => 'rw');
 has exit => (is => 'rw', default=>sub{1});
 has log_any_app => (is => 'rw', default=>sub{$ENV{LOG} // 1});
 has custom_completer => (is => 'rw');
@@ -908,6 +909,15 @@ sub run {
     $self->{_actions} = []; # first action will be tried first, then 2nd, ...
 
     my $getopts_common = $self->gen_common_opts();
+    if (my $oo = $self->extra_opts) {
+        for my $on (keys %$oo) {
+            my $o = $oo->{$on};
+            my $ond = $on; $ond =~ s/_/-/g;
+            push @$getopts_common, "$ond", sub {
+                $o->{handler}->($self, $_[1]);
+            };
+        }
+    }
 
     # store for other methods, e.g. run_subcommand() & run_completion()
     $self->{_getopts_common} = $getopts_common;
@@ -1078,6 +1088,29 @@ only.
 
 If set, subcommand will always be set to this instead of from the first
 argument. To use other subcommands, you will have to use --cmd option.
+
+=head2 extra_opts => HASH
+
+Optional. Used to let program recognize extra command-line options. Currently
+not well-documented. For example:
+
+ extra_opts => {
+     halt => {
+         handler => sub {
+             my ($self, $val) = @_;
+             unshift @{$self->{_actions}}, 'subcommand';
+             $self->{_selected_subcommand} = 'shutdown';
+         },
+     },
+ }
+
+This will make:
+
+ % cmd --halt
+
+equivalent to executing the 'shutdown' subcommand:
+
+ % cmd shutdown
 
 =head2 exit => BOOL (default 1)
 
