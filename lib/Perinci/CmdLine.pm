@@ -621,9 +621,8 @@ sub run_history {
         next unless $tx->{tx_status} =~ /[CUX]/;
         push @txs, {
             id          => $tx->{tx_id},
-            start_time  => scalar(localtime $tx->{tx_start_time}),
-            commit_time => $tx->{tx_commit_time} ?
-                scalar(localtime $tx->{tx_commit_time}) : undef,
+            start_time  => $tx->{tx_start_time},
+            commit_time => $tx->{tx_commit_time},
             status      => $tx->{tx_status} eq 'X' ? 'error' :
                 $tx->{tx_status} eq 'U' ? 'undone' : '',
             summary     => $tx->{tx_summary},
