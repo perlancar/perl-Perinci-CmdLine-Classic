@@ -1098,7 +1098,6 @@ not well-documented. For example:
      halt => {
          handler => sub {
              my ($self, $val) = @_;
-             unshift @{$self->{_actions}}, 'subcommand';
              $self->{_selected_subcommand} = 'shutdown';
          },
      },
@@ -1111,6 +1110,20 @@ This will make:
 equivalent to executing the 'shutdown' subcommand:
 
  % cmd shutdown
+
+As an alternative to using this attribute, you can also subclass and override
+C<gen_common_opts()>, like this:
+
+ sub gen_common_opts {
+     my ($self) = @_;
+     my $go = $self->SUPER::gen_common_opts;
+     push @$go, (
+         halt => sub {
+             $self->{_selected_subcommand} = 'shutdown';
+         },
+     );
+     $go;
+ }
 
 =head2 exit => BOOL (default 1)
 
