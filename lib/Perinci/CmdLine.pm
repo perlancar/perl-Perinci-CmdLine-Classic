@@ -430,8 +430,8 @@ _
     $text = <<_;
 Undo options:
 
-    --undo <ID>     Undo previous action (use --history to get IDs)
-    --redo <ID>     Redo previous undo action (use --history to get IDs)
+    --undo <ID>     Undo previous action (use --history to get action IDs)
+    --redo <ID>     Redo previous undo action (use --history to get action IDs)
     --history       List actions history
     --clear-history Clear actions history
 _
