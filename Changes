@@ -1,5 +1,13 @@
 Revision history for Perinci-CmdLine
 
+0.59     2012-07-27 (SHARYANTO)
+
+         - Tweak: run_history(): Do not format date/time, let
+           Data::Format::Pretty::Console do it for us
+
+         - Fix: --verbose, --quiet, et al didn't work before.
+
+
 0.58     2012-07-26 (SHARYANTO)
 
          - Allow setting undo => 0 in subcommand, to disable undo/transaction
