@@ -12,36 +12,36 @@ Perinci::CmdLine->new(url=>'/Setup/File/Symlink/setup_symlink', undo=>1)->run;
 
 1;
 # ABSTRACT: Create symlink, with undo/redo capability
-# PODNAME: u-symlink
+# PODNAME: symlink-u
 
 =head1 SYNOPSIS
 
  # create a symlink
- $ u-symlink --symlink /tmp/l1 --target target1
+ $ symlink-u --symlink /tmp/l1 --target target1
 
  # this will replace symlink's target
- $ u-symlink --symlink /tmp/l1 --target target2
+ $ symlink-u --symlink /tmp/l1 --target target2
 
  # list history
- $ u-symlink --history
+ $ symlink-u --history
 
  # undo last action, now symlink points back to 'target1'
- $ u-symlink --undo
+ $ symlink-u --undo
 
  # undo again, now symlink '/tmp/l1' is removed
- $ u-symlink --undo
+ $ symlink-u --undo
 
  # redo, now symlink '/tmp/l1' is recreated and points to 'target1'
- $ u-symlink --redo
+ $ symlink-u --redo
 
  # redo, now symlink '/tmp/l1' points to 'target2'
- $ u-symlink --redo
+ $ symlink-u --redo
 
  # forget history
- $ u-symlink --clear-history
+ $ symlink-u --clear-history
 
  # display help for more options
- $ u-symlink --help
+ $ symlink-u --help
 
 
 =head1 DESCRIPTION

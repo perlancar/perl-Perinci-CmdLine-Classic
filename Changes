@@ -1,5 +1,10 @@
 Revision history for Perinci-CmdLine
 
+0.60     2012-07-27 (SHARYANTO) (not yet released)
+
+         - Rename script 'u-symlink' to 'symlink-u'.
+
+
 0.59     2012-07-27 (SHARYANTO)
 
          - Tweak: run_history(): Do not format date/time, let
