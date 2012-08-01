@@ -4,6 +4,7 @@ use 5.010;
 use strict;
 use warnings;
 use Perinci::CmdLine;
+use Scalar::Util qw(reftype);
 
 require Exporter;
 our @ISA       = qw(Exporter);
@@ -77,7 +78,7 @@ sub run_cmdline_app {
     my $url;
     if (!$sub) {
         die "Please supply sub\n";
-    } elsif (ref($sub) eq 'CODE') {
+    } elsif (reftype($sub) eq 'CODE') {
         my $name = "$sub";
         $name =~ s/[^A-Za-z0-9]+//g;
         $main::SPEC{$name} = $meta;
