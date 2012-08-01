@@ -8,6 +8,7 @@ use Log::Any '$log';
 use Moo;
 #use Perinci::Object;
 use Perinci::ToUtil;
+use Scalar::Util qw(reftype);
 
 # VERSION
 
@@ -133,7 +134,7 @@ sub get_subcommand {
     my $scs = $self->subcommands;
     return undef unless $scs;
 
-    if (ref($scs) eq 'CODE') {
+    if (reftype($scs) eq 'CODE') {
         return $scs->($self, name=>$name);
     } else {
         return $scs->{$name};
@@ -148,7 +149,7 @@ sub list_subcommands {
     my $scs = $self->subcommands;
     my $res;
     if ($scs) {
-        if (ref($scs) eq 'CODE') {
+        if (reftype($scs) eq 'CODE') {
             $scs = $scs->($self);
             die "ERROR: Subcommands code didn't return a hashref\n"
                 unless ref($scs) eq 'HASH';
