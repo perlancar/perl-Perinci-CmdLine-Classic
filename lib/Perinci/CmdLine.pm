@@ -459,6 +459,11 @@ sub doc_gen_options {
         my $s = $a->{schema} || [any=>{}];
         my $ane = $an; $ane =~ s/_/-/g; $ane =~ s/\W/-/g;
         $ane = "no$ane" if $s->[0] eq 'bool' && $s->[1]{default};
+        for my $al0 (keys %{ $a->{cmdline_aliases} // {}}) {
+            my $al = $al0; $al =~ s/_/-/g;
+            $al = length($al) > 1 ? "--$al" : "-$al";
+            $ane .= ", $al";
+        }
         my $def = defined($s->[1]{default}) ?
             " (default: ".dump1($s->[1]{default}).")" : "";
         my $src = $a->{cmdline_src} // "";
