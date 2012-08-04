@@ -802,6 +802,8 @@ sub parse_subcommand_opts {
         meta                => $meta,
         check_required_args => $self->{_check_required_args} // 1,
         allow_extra_elems   => 1,
+        per_arg_json        => 1,
+        per_arg_yaml        => 1,
         on_missing_required_args => sub {
             my %a = @_;
             my ($a, $aa, $as) = ($a{arg}, $a{args}, $a{spec});
@@ -1049,8 +1051,8 @@ What you'll get:
 =item * Command-line options parsing
 
 Non-scalar arguments (array, hash, other nested) can also be passed as JSON or
-YAML (both will be attempted). For example, the C<tags> argument is defined as
-'array':
+YAML (both will be attempted). For example, if the C<tags> argument is defined
+as 'array':
 
  % mycmd --tags '[foo, bar, baz]' ; # interpreted as YAML
  % mycmd --tags '["foo","bar"]'   ; # interpreted as JSON
@@ -1229,6 +1231,51 @@ returns undef, the next action candidate method will be tried.
 After that, exit() will be called with the exit code from the action method (or,
 if C<exit> attribute is set to false, routine will return with exit code
 instead).
+
+
+=head1 COMMAND-LINE OPTION/ARGUMENT PARSING
+
+This section describes how Perinci::CmdLine parses command-line
+options/arguments into function arguments. Command-line option parsing is
+implemented by L<Perinci::Sub::GetArgs::Argv>.
+
+For boolean function arguments, use C<--arg> to set C<arg> to true (1), and
+C<--noarg> to set C<arg> to false (0). A flag argument (C<< [bool => {is=>1}]
+>>) only recognizes C<--arg> and not C<--noarg>. For single letter arguments,
+only C<-X> is recognized, not C<--X> nor C<--noX>.
+
+For string and number function arguments, use C<--arg VALUE> or C<--arg=VALUE>
+(or C<-X VALUE> for single letter arguments) to set argument value. Other scalar
+arguments use the same way, except that some parsing will be done (e.g. for date
+type, --arg 1343920342 or --arg '2012-07-31' can be used to set a date value,
+which will be a DateTime object.) (Note that date parsing will be done by
+L<Data::Sah> and currently not implemented yet.)
+
+For arguments with type array of scalar, a series of C<--arg VALUE> is accepted,
+a la L<Getopt::Long>:
+
+ --tags tag1 --tags tag2 ; # will result in tags => ['tag1', 'tag2']
+
+For other non-scalar arguments, also use C<--arg VALUE> or C<--arg=VALUE>, but
+VALUE will be attempted to be parsed using JSON, and then YAML, and then passed
+as-is if failed. This is convenient for common cases:
+
+ --aoa  '[[1],[2],[3]]'  # parsed as JSON
+ --hash '{a: 1, b: 2}'   # parsed as YAML
+
+For explicit JSON parsing, all arguments can also be set via --ARG-json. This
+can be used to input undefined value in scalars, or setting array value without
+using repetitive C<--arg VALUE>:
+
+ --str-json 'null'    # set undef value
+ --ary-json '[1,2,3]' # set array value without doing --ary 1 --ary 2 --ary 3
+ --ary-json '[]'      # set empty array value
+
+Likewise for explicit YAML parsing:
+
+ --str-yaml '~'       # set undef value
+ --ary-yaml '[a, b]'  # set array value without doing --ary a --ary b
+ --ary-yaml '[]'      # set empty array value
 
 
 =head1 BASH COMPLETION
