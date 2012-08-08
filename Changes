@@ -1,5 +1,17 @@
 Revision history for Perinci-CmdLine
 
+0.61     2012-08-08 (SHARYANTO)
+
+         [INCOMPATIBLE CHANGES]
+
+         - Change how array of scalars is parsed, now not as JSON/YAML but using
+           repeated options (--foo 1 --foo 2) a la traditional Getopt::Long.
+
+         - Turn on per-argument explicit JSON and YAML parsing, using
+           --ARGNAME-json and --ARGNAME-yaml, to make it possible to enter undefs,
+           empty arrays, etc.
+
+
 0.60     2012-08-01 (SHARYANTO)
 
          - Rename demo script 'u-symlink' to 'symlink-u'.
