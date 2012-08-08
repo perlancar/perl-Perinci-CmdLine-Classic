@@ -1257,8 +1257,8 @@ a la L<Getopt::Long>:
  --tags tag1 --tags tag2 ; # will result in tags => ['tag1', 'tag2']
 
 For other non-scalar arguments, also use C<--arg VALUE> or C<--arg=VALUE>, but
-VALUE will be attempted to be parsed using JSON, and then YAML, and then passed
-as-is if failed. This is convenient for common cases:
+VALUE will be attempted to be parsed using JSON, and then YAML. This is
+convenient for common cases:
 
  --aoa  '[[1],[2],[3]]'  # parsed as JSON
  --hash '{a: 1, b: 2}'   # parsed as YAML
