@@ -903,10 +903,19 @@ sub _set_subcommand {
 
 sub _load_log_any_app {
     my ($self) = @_;
-    # Log::Any::App::init can already avoid being run twice
-    #return unless $self->{_log_any_app_loaded}
+    # Log::Any::App::init can already avoid being run twice, but we need to
+    # check anyway to avoid logging starting message below twice.
+    return if $self->{_log_any_app_loaded}++;
     require Log::Any::App;
     Log::Any::App::init();
+
+    # we log this after we initialize Log::Any::App, since Log::Any::App might
+    # not be loaded at all. yes, this means that this log message is printer
+    # rather 'late' and might not be the first message to be logged (see log
+    # messages in run()) if user already loads Log::Any::App by herself.
+    $self->{_original_argv} =
+        $log->debugf("Program %s started with arguments: %s",
+                     $0, $self->{_orig_argv});
 }
 
 sub run {
@@ -978,7 +987,12 @@ sub run {
     $self->format_and_display_result;
 
     $log->tracef("<- CmdLine's run(), exit code=%s", $exit_code);
-    if ($self->exit) { exit $exit_code } else { return $exit_code }
+    if ($self->exit) {
+        $log->debugf("Program ending with exit code %d", $exit_code);
+        exit $exit_code;
+    } else {
+        return $exit_code;
+    }
 }
 
 1;
