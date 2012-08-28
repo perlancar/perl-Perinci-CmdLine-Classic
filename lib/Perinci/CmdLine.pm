@@ -612,7 +612,13 @@ sub run_subcommand {
         }
     }
 
-    $self->{_res}[0] =~ /\A(?:200|304)\z/ ? 0 : $self->{_res}[0] - 300;
+    my $resmeta = $self->{_res}[3] // {};
+    if (defined $resmeta->{"cmdline.exit_code"}) {
+        return $resmeta->{"cmdline.exit_code"};
+    } else {
+        return $self->{_res}[0] =~ /\A(?:200|304)\z/ ?
+            0 : $self->{_res}[0] - 300;
+    }
 }
 
 sub run_history {
@@ -1341,6 +1347,11 @@ For example:
 
 Instruct Perinci::CmdLine to use specified pager instead of C<$ENV{PAGER}> or
 the default C<less> or C<more>.
+
+=head2 cmdline.exit_code => INT
+
+Instruct Perinci::CmdLine to use this exit code, instead of using (function
+status - 300).
 
 
 =head1 ENVIRONMENT
