@@ -1,5 +1,10 @@
 Revision history for Perinci-CmdLine
 
+0.63     2012-08-29 (SHARYANTO)
+
+         - Allow transactional function to be passed --dry-run.
+
+
 0.62     2012-08-28 (SHARYANTO)
 
          - Allow setting exit code via result metadata key 'cmdline.exit_code'.
