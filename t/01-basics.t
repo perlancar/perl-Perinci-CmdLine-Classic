@@ -166,6 +166,24 @@ sub cmdline_src_multi {
     [200, "OK", "a1=$args{a1}\na2=$args{a2}"];
 }
 
+$SPEC{dry_run} = {
+    v => 1.1,
+    features => {dry_run=>1},
+};
+sub dry_run {
+    my %args = @_;
+    [200, "OK", $args{-dry_run} ? 1:2];
+}
+
+$SPEC{tx} = {
+    v => 1.1,
+    features => {tx=>{v=>2}, idempotent=>1},
+};
+sub tx {
+    my %args = @_;
+    [200, "OK", $args{-tx_action} eq 'check_state' ? 1:2];
+}
+
 package main;
 
 subtest 'completion' => sub {
@@ -503,7 +521,31 @@ test_run(name      => 'extra_opts',
          output_re => qr/idub/,
      );
 
-# XXX test arg: undo
+test_run(name      => 'dry_run (using dry_run) (w/o)',
+         args      => {url=>'/Foo/dry_run'},
+         argv      => [],
+         exit_code => 0,
+         output_re => qr/2/,
+     );
+test_run(name      => 'dry_run (using dry_run) (w/)',
+         args      => {url=>'/Foo/dry_run'},
+         argv      => [qw/--dry-run/],
+         exit_code => 0,
+         output_re => qr/1/,
+     );
+test_run(name      => 'dry_run (using tx) (w/o)',
+         args      => {url=>'/Foo/tx'},
+         argv      => [],
+         exit_code => 0,
+         output_re => qr/2/,
+     );
+test_run(name      => 'dry_run (using tx) (w/)',
+         args      => {url=>'/Foo/tx'},
+         argv      => [qw/--dry-run/],
+         exit_code => 0,
+         output_re => qr/1/,
+     );
+
 
 DONE_TESTING:
 done_testing();

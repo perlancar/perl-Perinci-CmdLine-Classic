@@ -6,7 +6,7 @@ use warnings;
 use Data::Dump::OneLine qw(dump1);
 use Log::Any '$log';
 use Moo;
-#use Perinci::Object;
+use Perinci::Object;
 use Perinci::ToUtil;
 use Scalar::Util qw(reftype);
 
@@ -505,8 +505,7 @@ sub doc_gen_options {
     }
 
     my @spec;
-    my $ff = $meta->{features} // {};
-    if ($ff->{dry_run}) {
+    if (risub($meta)->can_dry_run) {
         push @spec, {opt=>"dry-run", type=>"bool",
                      summary=>$self->loc(
                          "Run in simulation mode ".
@@ -577,10 +576,7 @@ sub run_subcommand {
 
     my $tx_id;
 
-    my $ff = $self->{_meta}{features} // {};
-    my $dry_run = $ff->{dry_run} && $self->{_args}{-dry_run};
-
-    my $using_tx = $self->undo && !$dry_run && ($sc->{undo} // 1);
+    my $using_tx = !$self->{_dry_run} && $self->undo && ($sc->{undo} // 1);
 
     if ($using_tx) {
         require UUID::Random;
@@ -599,10 +595,10 @@ sub run_subcommand {
     # call function
     $self->{_res} = $self->_pa->request(
         call => $self->{_subcommand}{url},
-        {args=>\%fargs, tx_id=>$tx_id});
+        {args=>\%fargs, tx_id=>$tx_id, dry_run=>$self->{_dry_run}});
     $log->tracef("call res=%s", $self->{_res});
 
-    # commit transaction (if using undo)
+    # commit transaction (if using tx)
     if ($using_tx && $self->{_res}[0] =~ /\A(?:200|304)\z/) {
         my $res = $self->_pa->request(commit_tx => "/", {tx_id=>$tx_id});
         if ($res->[0] != 200) {
@@ -790,14 +786,13 @@ sub parse_subcommand_opts {
     $self->{_meta} = $meta;
 
     # parse --dry-run
-    my $ff = $meta->{features} // {};
     my %merge_args;
-    if ($ff->{dry_run}) {
+    if (risub($meta)->can_dry_run) {
         push @{$self->{_getopts_common}}, "dry-run" => sub {
-            $merge_args{-dry_run} = 1;
+            $self->{_dry_run} = 1;
         };
     }
-    $merge_args{-dry_run} = 1 if $ENV{DRY_RUN};
+    $self->{_dry_run} = 1 if $ENV{DRY_RUN};
 
     # parse argv
     $Perinci::Sub::GetArgs::Argv::_pa_skip_check_required_args = 1
