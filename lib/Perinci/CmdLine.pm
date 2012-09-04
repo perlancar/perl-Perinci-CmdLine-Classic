@@ -790,9 +790,10 @@ sub parse_subcommand_opts {
     if (risub($meta)->can_dry_run) {
         push @{$self->{_getopts_common}}, "dry-run" => sub {
             $self->{_dry_run} = 1;
+            $ENV{VERBOSE} = 1;
         };
     }
-    $self->{_dry_run} = 1 if $ENV{DRY_RUN};
+    do { $self->{_dry_run} = 1; $ENV{VERBOSE} = 1 } if $ENV{DRY_RUN};
 
     # parse argv
     $Perinci::Sub::GetArgs::Argv::_pa_skip_check_required_args = 1
@@ -836,6 +837,14 @@ sub parse_subcommand_opts {
         $ga_args{extra_getopts_after}  = $self->{_getopts_common};
     }
     $res = Perinci::Sub::GetArgs::Argv::get_args_from_argv(%ga_args);
+
+    # We load Log::Any::App rather late here, to be able to customize level via
+    # --debug, --dry-run, etc.
+    unless ($ENV{COMP_LINE}) {
+        $self->_load_log_any_app if
+            $self->{_subcommand}{log_any_app} // $self->log_any_app;
+    }
+
     die "ERROR: Failed parsing arguments: $res->[0] - $res->[1]\n"
         unless $res->[0] == 200;
     $self->{_args} = { %merge_args, %{ $res->[2] } };
@@ -893,11 +902,7 @@ sub _set_subcommand {
     unshift @{$self->{_actions}}, 'completion' if $ENV{COMP_LINE};
     push @{$self->{_actions}}, 'help' if !@{$self->{_actions}};
 
-    unless ($ENV{COMP_LINE}) {
-        $self->_load_log_any_app if
-            $self->{_subcommand}{log_any_app} // $self->log_any_app;
-    }
-
+    # unlogged, too early
     $log->tracef("actions=%s, subcommand=%s",
                  $self->{_actions}, $self->{_subcommand});
 }
@@ -912,7 +917,7 @@ sub _load_log_any_app {
 
     # we log this after we initialize Log::Any::App, since Log::Any::App might
     # not be loaded at all. yes, this means that this log message is printer
-    # rather 'late' and might not be the first message to be logged (see log
+    # rather late and might not be the first message to be logged (see log
     # messages in run()) if user already loads Log::Any::App by herself.
     $self->{_original_argv} =
         $log->debugf("Program %s started with arguments: %s",
