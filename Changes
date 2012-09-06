@@ -1,5 +1,11 @@
 Revision history for Perinci-CmdLine
 
+0.65     2012-09-06 (SHARYANTO)
+
+         Remove example script bin/symlink-u due to circular dependency
+         [RT#79482].
+
+
 0.64     2012-09-04 (SHARYANTO)
 
          - Automatically set verbose when --dry-run.
