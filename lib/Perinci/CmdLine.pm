@@ -225,6 +225,11 @@ sub run_version {
     }
 
     say $self->loc("[_1] version [_2]", $self->program_name, $ver);
+    {
+        no strict 'refs';
+        say "  ", $self->loc("[_1] version [_2]",
+                             "Perinci::CmdLine", $Perinci::CmdLine::VERSION);
+    }
 
     0;
 }
@@ -544,42 +549,38 @@ sub doc_parse_links {
 sub doc_gen_links {
 }
 
+my ($ph1, $ph2); # patch handles
 sub _setup_progress_output {
     my $self = shift;
 
     require Progress::Any;
     if (-t STDOUT) {
         require Progress::Any::Output::TermProgressBar;
-        state $tpb = Progress::Any::Output::TermProgressBar->new;
-        Progress::Any->set_output(output => $tpb);
+        state $out = Progress::Any::Output::TermProgressBar->new;
+        Progress::Any->set_output(output => $out);
         if ($self->{_log_any_app_loaded}) {
-            # make Log::Any::App's screen output not interfering with
-            # Term::ProgressBar output.
             require Monkey::Patch::Action;
-            if ($INC{"Log/Log4perl/Appender/ScreenColoredLevels.pm"}) {
-                Monkey::Patch::Action::patch_package(
-                    'Log::Log4perl::Appender::ScreenColoredLevels', 'log',
-                    'replace', sub {
-                        my ($self, %params) = @_;
-                        $tpb->message($params{message});
-                    },
-                );
-            }
-            if ($INC{"Log/Log4perl/Appender/Screen.pm"}) {
-                Monkey::Patch::Action::patch_package(
-                    'Log::Log4perl::Appender::ScreenColoredLevels', 'log',
-                    'replace', sub {
-                        my ($self, %params) = @_;
-                        # BEGIN copy-paste'ish from ScreenColoredLevels.pm
-                        my $msg = $params{message};
-                        if (my $color=$self->{color}->{$params{log4p_level}}) {
-                            $msg = Term::ANSIColor::colored($msg, $color);
-                        }
-                        # END copy-paste'ish
-                        $tpb->message($params{message});
-                    },
-                );
-            }
+            $ph1 = Monkey::Patch::Action::patch_package(
+                'Log::Log4perl::Appender::Screen', 'log',
+                'replace', sub {
+                    my ($self, %params) = @_;
+                    $out->_message($params{message});
+                },
+            );
+            $ph2 = Monkey::Patch::Action::patch_package(
+                'Log::Log4perl::Appender::ScreenColoredLevels', 'log',
+                'replace', sub {
+                    my ($self, %params) = @_;
+                    # BEGIN copy-paste'ish from ScreenColoredLevels.pm
+                    my $msg = $params{message};
+                    $msg =~ s/\n//g;
+                    if (my $color=$self->{color}->{$params{log4p_level}}) {
+                        $msg = Term::ANSIColor::colored($msg, $color);
+                    }
+                    # END copy-paste'ish
+                    $out->_message($msg);
+                },
+            );
         }
     } else {
         if ($self->{_log_any_app_loaded}) {
