@@ -1,5 +1,14 @@
 Revision history for Perinci-CmdLine
 
+0.66     2012-10-24 (SHARYANTO)
+
+         - Display progress indicator for function which uses it (see
+           Perinci::Access::InProcess 0.36+). For an example of this, see
+           Git::Bunch 0.24, function sync_bunch().
+
+         - Show Perinci::CmdLine's version in --version.
+
+
 0.65     2012-09-06 (SHARYANTO)
 
          Remove example script bin/symlink-u due to circular dependency
