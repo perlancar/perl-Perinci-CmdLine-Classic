@@ -544,6 +544,54 @@ sub doc_parse_links {
 sub doc_gen_links {
 }
 
+sub _setup_progress_output {
+    my $self = shift;
+
+    require Progress::Any;
+    if (-t STDOUT) {
+        require Progress::Any::Output::TermProgressBar;
+        state $tpb = Progress::Any::Output::TermProgressBar->new;
+        Progress::Any->set_output(output => $tpb);
+        if ($self->{_log_any_app_loaded}) {
+            # make Log::Any::App's screen output not interfering with
+            # Term::ProgressBar output.
+            require Monkey::Patch::Action;
+            if ($INC{"Log/Log4perl/Appender/ScreenColoredLevels.pm"}) {
+                Monkey::Patch::Action::patch_package(
+                    'Log::Log4perl::Appender::ScreenColoredLevels', 'log',
+                    'replace', sub {
+                        my ($self, %params) = @_;
+                        $tpb->message($params{message});
+                    },
+                );
+            }
+            if ($INC{"Log/Log4perl/Appender/Screen.pm"}) {
+                Monkey::Patch::Action::patch_package(
+                    'Log::Log4perl::Appender::ScreenColoredLevels', 'log',
+                    'replace', sub {
+                        my ($self, %params) = @_;
+                        # BEGIN copy-paste'ish from ScreenColoredLevels.pm
+                        my $msg = $params{message};
+                        if (my $color=$self->{color}->{$params{log4p_level}}) {
+                            $msg = Term::ANSIColor::colored($msg, $color);
+                        }
+                        # END copy-paste'ish
+                        $tpb->message($params{message});
+                    },
+                );
+            }
+        }
+    } else {
+        if ($self->{_log_any_app_loaded}) {
+            require Progress::Any::Output::LogAny;
+            Progress::Any->set_output(
+                Progress::Any::Output::LogAny->new(
+                ),
+            );
+        }
+    }
+}
+
 sub run_help {
     require Text::Wrap;
 
@@ -589,6 +637,15 @@ sub run_subcommand {
             $self->{_res} = [$res->[0],
                              "Can't start transaction '$tx_id': $res->[1]"];
             return 1;
+        }
+    }
+
+    # setup output progress indicator
+    state $setup_progress;
+    if ($self->{_meta}{features}{progress}) {
+        unless ($setup_progress) {
+            $self->_setup_progress_output;
+            $setup_progress++;
         }
     }
 
@@ -1312,6 +1369,13 @@ C</etc/bash.bashrc> or C<~/.bashrc> for future sessions):
 
  % complete -C myscript myscript; # myscript must be in PATH
 
+
+=head1 PROGRESS INDICATOR
+
+For functions that express that they do progress updating (by setting their
+C<progress> feature to true), Perinci::CmdLine will setup an output, currently
+either L<Progress::Any::Output::TermProgressBar> if program runs interactively,
+or L<Progress::Any::Output::LogAny> if program doesn't run interactively.
 
 =head1 RESULT METADATA
 
