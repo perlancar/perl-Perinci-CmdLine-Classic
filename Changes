@@ -1,5 +1,10 @@
 Revision history for Perinci-CmdLine
 
+0.67     2012-10-29 (SHARYANTO)
+
+         No functional changes. Fix dependencies.
+
+
 0.66     2012-10-24 (SHARYANTO)
 
          - Display progress indicator for function which uses it (see
