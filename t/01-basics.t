@@ -274,7 +274,7 @@ subtest 'completion' => sub {
 
 test_run(name      => 'single sub',
          args      => {url=>'/Foo/ok'},
-         argv      => [qw/--arg1 1 --arg2 2/],
+         argv      => [qw/--arg1 a --arg2 2/],
          exit_code => 0,
          output_re => qr/First argument/,
      );
