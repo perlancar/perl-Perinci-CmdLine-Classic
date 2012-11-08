@@ -75,6 +75,10 @@ has _pa => (
                     );
                     $txm;
                 },
+                extra_wrapper_args => {
+                    # turn off arg validation generation to reduce startup cost
+                    validate_args => $ENV{COMP_LINE} ? 0:undef,
+                },
             );
             $args{handlers} = {
                 pl   => $pai,
