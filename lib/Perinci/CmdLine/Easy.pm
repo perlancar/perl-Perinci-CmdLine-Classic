@@ -29,8 +29,7 @@ $SPEC{run_cmdline_app} = {
             schema => "str*",
         },
         argv => {
-            schema  => ["array*" => {of=>"str*"}],
-            default => [],
+            schema  => ["array*" => {of=>"str*", default=>[]}],
             summary => "List of arguments",
             description => <<'_',
 
@@ -42,10 +41,10 @@ _
         },
     },
     result_naked => 1,
-
+    "_perinci.sub.wrapper.validate_args" => 0,
 };
 sub run_cmdline_app {
-    my %args = @_;
+    my %args = @_; # VALIDATE_ARGS
 
     my $meta = {
         v            => 1.1,
