@@ -116,7 +116,7 @@ sub format_and_display_result {
         my $pager = $resmeta->{"cmdline.pager"} //
             $ENV{PAGER};
         unless (defined $pager) {
-            $pager = "less -FRS" if File::Which::which("less");
+            $pager = "less -FRSX" if File::Which::which("less");
         }
         unless (defined $pager) {
             $pager = "more" if File::Which::which("more");
@@ -1401,7 +1401,7 @@ C<cmdline.display_result> result metadata to false. Example:
 =head2 cmdline.page_result => BOOL
 
 If you want to filter the result through pager (currently defaults to
-C<$ENV{PAGER}> or C<less -FRS>), you can set C<cmdline.page_result> in result
+C<$ENV{PAGER}> or C<less -FRSX>), you can set C<cmdline.page_result> in result
 metadata to true.
 
 For example:
