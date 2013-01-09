@@ -1075,6 +1075,8 @@ sub run {
 1;
 # ABSTRACT: Rinci/Riap-based command-line application framework
 
+=for Pod::Coverage ^(BUILD|run_.+|doc_.+|before_.+|after_.+|format_and_display_result|gen_common_opts|get_subcommand|list_subcommands|parse_common_opts|parse_subcommand_opts)$
+
 =head1 SYNOPSIS
 
 In your command-line script:

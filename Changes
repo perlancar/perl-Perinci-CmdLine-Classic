@@ -1,5 +1,10 @@
 Revision history for Perinci-CmdLine
 
+0.68     2013-01-09 (SHARYANTO)
+
+         - Add workaround for formatter that modifies STDOUT's binmode setting.
+
+
 0.67     2012-10-29 (SHARYANTO)
 
          No functional changes. Fix dependencies.
