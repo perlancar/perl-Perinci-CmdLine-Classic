@@ -109,7 +109,16 @@ sub format_and_display_result {
     die "ERROR: Unknown output format '$format', please choose one of: ".
         join(", ", sort keys(%Perinci::Result::Format::Formats))."\n"
             unless $Perinci::Result::Format::Formats{$format};
-    $self->{_fres} = Perinci::Result::Format::format($self->{_res}, $format);
+    {
+        # protect STDOUT from changes (e.g. binmode :utf8 setting). certain
+        # format (Console, i'm suspecting Text::ASCIITable) modifies this,
+        # resulting in "Wide character in print" when printing Unicode
+        # characters, even though binmode(STDOUT, ":utf8") has been set prior to
+        # executing $pericmd->run().
+        local *STDOUT;
+        $self->{_fres} = Perinci::Result::Format::format(
+            $self->{_res}, $format);
+    }
 
     # display result
     if ($resmeta->{"cmdline.page_result"}) {
