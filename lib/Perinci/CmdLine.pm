@@ -572,6 +572,8 @@ sub _setup_progress_output {
         state $out = Progress::Any::Output::TermProgressBar->new;
         Progress::Any->set_output(output => $out);
         if ($self->{_log_any_app_loaded}) {
+            # we need to patch the logger adapters so it won't interfere with
+            # progress meter's output
             require Monkey::Patch::Action;
             $ph1 = Monkey::Patch::Action::patch_package(
                 'Log::Log4perl::Appender::Screen', 'log',
