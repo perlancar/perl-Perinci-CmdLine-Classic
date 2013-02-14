@@ -483,7 +483,7 @@ sub doc_gen_options {
             $al = length($al) > 1 ? "--$al" : "-$al";
             $ane .= ", $al";
         }
-        my $def = defined($s->[1]{default}) ?
+        my $def = defined($s->[1]{default}) && $s->[0] ne 'bool' ?
             " (default: ".dump1($s->[1]{default}).")" : "";
         my $src = $a->{cmdline_src} // "";
         my $text = sprintf(
