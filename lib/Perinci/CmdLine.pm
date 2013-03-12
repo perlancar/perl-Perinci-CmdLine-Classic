@@ -109,6 +109,7 @@ sub format_and_display_result {
     die "ERROR: Unknown output format '$format', please choose one of: ".
         join(", ", sort keys(%Perinci::Result::Format::Formats))."\n"
             unless $Perinci::Result::Format::Formats{$format};
+    $log->tracef("Formatting output with %s", $format);
     {
         # protect STDOUT from changes (e.g. binmode :utf8 setting). certain
         # format (Console, i'm suspecting Text::ASCIITable) modifies this,
