@@ -3,8 +3,9 @@ package Perinci::CmdLine;
 use 5.010;
 use strict;
 use warnings;
-use Data::Dump::OneLine qw(dump1);
 use Log::Any '$log';
+
+use Data::Dump::OneLine qw(dump1);
 use Moo;
 use Perinci::Object;
 use Perinci::ToUtil;
@@ -54,6 +55,8 @@ has undo_dir => (
 );
 
 has format => (is => 'rw', default=>sub{'text'});
+has format_options => (is => 'rw');
+has format_options_set => (is => 'rw'); # bool
 has _pa => (
     is => 'rw',
     lazy => 1,
@@ -89,6 +92,12 @@ has _pa => (
     }
 );
 
+sub __json_decode {
+    require JSON;
+    state $json = do { JSON->new->allow_nonref };
+    $json->decode(shift);
+}
+
 sub BUILD {
     my ($self, $args) = @_;
     #$self->{indent} = $args->{indent} // "    ";
@@ -100,7 +109,7 @@ sub format_and_display_result {
     my $self = shift;
     return unless $self->{_res};
 
-    my $resmeta = $self->{_res}->[3] // {};
+    my $resmeta = $self->{_res}[3] // {};
     unless ($resmeta->{"cmdline.display_result"}//1) {
         $self->{_res}[2] = undef;
     }
@@ -109,7 +118,11 @@ sub format_and_display_result {
     die "ERROR: Unknown output format '$format', please choose one of: ".
         join(", ", sort keys(%Perinci::Result::Format::Formats))."\n"
             unless $Perinci::Result::Format::Formats{$format};
+    if ($self->format_options_set) {
+        $self->{_res}[3]{result_format_options} = $self->format_options;
+    }
     $log->tracef("Formatting output with %s", $format);
+
     {
         # protect STDOUT from changes (e.g. binmode :utf8 setting). certain
         # format (Console, i'm suspecting Text::ASCIITable) modifies this,
@@ -759,6 +772,10 @@ sub gen_common_opts {
         },
 
         "format=s" => sub { $self->format($_[1]) },
+        "format-options=s" => sub {
+            $self->format_options_set(1);
+            $self->format_options(__json_decode($_[1]));
+        },
     );
 
     if ($self->subcommands) {
@@ -1078,7 +1095,7 @@ sub run {
 1;
 # ABSTRACT: Rinci/Riap-based command-line application framework
 
-=for Pod::Coverage ^(BUILD|run_.+|doc_.+|before_.+|after_.+|format_and_display_result|gen_common_opts|get_subcommand|list_subcommands|parse_common_opts|parse_subcommand_opts)$
+=for Pod::Coverage ^(BUILD|run_.+|doc_.+|before_.+|after_.+|format_and_display_result|gen_common_opts|get_subcommand|list_subcommands|parse_common_opts|parse_subcommand_opts|format_options|format_options_set)$
 
 =head1 SYNOPSIS
 
