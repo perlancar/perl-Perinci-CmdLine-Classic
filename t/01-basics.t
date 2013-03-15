@@ -193,12 +193,13 @@ subtest 'completion' => sub {
         args        => {url=>'/Foo/ok'},
         comp_line   => 'CMD -',
         comp_point0 => '     ^',
-        result      => [qw(
-                           --action
-                           --arg1 --arg2 --arg3 --debug --format --help
-                           --log-level --quiet
+        result      => [qw(--action
+                           --arg1 --arg2 --arg3 --debug
+                           --format --format-options
+                           --help --log-level --quiet
                            --trace --verbose --version
                            -\? -h -v
+
                       )],
     );
     test_complete(
@@ -211,8 +212,8 @@ subtest 'completion' => sub {
         comp_point0 => '     ^',
         result      => [qw(
                            --action
-                           --debug --format --help
-                           --list --log-level --quiet
+                           --debug --format --format-options
+                           --help --list --log-level --quiet
                            --trace --verbose --version
                            -\? -h -l -v
                       )],
@@ -229,8 +230,8 @@ subtest 'completion' => sub {
         result      => [qw(
                            --action
                            --cmd
-                           --debug --format --help
-                           --list --log-level --quiet
+                           --debug --format --format-options
+                           --help --list --log-level --quiet
                            --trace --verbose --version
                            -\? -h -l -v
                       )],

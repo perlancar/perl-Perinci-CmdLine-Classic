@@ -1,5 +1,13 @@
 Revision history for Perinci-CmdLine
 
+0.69     2013-03-15 (SHARYANTO)
+
+         - Add 'pa_args' attribute to pass to Perinci::Access (and in turn to
+           Perinci::Access::HTTP::Client), e.g. HTTP basic auth information.
+
+         - Several small tweaks.
+
+
 0.68     2013-01-09 (SHARYANTO)
 
          - Add workaround for formatter that modifies STDOUT's binmode setting.
