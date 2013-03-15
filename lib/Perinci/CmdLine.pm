@@ -57,7 +57,7 @@ has undo_dir => (
 has format => (is => 'rw', default=>sub{'text'});
 has format_options => (is => 'rw');
 has format_options_set => (is => 'rw'); # bool
-has pa_options => (is => 'rw');
+has pa_args => (is => 'rw');
 has _pa => (
     is => 'rw',
     lazy => 1,
@@ -65,7 +65,7 @@ has _pa => (
         my $self = shift;
 
         require Perinci::Access;
-        my %args = %{$self->pa_options // {}};
+        my %args = %{$self->pa_args // {}};
         if ($self->undo) {
             require Perinci::Access::InProcess;
             my $pai = Perinci::Access::InProcess->new(
@@ -89,6 +89,7 @@ has _pa => (
                 riap => $pai,
             };
         }
+        $log->tracef("Creating Perinci::Access object with args: %s", \%args);
         Perinci::Access->new(%args);
     }
 );
@@ -1096,7 +1097,7 @@ sub run {
 1;
 # ABSTRACT: Rinci/Riap-based command-line application framework
 
-=for Pod::Coverage ^(BUILD|run_.+|doc_.+|before_.+|after_.+|format_and_display_result|gen_common_opts|get_subcommand|list_subcommands|parse_common_opts|parse_subcommand_opts|format_options|format_options_set|pa_options)$
+=for Pod::Coverage ^(BUILD|run_.+|doc_.+|before_.+|after_.+|format_and_display_result|gen_common_opts|get_subcommand|list_subcommands|parse_common_opts|parse_subcommand_opts|format_options|format_options_set)$
 
 =head1 SYNOPSIS
 
@@ -1301,6 +1302,13 @@ Passing the cmdline object can be useful, e.g. to call run_help(), etc.
 
 Whether to enable undo/redo functionality. Some things to note if you intend to
 use undo:
+
+=head2 pa_args => HASH
+
+Arguments to pass to L<Perinci::Access>. This is useful for passing e.g. HTTP
+basic authentication to Riap client (L<Perinci::Access::HTTP::Client>):
+
+ pa_args => {handler_args => {user=>$USER, password=>$PASS}}
 
 =over 4
 
