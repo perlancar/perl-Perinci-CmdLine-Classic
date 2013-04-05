@@ -125,16 +125,8 @@ sub format_and_display_result {
     }
     $log->tracef("Formatting output with %s", $format);
 
-    {
-        # protect STDOUT from changes (e.g. binmode :utf8 setting). certain
-        # format (Console, i'm suspecting Text::ASCIITable) modifies this,
-        # resulting in "Wide character in print" when printing Unicode
-        # characters, even though binmode(STDOUT, ":utf8") has been set prior to
-        # executing $pericmd->run().
-        local *STDOUT;
-        $self->{_fres} = Perinci::Result::Format::format(
-            $self->{_res}, $format);
-    }
+    $self->{_fres} = Perinci::Result::Format::format(
+        $self->{_res}, $format);
 
     # display result
     if ($resmeta->{"cmdline.page_result"}) {
@@ -153,7 +145,19 @@ sub format_and_display_result {
         open my($p), "| $pager";
         print $p $self->{_fres};
     } else {
-        print $self->{_fres};
+        {
+            # this is a specific (and wrong) workaround to avoid the "Wide
+            # character in print" error when printing, even though something
+            # like binmode(STDOUT, ":utf8") has been . this only happens when
+            # using the Console (text-pretty) formatter. i haven't managed to
+            # pinpoint who the culprit is (it's not Term::Size and probably
+            # something that Text::ASCIITable uses). i will remove this
+            # workaround because i will be replacing Text::ASCIITable with
+            # Text::ANSITable sometime soon anyway.
+            local *STDOUT = \*STDOUT;
+            binmode(STDOUT, ":utf8");
+            print $self->{_fres};
+        }
     }
 }
 
