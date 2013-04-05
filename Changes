@@ -1,5 +1,11 @@
 Revision history for Perinci-CmdLine
 
+0.70     2013-04-05 (SHARYANTO)
+
+         - Add no_getopt_compat Getopt::Long::Configure to disregard "+" as
+           option starter.
+
+
 0.69     2013-03-15 (SHARYANTO)
 
          - Add 'pa_args' attribute to pass to Perinci::Access (and in turn to
