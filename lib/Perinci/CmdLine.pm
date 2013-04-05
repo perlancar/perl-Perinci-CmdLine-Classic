@@ -846,7 +846,7 @@ sub parse_common_opts {
     $self->{_orig_argv} = \@orig_ARGV;
 
     my $old_go_opts = Getopt::Long::Configure(
-        "pass_through", "no_ignore_case", "no_getopt_compact");
+        "pass_through", "no_ignore_case", "no_getopt_compat");
     Getopt::Long::GetOptions(@{$self->{_getopts_common}});
     $log->tracef("result of GetOptions for common options: remaining argv=%s, ".
                      "actions=%s", \@ARGV, $self->{_actions});
