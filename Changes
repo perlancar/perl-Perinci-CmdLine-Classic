@@ -1,5 +1,11 @@
 Revision history for Perinci-CmdLine
 
+0.71     2013-04-05 (SHARYANTO)
+
+         No functional changes. Workaround problem which causes non-pretty text
+         tables to be displayed by default.
+
+
 0.70     2013-04-05 (SHARYANTO)
 
          - Add no_getopt_compat Getopt::Long::Configure to disregard "+" as
