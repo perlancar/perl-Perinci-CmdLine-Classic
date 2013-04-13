@@ -55,8 +55,11 @@ has undo_dir => (
 );
 
 has format => (is => 'rw', default=>sub{'text'});
+# bool, is format set via cmdline opt?
+has format_set => (is => 'rw');
 has format_options => (is => 'rw');
-has format_options_set => (is => 'rw'); # bool
+# bool, is format_options set via cmdline opt?
+has format_options_set => (is => 'rw');
 has pa_args => (is => 'rw');
 has _pa => (
     is => 'rw',
@@ -116,7 +119,9 @@ sub format_and_display_result {
         $self->{_res}[2] = undef;
     }
 
-    my $format = $self->format;
+    my $format = $self->format_set ?
+        $self->format :
+            $self->{_meta}{"x.perinci.cmdline.default_format"} // $self->format;
     die "ERROR: Unknown output format '$format', please choose one of: ".
         join(", ", sort keys(%Perinci::Result::Format::Formats))."\n"
             unless $Perinci::Result::Format::Formats{$format};
@@ -777,7 +782,10 @@ sub gen_common_opts {
             $self->{_check_required_args} = 0;
         },
 
-        "format=s" => sub { $self->format($_[1]) },
+        "format=s" => sub {
+            $self->format_set(1);
+            $self->format($_[1]);
+        },
         "format-options=s" => sub {
             $self->format_options_set(1);
             $self->format_options(__json_decode($_[1]));
@@ -1101,7 +1109,7 @@ sub run {
 1;
 # ABSTRACT: Rinci/Riap-based command-line application framework
 
-=for Pod::Coverage ^(BUILD|run_.+|doc_.+|before_.+|after_.+|format_and_display_result|gen_common_opts|get_subcommand|list_subcommands|parse_common_opts|parse_subcommand_opts|format_options|format_options_set)$
+=for Pod::Coverage ^(BUILD|run_.+|doc_.+|before_.+|after_.+|format_and_display_result|gen_common_opts|get_subcommand|list_subcommands|parse_common_opts|parse_subcommand_opts|format_set|format_options|format_options_set)$
 
 =head1 SYNOPSIS
 
