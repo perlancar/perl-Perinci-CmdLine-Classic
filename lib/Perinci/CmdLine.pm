@@ -1434,6 +1434,16 @@ C<progress> feature to true), Perinci::CmdLine will setup an output, currently
 either L<Progress::Any::Output::TermProgressBar> if program runs interactively,
 or L<Progress::Any::Output::LogAny> if program doesn't run interactively.
 
+=head1 METADATA PROPERTY ATTRIBUTE
+
+This module observes the following Rinci metadata property attributes:
+
+=head2 x.perinci.cmdline.default_format => STR
+
+Set default output format (if user does not specify via --format command-line
+option).
+
+
 =head1 RESULT METADATA
 
 This module interprets the following result metadata keys:
