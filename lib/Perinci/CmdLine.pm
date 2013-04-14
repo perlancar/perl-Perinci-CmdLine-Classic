@@ -131,10 +131,8 @@ sub format_result {
         $resmeta->{result_format_options} = $self->format_options;
     }
 
-    # special handling for streaming output
-    if ($resmeta->{is_stream} && $res->[0] == 200) {
+    if ($resmeta->{is_stream}) {
         $log->tracef("Result is a stream");
-        $self->{_res_is_stream} = 1;
     } else {
         $log->tracef("Formatting output with %s", $format);
         $self->{_fres} = Perinci::Result::Format::format(
@@ -181,9 +179,9 @@ sub display_result {
         $handle = \*STDOUT;
     }
 
-    if ($self->{_res_is_stream}) {
+    if ($resmeta->{is_stream}) {
         die "Can't format stream as " . $self->format .
-            "please use --format text\n" unless $self->format =~ /^text/;
+            ", please use --format text\n" unless $self->format =~ /^text/;
         my $r = $res->[2];
         if (ref($r) eq 'GLOB') {
             while (!eof($r)) {

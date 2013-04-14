@@ -1,5 +1,22 @@
 Revision history for Perinci-CmdLine
 
+0.72     2013-04-14 (SHARYANTO)
+
+         [INCOMPATIBLE CHANGES]
+
+         - format_and_display_result() is split to format_result() and
+           display_result() (should not be a problem because it's not yet
+           documented).
+
+         [ENHANCEMENTS]
+
+         - Support streaming output (function needs to set result metadata
+           is_stream => 1 and result needs to be glob/IO::Handle/array/tied
+           array, format needs to be text).
+
+         - Observe 'x.perinci.cmdline.default_format' metadata attribute.
+
+
 0.71     2013-04-05 (SHARYANTO)
 
          No functional changes. Workaround problem which causes non-pretty text
