@@ -9,7 +9,7 @@ use Data::Dump::OneLine qw(dump1);
 use Moo;
 use Perinci::Object;
 use Perinci::ToUtil;
-use Scalar::Util qw(reftype);
+use Scalar::Util qw(reftype blessed);
 
 # VERSION
 
@@ -108,15 +108,17 @@ sub BUILD {
     #$self->{indent} = $args->{indent} // "    ";
 }
 
-sub format_and_display_result {
+sub format_result {
     require Perinci::Result::Format;
 
     my $self = shift;
-    return unless $self->{_res};
+    my $res  = $self->{_res};
+    return unless $res;
 
-    my $resmeta = $self->{_res}[3] // {};
-    unless ($resmeta->{"cmdline.display_result"}//1) {
-        $self->{_res}[2] = undef;
+    my $resmeta = $res->[3] // {};
+    unless ($resmeta->{"cmdline.display_result"} // 1) {
+        $res->[2] = undef;
+        return;
     }
 
     my $format = $self->format_set ?
@@ -126,14 +128,41 @@ sub format_and_display_result {
         join(", ", sort keys(%Perinci::Result::Format::Formats))."\n"
             unless $Perinci::Result::Format::Formats{$format};
     if ($self->format_options_set) {
-        $self->{_res}[3]{result_format_options} = $self->format_options;
+        $resmeta->{result_format_options} = $self->format_options;
     }
-    $log->tracef("Formatting output with %s", $format);
 
-    $self->{_fres} = Perinci::Result::Format::format(
-        $self->{_res}, $format);
+    # special handling for streaming output
+    if ($resmeta->{is_stream} && $res->[0] == 200) {
+        $log->tracef("Result is a stream");
+        $self->{_res_is_stream} = 1;
+    } else {
+        $log->tracef("Formatting output with %s", $format);
+        $self->{_fres} = Perinci::Result::Format::format(
+            $self->{_res}, $format);
+    }
+}
 
-    # display result
+sub display_result {
+    require File::Which;
+
+    my $self = shift;
+
+    my $res  = $self->{_res};
+    return unless $res;
+
+    my $resmeta = $res->[3] // {};
+
+    # this is a specific (and wrong) workaround to avoid the "Wide character in
+    # print" error when printing, even though something like binmode(STDOUT,
+    # ":utf8") has been . this only happens when using the Console (text-pretty)
+    # formatter. i haven't managed to pinpoint who the culprit is (it's not
+    # Term::Size and probably something that Text::ASCIITable uses). i will
+    # remove this workaround because i will be replacing Text::ASCIITable with
+    # Text::ANSITable sometime soon anyway.
+    local *STDOUT = \*STDOUT;
+    binmode(STDOUT, ":utf8");
+
+    my $handle;
     if ($resmeta->{"cmdline.page_result"}) {
         my $pager = $resmeta->{"cmdline.pager"} //
             $ENV{PAGER};
@@ -147,22 +176,35 @@ sub format_and_display_result {
             die "Can't determine PAGER";
         }
         $log->tracef("Paging output using %s", $pager);
-        open my($p), "| $pager";
-        print $p $self->{_fres};
+        open $handle, "| $pager";
     } else {
-        {
-            # this is a specific (and wrong) workaround to avoid the "Wide
-            # character in print" error when printing, even though something
-            # like binmode(STDOUT, ":utf8") has been . this only happens when
-            # using the Console (text-pretty) formatter. i haven't managed to
-            # pinpoint who the culprit is (it's not Term::Size and probably
-            # something that Text::ASCIITable uses). i will remove this
-            # workaround because i will be replacing Text::ASCIITable with
-            # Text::ANSITable sometime soon anyway.
-            local *STDOUT = \*STDOUT;
-            binmode(STDOUT, ":utf8");
-            print $self->{_fres};
+        $handle = \*STDOUT;
+    }
+
+    if ($self->{_res_is_stream}) {
+        die "Can't format stream as " . $self->format .
+            "please use --format text\n" unless $self->format =~ /^text/;
+        my $r = $res->[2];
+        if (ref($r) eq 'GLOB') {
+            while (!eof($r)) {
+                print $handle ~~<$r>;
+            }
+        } elsif (blessed($r) && $r->can('getline') && $r->can('eof')) {
+            # IO::Handle-like object
+            while (!$r->eof) {
+                print $r->getline;
+            }
+        } elsif (ref($r) eq 'ARRAY') {
+            # tied array
+            while (~~(@$r) > 0) {
+                print shift(@$r);
+            }
+        } else {
+            die "Invalid stream in result (not a glob/IO::Handle-like object/".
+                "(tied) array)\n";
         }
+    } else {
+        print $handle $self->{_fres};
     }
 }
 
@@ -1095,7 +1137,8 @@ sub run {
         $log->tracef("<- %s(), return=%s", $meth, $exit_code);
         last if defined $exit_code;
     }
-    $self->format_and_display_result;
+    $self->format_result;
+    $self->display_result;
 
     $log->tracef("<- CmdLine's run(), exit code=%s", $exit_code);
     if ($self->exit) {
@@ -1109,7 +1152,7 @@ sub run {
 1;
 # ABSTRACT: Rinci/Riap-based command-line application framework
 
-=for Pod::Coverage ^(BUILD|run_.+|doc_.+|before_.+|after_.+|format_and_display_result|gen_common_opts|get_subcommand|list_subcommands|parse_common_opts|parse_subcommand_opts|format_set|format_options|format_options_set)$
+=for Pod::Coverage ^(BUILD|run_.+|doc_.+|before_.+|after_.+|format_result|display_result|gen_common_opts|get_subcommand|list_subcommands|parse_common_opts|parse_subcommand_opts|format_set|format_options|format_options_set)$
 
 =head1 SYNOPSIS
 
@@ -1448,6 +1491,41 @@ option).
 
 This module interprets the following result metadata keys:
 
+=head2 is_stream => BOOL
+
+XXX should perhaps be defined as standard in L<Rinci::function>.
+
+If set to 1, signify that result is a stream. Result must be a glob, or an
+object that responds to getline() and eof() (like a Perl L<IO::Handle> object),
+or an array/tied array. Format must currently be C<text> (streaming YAML might
+be supported in the future). Items of result will be displayed to output as soon
+as it is retrieved, and unlike non-streams, it can be infinite.
+
+An example function:
+
+ $SPEC{cat_file} = { ... };
+ sub cat_file {
+     my %args = @_;
+     open my($fh), "<", $args{path} or return [500, "Can't open file: $!"];
+     [200, "OK", $fh, {is_stream=>1}];
+ }
+
+another example:
+
+ use Tie::Simple;
+ $SPEC{uc_file} = { ... };
+ sub uc_file {
+     my %args = @_;
+     open my($fh), "<", $args{path} or return [500, "Can't open file: $!"];
+     my @ary;
+     tie @ary, "Tie::Simple", undef,
+         SHIFT     => sub { eof($fh) ? undef : uc(~~<$fh> // "") },
+         FETCHSIZE => sub { eof($fh) ? 0 : 1 };
+     [200, "OK", \@ary, {is_stream=>1}];
+ }
+
+See also L<Data::Unixish> and L<App::dux> which deals with streams.
+
 =head2 cmdline.display_result => BOOL
 
 If you don't want to display function output (for example, function output is a
@@ -1545,13 +1623,20 @@ value will be retrieved from standard input if not specified. Example:
  };
  sub cmd {
      my %args = @_;
-     [200, "OK", "arg is $args{arg}"];
+     [200, "OK", "arg is '$args{arg}'"];
  }
  Perinci::CmdLine->new(url=>'/main/cmd')->run;
 
 When run from command line:
 
- % cmd --arg v1
+ % cat file.txt
+ This is content of file.txt
+ % cat file.txt | cmd
+ arg is 'This is content of file.txt'
+
+=head2 But I don't want it slurped into a single scalar, I want streaming!
+
+See L<App::dux> for an example on how to accomplish that.
 
 
 =head1 SEE ALSO
