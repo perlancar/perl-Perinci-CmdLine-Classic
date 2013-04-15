@@ -1,5 +1,10 @@
 Revision history for Perinci-CmdLine
 
+0.73     2013-04-15 (SHARYANTO)
+
+         Provide format_row().
+
+
 0.72     2013-04-14 (SHARYANTO)
 
          [INCOMPATIBLE CHANGES]
