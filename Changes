@@ -1,5 +1,10 @@
 Revision history for Perinci-CmdLine
 
+0.74     2013-04-16 (SHARYANTO)
+
+         No functional changes. Avoid perl undef warning.
+
+
 0.73     2013-04-15 (SHARYANTO)
 
          Provide format_row().
