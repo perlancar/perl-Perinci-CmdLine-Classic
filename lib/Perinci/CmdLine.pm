@@ -222,7 +222,7 @@ sub display_result {
                 "(tied) array)\n";
         }
     } else {
-        print $handle $self->{_fres};
+        print $handle $self->{_fres} // "";
     }
 }
 
