@@ -652,7 +652,7 @@ sub _setup_progress_output {
     my $self = shift;
 
     require Progress::Any;
-    if (-t STDOUT) {
+    if ($ENV{PROGRESS} // (-t STDOUT)) {
         require Progress::Any::Output::TermProgressBar;
         state $out = Progress::Any::Output::TermProgressBar->new;
         Progress::Any->set_output(output => $out);
@@ -1583,7 +1583,17 @@ status - 300).
 
 =head1 ENVIRONMENT
 
-B<PERINCI_CMDLINE_PROGRAM_NAME>. Can be used to set CLI program name.
+=over
+
+=item * PERINCI_CMDLINE_PROGRAM_NAME => STR
+
+Can be used to set CLI program name.
+
+=item * PROGRESS => BOOL.
+
+Explicitly turn the progress bar on/off.
+
+=back
 
 
 =head1 FAQ
