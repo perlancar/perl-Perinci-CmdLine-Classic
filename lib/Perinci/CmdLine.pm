@@ -683,13 +683,9 @@ sub _setup_progress_output {
             );
         }
     } else {
-        if ($self->{_log_any_app_loaded}) {
-            require Progress::Any::Output::LogAny;
+        require Progress::Any::Output::Null;
             Progress::Any->set_output(
-                Progress::Any::Output::LogAny->new(
-                ),
-            );
-        }
+                output => Progress::Any::Output::Null->new);
     }
 }
 
@@ -1589,7 +1585,7 @@ status - 300).
 
 Can be used to set CLI program name.
 
-=item * PROGRESS => BOOL.
+=item * PROGRESS => BOOL
 
 Explicitly turn the progress bar on/off.
 
