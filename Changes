@@ -1,5 +1,13 @@
 Revision history for Perinci-CmdLine
 
+0.75     2013-05-04 (SHARYANTO)
+
+         - Observe PROGRESS environment (can be set to 0 to disable progress
+           display).
+
+         - binmode(STDOUT, ":utf8") (TODO: option to opt out from this).
+
+
 0.74     2013-04-16 (SHARYANTO)
 
          No functional changes. Avoid perl undef warning.
