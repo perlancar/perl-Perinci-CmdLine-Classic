@@ -170,14 +170,7 @@ sub display_result {
 
     my $resmeta = $res->[3] // {};
 
-    # this is a specific (and wrong) workaround to avoid the "Wide character in
-    # print" error when printing, even though something like binmode(STDOUT,
-    # ":utf8") has been . this only happens when using the Console (text-pretty)
-    # formatter. i haven't managed to pinpoint who the culprit is (it's not
-    # Term::Size and probably something that Text::ASCIITable uses). i will
-    # remove this workaround because i will be replacing Text::ASCIITable with
-    # Text::ANSITable sometime soon anyway.
-    local *STDOUT = \*STDOUT;
+    # XXX allow programs to opt out from this
     binmode(STDOUT, ":utf8");
 
     my $handle;
