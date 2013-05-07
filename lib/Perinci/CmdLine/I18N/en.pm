@@ -12,7 +12,7 @@ our %Lexicon = %{ Locale::Maketext::Lexicon::Gettext->parse(<DATA>) };
 # ABSTRACT: English translation for Perinci::CmdLine
 __DATA__
 
-# list
+### action: list
 
 msgid  "There are no subcommands"
 msgstr "There are no subcommands"
@@ -20,98 +20,79 @@ msgstr "There are no subcommands"
 msgid  "List of available %1 subcommands"
 msgstr "List of available %1 subcommands"
 
-# version
+### action: version
 
 msgid  "%1 version %2"
 msgstr "%1 version %2"
 
-# usage
+### action: help
 
-# help when there is no subcommands
-msgid  ""
-"Usage:\n"
-"\n"
-"    %1 --help (or -h, -?)\n"
-"    %1 --version (or -v)\n"
-"    %1 (common options) (options)\n"
-msgstr ""
-"Usage:\n"
-"\n"
-"    %1 --help (or -h, -?)\n"
-"    %1 --version (or -v)\n"
-"    %1 [common options] [options]\n"
+msgid  "Usage"
+msgstr "Usage"
 
-# help when there is subcommands
-msgid  ""
-"Usage:\n"
-"\n"
-"    %1 --help (or -h, -?)\n"
-"    %1 --version (or -v)\n"
-"    %1 --list (or -l)\n"
-"    %1 SUBCOMMAND (common options) (options)\n"
-msgstr ""
-"Usage:\n"
-"\n"
-"    %1 --help (or -h, -?)\n"
-"    %1 --version (or -v)\n"
-"    %1 --list (or -l)\n"
-"    %1 SUBCOMMAND [common options] [options]\n"
+msgid  "%1 --help (or -h, -?)"
+msgstr "%1 --help (or -h, -?)"
 
-# help when there is subcommands + default_subcommand
-msgid  ""
-"Usage:\n"
-"\n"
-"    %1 --help (or -h, -?)\n"
-"    %1 --version (or -v)\n"
-"    %1 --list (or -l)\n"
-"    %1 (common options) (options)\n"
-"    %1 --cmd=OTHER_SUBCOMMAND (common options) (options)\n"
-msgstr ""
-"Usage:\n"
-"\n"
-"    %1 --help (or -h, -?)\n"
-"    %1 --version (or -v)\n"
-"    %1 --list (or -l)\n"
-"    %1 [common options] [options]\n"
-"    %1 --cmd=OTHER_SUBCOMMAND [common options] [options]\n"
+msgid  "%1 --version (or -v)"
+msgstr "%1 --version (or -v)"
 
-msgid  ""
-"Common options:\n"
-"\n"
-"    --format=FMT    Choose output format\n"
-msgstr ""
-"Common options:\n"
-"\n"
-"    --format=FMT    Choose output format\n"
+msgid  "%1 --list (or -l)"
+msgstr "%1 --list (or -l)"
 
-msgid  ""
-"Undo options:\n"
-"\n"
-"    --undo          Undo previous action\n"
-"    --redo          Redo previous undone action\n"
-"    --history       List actions history\n"
-"    --clear-history Clear actions history\n"
-msgstr ""
-"Undo options:\n"
-"\n"
-"    --undo          Undo previous action\n"
-"    --redo          Redo previous undone action\n"
-"    --history       List actions history\n"
-"    --clear-history Clear actions history\n"
+# usage when there are no subcommands
+msgid  "%1 (options)"
+msgstr "%1 [options]"
 
-msgid  "Special options"
-msgstr "Special options"
+# help when there are subcommands and no default subcommand
+msgid  "%1 (common options) SUBCOMMAND (options)"
+msgstr "%1 [common options] SUBCOMMAND [options]"
+
+# help when there are subcommands and there is a default subcommand
+msgid  "%1 (common options) (options)"
+msgstr "%1 [common options] [options]"
+
+msgid  "Options"
+msgstr "Options"
+
+msgid  "Common options"
+msgstr "Common options"
+
+msgid  "Undo options"
+msgstr "Undo options"
+
+# --format
+msgid  "Choose output format, e.g. json, text"
+msgstr "Choose output format, e.g. json, text"
+
+# --undo
+msgid  "Undo previous action"
+msgstr "Undo previous action"
+
+# --redo
+msgid  "Redo previous undone action"
+msgstr "Redo previous undone action"
+
+# --history
+msgid  "List actions history"
+msgstr "List actions history"
+
+# --clear-history
+msgid  "Clear actions history"
+msgstr "Clear actions history"
 
 # --dry-run
-msgid  "Run in simulation mode (can also be set via environment DRY_RUN=1)"
-msgstr "Run in simulation mode (can also be set via environment DRY_RUN=1)"
+msgid  "Run in simulation mode (also via DRY_RUN=1)"
+msgstr "Run in simulation mode (also via DRY_RUN=1)"
 
+# --version
 msgid  "Show version"
 msgstr "Show version"
 
+# --help
 msgid  "Display this help message"
 msgstr "Display this help message"
 
+# --list
 msgid  "List available subcommands"
 msgstr "List available subcommands"
 
@@ -123,12 +104,6 @@ msgstr "Subcommand"
 
 msgid  "Subcommands"
 msgstr "Subcommands"
-
-msgid  "Usage"
-msgstr "Usage"
-
-msgid  "Options"
-msgstr "Options"
 
 msgid  "For general help, type '%1'"
 msgstr "For general help, type '%1'"

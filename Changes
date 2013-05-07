@@ -1,4 +1,18 @@
-Revision history for Perinci-CmdLine
+Revisi0;115;0con history for Perinci-CmdLine
+
+0.76     2013-05-04 (SHARYANTO) (not yet released)
+
+         [ENHANCEMENTS]
+
+         - Common options are now modularized instead of hardcoded. You can now
+           delete/rename/add common options like --help, --version, etc. See
+           documentation for the 'common_opts' attribute.
+
+         [REMOVED FEATURES]
+
+         - Remove 'extra_opts' attribute because they are now supported via
+           'common_opts'.
+
 
 0.75     2013-05-04 (SHARYANTO)
 

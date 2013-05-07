@@ -33,7 +33,7 @@ has url => (is => 'rw');
 has summary => (is => 'rw');
 has subcommands => (is => 'rw');
 has default_subcommand => (is => 'rw');
-has extra_opts => (is => 'rw');
+has common_opts => (is => 'rw');
 has exit => (is => 'rw', default=>sub{1});
 has log_any_app => (is => 'rw', default=>sub{$ENV{LOG} // 1});
 has custom_completer => (is => 'rw');
@@ -53,7 +53,6 @@ has undo_dir => (
         $dir;
     }
 );
-
 has format => (is => 'rw', default=>sub{'text'});
 # bool, is format set via cmdline opt?
 has format_set => (is => 'rw');
@@ -683,10 +682,7 @@ sub _setup_progress_output {
 }
 
 sub run_help {
-    require Text::Wrap;
-
     my ($self) = @_;
-    my $sc = $self->{_subcommand};
 
     $self->{doc_sections} //= [
         'summary',
@@ -697,7 +693,6 @@ sub run_help {
         'examples',
         'links',
     ];
-    $Text::Wrap::columns = 80;
     print $self->generate_doc();
     0;
 }
@@ -1099,15 +1094,6 @@ sub run {
     $self->{_actions} = []; # first action will be tried first, then 2nd, ...
 
     my $getopts_common = $self->gen_common_opts();
-    if (my $oo = $self->extra_opts) {
-        for my $on (keys %$oo) {
-            my $o = $oo->{$on};
-            my $ond = $on; $ond =~ s/_/-/g;
-            push @$getopts_common, "$ond", sub {
-                $o->{handler}->($self, $_[1]);
-            };
-        }
-    }
 
     # store for other methods, e.g. run_subcommand() & run_completion()
     $self->{_getopts_common} = $getopts_common;
@@ -1216,30 +1202,48 @@ Perinci::CmdLine.
 
 =head1 DESCRIPTION
 
-Perinci::CmdLine is a command-line application framework. It accesses functions
-using Riap protocol (L<Perinci::Access>) so you get transparent remote access.
-It utilizes L<Rinci> metadata in the code so the amount of plumbing that you
-have to do is quite minimal.
-
-What you'll get:
+Perinci::CmdLine is a command-line application framework. It parses command-line
+options and dispatches to one of your specified Perl functions, passing the
+command-line options and arguments to the function. It accesses functions via
+L<Riap> protocol (using the L<Perinci::Access> Riap client library) so you can
+access remote functions transparently. It utilizes L<Rinci> metadata in the code
+so the amount of plumbing that you have to do is quite minimal. Basically most
+of the time you just need to write your "business logic" in your function (along
+with some metadata), and with a couple or several lines of script you have
+created a command-line interface with the following features:
 
 =over 4
 
 =item * Command-line options parsing
 
 Non-scalar arguments (array, hash, other nested) can also be passed as JSON or
-YAML (both will be attempted). For example, if the C<tags> argument is defined
-as 'array':
+YAML. For example, if the C<tags> argument is defined as 'array', then all of
+below are equivalent:
 
- % mycmd --tags '[foo, bar, baz]' ; # interpreted as YAML
- % mycmd --tags '["foo","bar"]'   ; # interpreted as JSON
- % mycmd --tags '[foo, bar, baz'  ; # fails both
+ % mycmd --tags-yaml '[foo, bar, baz]'
+ % mycmd --tags-yaml '["foo","bar","baz"]'
+ % mycmd --tags foo --tags bar --tags baz
 
 =item * Help message (utilizing information from metadata, supports translation)
 
+ % mycmd --help
+
 =item * Tab completion for bash (including completion from remote code)
 
+ % mycmd --he<tab> ; # --help
+ % mycmd s<tab>    ; # sub1, sub2, sub3 (if those are the specified subcommands)
+
 =item * Undo/redo/history
+
+=item * Version (--version, -v)
+
+Can be disabled or command-line option changed.
+
+=item * List available subcommands (--list, -l)
+
+Can be disabled or command-line option changed.
+
+=item Configurable output format (--format, --format-options)
 
 =back
 
@@ -1290,19 +1294,69 @@ only.
 If set, subcommand will always be set to this instead of from the first
 argument. To use other subcommands, you will have to use --cmd option.
 
-=head2 extra_opts => HASH
+=head2 common_opts => HASH
 
-Optional. Used to let program recognize extra command-line options. Currently
-not well-documented. For example:
+A list of common options, which are command-line options that are not associated
+with any subcommand. Each option is itself a specification hash. A partial
+example from the default:
 
- extra_opts => {
-     halt => {
-         handler => sub {
+ {
+     help => {
+         category    => 'Common options',
+         getopt      => 'help|h|?',
+         usage       => '%1 --help (or -h, -?)',
+         summary     => '',
+         handler     => sub {
              my ($self, $val) = @_;
-             $self->{_selected_subcommand} = 'shutdown';
+             $self->{_selected_subcommand} = 'help';
          },
      },
+     format => {
+         category    => 'Common options',
+         getopt      => 'format=s',
+         description => 'Choose output format, e.g. json, text',
+         handler     => sub {
+         },
+     },
+     undo => {
+         category => 'Undo options',
+         getopt   => 'undo',
+         summary  =>
+     },
+     ...
  }
+
+The default contains: help (getopt C<help|h|?>), version (getopt C<version|v>),
+action (getopt C<action>), format (getopt C<format=s>), format_options (getopt
+C<format-options=s>). If there are more than one subcommands, this will be
+added: list (getopt C<list|l>). If dry-run is supported by function, there will
+also be: dry_run (getopt C<dry-run>). If undo is turned on, there will also be:
+undo_undo (getopt C<undo>), undo_redo (getopt C<redo>), undo_history (getopt
+C<history>), undo_clear_history (getopt C<clear-history>).
+
+Sometimes you do not want some options, e.g. to remove C<format> and
+C<format_options>:
+
+ delete $cmd->common_opts->{format};
+ delete $cmd->common_opts->{format_options};
+ $cmd->run;
+
+Sometimes you want to rename some command-line options, e.g. to change version
+to use capital C<-V> instead of C<-v>:
+
+ $cmd->common_opts->{version}{getopt} = 'version|V';
+
+Sometimes you want to add subcommands as common options instead. For example:
+
+ $cmd->common_opts->{halt} = {
+     category    => 'Server options',
+     getopt      => 'halt',
+     summary     => 'Halt the server',
+     handler     => sub {
+         my ($self, $val) = @_;
+         $self->{_selected_subcommand} = 'shutdown';
+     },
+ };
 
 This will make:
 
@@ -1311,20 +1365,6 @@ This will make:
 equivalent to executing the 'shutdown' subcommand:
 
  % cmd shutdown
-
-As an alternative to using this attribute, you can also subclass and override
-C<gen_common_opts()>, like this:
-
- sub gen_common_opts {
-     my ($self) = @_;
-     my $go = $self->SUPER::gen_common_opts;
-     push @$go, (
-         halt => sub {
-             $self->{_selected_subcommand} = 'shutdown';
-         },
-     );
-     $go;
- }
 
 =head2 exit => BOOL (default 1)
 
