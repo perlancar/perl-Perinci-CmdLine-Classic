@@ -1435,7 +1435,7 @@ enclose the call request to function.
 
 =item * Called function will need to support transaction and undo
 
-Function which do not meet qualifications will refuse to be called.
+Function which does not meet qualifications will refuse to be called.
 
 Exception is when subcommand is specified with C<< undo=>0 >>, where transaction
 will not be used for that subcommand. For an example of disabling transaction
