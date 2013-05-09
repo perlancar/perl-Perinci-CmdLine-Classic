@@ -1250,7 +1250,10 @@ list (--history) and clearing the list (--clear-history).
 
 =item * List available subcommands (--list, -l)
 
-=item Configurable output format (--format, --format-options)
+=item * Configurable output format (--format, --format-options)
+
+By default C<yaml>, C<json>, C<text>, C<text-simple>, C<text-pretty> are
+recognized.
 
 =back
 
@@ -1259,6 +1262,59 @@ etc) can be renamed or disabled.
 
 This module uses L<Log::Any> and L<Log::Any::App> for logging. This module uses
 L<Moo> for OO.
+
+
+=head1 DISPATCHING
+
+Below is the description of how the framework determines what action and which
+function to call. (Currently lots of internal attributes are accessed directly,
+this might be rectified in the future.)
+
+B<Actions>. The C<_actions> attribute is an array which contains the list of
+potential actions to choose, in order. It will then be filled out according to
+the command-line options specified. For example, if C<--help> is specified,
+C<help> action is shifted to the beginning of C<_actions>. Likewise for
+C<--list>, etc. Finally, the C<subcommand> action (which means an action to call
+our function) is added to this list. After we are finished filling out the
+C<_actions> array, the first action is chosen by running a method called C<<
+run_<ACTION> >>. For example if the chosen action is C<help>, C<run_help()> is
+called. These C<run_*> methods must execute the action, display the output, and
+return an exit code. Program will end with this exit code.
+
+B<The subcommand action and determining function to call>. The C<subcommand>
+action (implemented by C<run_subcommand()>) is the one that actually does the
+real job, calling the function and displaying its result. The C<_subcommand>
+attribute stores information on the subcommand to run, including its Riap URL.
+If there are subcommands, e.g.:
+
+ my $cmd = Perinci::CmdLine->new(
+     subcommands => {
+         sub1 => {
+             url => '/MyApp/func1',
+         },
+         sub2 => {
+             url => '/MyApp/func2',
+         },
+     },
+ );
+
+then which subcommand to run is determined by the command-line argument, e.g.:
+
+ % myapp sub1 ...
+
+then C<_subcommand> attribute will contain C<< {url=>'/MyApp/func1'} >>. When no
+subcommand is specified on the command line, either the C<help> action will be
+executed, or C<subcommand> action if C<default_subcommand> attribute is set.
+
+When there are no subcommands, e.g.:
+
+ my $cmd = Perinci::CmdLine->new(url => '/MyApp/func');
+
+C<_subcommand> will simply contain C<< {url=>'/MyApp/func'} >>.
+
+C<run_subcommand()> will then call the function specified in the C<url> in the
+C<_subcommand> using C<Perinci::Access>. (Actually, C<run_help()> or
+C<run_completion()> can be called instead, depending on which action to run.)
 
 
 =head1 ATTRIBUTES
@@ -1306,31 +1362,31 @@ argument. To use other subcommands, you will have to use --cmd option.
 =head2 common_opts => HASH
 
 A list of common options, which are command-line options that are not associated
-with any subcommand. Each option is itself a specification hash. A partial
-example from the default:
+with any subcommand. Each option is itself a specification hash containing these
+keys: C<category> (str, optional, for grouping options in help/usage message,
+defaults to C<Common options>), C<getopt> (str, required, Getopt::Long
+specification), C<usage> (str, optional, displayed in usage line in help/usage
+text, C<%1> will be replaced by program name), C<summary> (str, optional, be
+displayed in description of the option in help/usage text). A partial example
+from the default:
 
  {
      help => {
          category    => 'Common options',
          getopt      => 'help|h|?',
          usage       => '%1 --help (or -h, -?)',
-         summary     => '',
-         handler     => sub {
-             my ($self, $val) = @_;
-             $self->{_selected_subcommand} = 'help';
-         },
+         handler     => sub { ... },
      },
      format => {
          category    => 'Common options',
          getopt      => 'format=s',
-         description => 'Choose output format, e.g. json, text',
-         handler     => sub {
-         },
+         summary     => 'Choose output format, e.g. json, text',
+         handler     => sub { ... },
      },
      undo => {
          category => 'Undo options',
          getopt   => 'undo',
-         summary  =>
+         ...
      },
      ...
  }
@@ -1398,7 +1454,7 @@ details.
 
 =head2 dash_to_underscore => BOOL (optional, default 1)
 
-If set to 1, subcommand like a-b-c will be converted to a_b_c. This is for
+If set to 1, subcommand like C<a-b-c> will be converted to C<a_b_c>. This is for
 convenience when typing in command line.
 
 =head2 pass_cmdline_object => BOOL (optional, default 0)
