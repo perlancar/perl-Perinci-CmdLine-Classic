@@ -1662,7 +1662,7 @@ L<App::Cmd>, L<App::Rad>, L<MooX::Cmd>, etc.
 
 =item * Configuration file support is currently missing
 
-Coming soon, most probably will be based on L<Config::Ini::OnDrugs>.
+Coming soon, most probably will be based on L<Config::IOD>.
 
 =item * Also lacking is more documentation and more plugins
 
