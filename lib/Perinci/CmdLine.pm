@@ -1689,6 +1689,11 @@ See L<App::dux> for an example on how to accomplish that. Basically in App::dux,
 you feed an array tied with L<Tie::Diamond> as a function argument. Thus you can
 get lines from file/STDIN iteratively with each().
 
+=head2 My application is OO?
+
+This framework is currently non-OO and function-centric. There are already
+several OO-based command-line frameworks on CPAN.
+
 
 =head1 SEE ALSO
 
