@@ -1227,29 +1227,38 @@ below are equivalent:
 =item * Help message (utilizing information from metadata, supports translation)
 
  % mycmd --help
+ % mycmd -h
+ % mycmd -?
 
 =item * Tab completion for bash (including completion from remote code)
 
+ % complete -C mycmd mycmd
  % mycmd --he<tab> ; # --help
  % mycmd s<tab>    ; # sub1, sub2, sub3 (if those are the specified subcommands)
+ % mycmd sub1 -<tab> ; # list the options available for sub1 subcommand
+
+Support for other shell might be added in the future upon request.
 
 =item * Undo/redo/history
 
+If the function supports transaction (see L<Rinci::Transaction>,
+L<Riap::Transaction>) the framework will setup transaction and provide command
+to do undo (--undo) and redo (--redo) as well as seeing the undo/transaction
+list (--history) and clearing the list (--clear-history).
+
 =item * Version (--version, -v)
 
-Can be disabled or command-line option changed.
-
 =item * List available subcommands (--list, -l)
-
-Can be disabled or command-line option changed.
 
 =item Configurable output format (--format, --format-options)
 
 =back
 
-This module uses L<Log::Any> and L<Log::Any::App> for logging.
+Note that the each of the above command-line options (C<--help>, C<--version>,
+etc) can be renamed or disabled.
 
-This module uses L<Moo> for OO.
+This module uses L<Log::Any> and L<Log::Any::App> for logging. This module uses
+L<Moo> for OO.
 
 
 =head1 ATTRIBUTES
