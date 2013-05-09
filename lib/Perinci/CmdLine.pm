@@ -1651,23 +1651,6 @@ on your system. After that, try running:
 Everything from help message, calling, argument checking, tab completion works
 for remote code as well as local Perl code.
 
-Aside from this difference, there are several others:
-
-=over 4
-
-=item * Non-OO, function-centric
-
-If you want OO, there are already several frameworks out there for you, e.g.
-L<App::Cmd>, L<App::Rad>, L<MooX::Cmd>, etc.
-
-=item * Configuration file support is currently missing
-
-Coming soon, most probably will be based on L<Config::IOD>.
-
-=item * Also lacking is more documentation and more plugins
-
-=back
-
 =head2 How to add support for new output format (e.g. XML, HTML)?
 
 See L<Perinci::Result::Format>.
@@ -1702,7 +1685,9 @@ When run from command line:
 
 =head2 But I don't want it slurped into a single scalar, I want streaming!
 
-See L<App::dux> for an example on how to accomplish that.
+See L<App::dux> for an example on how to accomplish that. Basically in App::dux,
+you feed an array tied with L<Tie::Diamond> as a function argument. Thus you can
+get lines from file/STDIN iteratively with each().
 
 
 =head1 SEE ALSO
