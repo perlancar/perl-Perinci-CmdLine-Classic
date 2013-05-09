@@ -1409,11 +1409,6 @@ per-subcommand basis.
 
 Passing the cmdline object can be useful, e.g. to call run_help(), etc.
 
-=head2 undo => BOOL (optional, default 0)
-
-Whether to enable undo/redo functionality. Some things to note if you intend to
-use undo:
-
 =head2 pa_args => HASH
 
 Arguments to pass to L<Perinci::Access>. This is useful for passing e.g. HTTP
@@ -1421,15 +1416,20 @@ basic authentication to Riap client (L<Perinci::Access::HTTP::Client>):
 
  pa_args => {handler_args => {user=>$USER, password=>$PASS}}
 
+=head2 undo => BOOL (optional, default 0)
+
+Whether to enable undo/redo functionality. Some things to note if you intend to
+use undo:
+
 =over 4
 
-=item * These command-line options will be recognized
+=item * These common command-line options will be recognized
 
 C<--undo>, C<--redo>, C<--history>, C<--clear-history>.
 
 =item * Transactions will be used
 
-use_tx=>1 will be passed to L<Perinci::Access>, which will cause it to
+C<< use_tx=>1 >> will be passed to L<Perinci::Access>, which will cause it to
 initialize the transaction manager. Riap requests begin_tx and commit_tx will
 enclose the call request to function.
 
@@ -1437,9 +1437,9 @@ enclose the call request to function.
 
 Function which do not meet qualifications will refuse to be called.
 
-Exception is when subcommand is specified with undo=>0, where transaction will
-not be used for that subcommand. For an example of disabling transaction for
-some subcommands, see C<bin/u-trash> in the distribution.
+Exception is when subcommand is specified with C<< undo=>0 >>, where transaction
+will not be used for that subcommand. For an example of disabling transaction
+for some subcommands, see C<bin/u-trash> in the distribution.
 
 =back
 
@@ -1532,6 +1532,7 @@ For functions that express that they do progress updating (by setting their
 C<progress> feature to true), Perinci::CmdLine will setup an output, currently
 either L<Progress::Any::Output::TermProgressBar> if program runs interactively,
 or L<Progress::Any::Output::LogAny> if program doesn't run interactively.
+
 
 =head1 METADATA PROPERTY ATTRIBUTE
 
