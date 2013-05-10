@@ -1,5 +1,12 @@
 Revisi0;115;0con history for Perinci-CmdLine
 
+0.77     2013-05-10 (SHARYANTO)
+
+         [BUG FIXES]
+
+         - Setting --format-options didn't work.
+
+
 0.76     2013-05-10 (SHARYANTO)
 
          [ENHANCEMENTS]
