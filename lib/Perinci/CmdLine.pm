@@ -276,7 +276,7 @@ sub format_result {
         join(", ", sort keys(%Perinci::Result::Format::Formats))."\n"
             unless $Perinci::Result::Format::Formats{$format};
     if ($self->format_options_set) {
-        $resmeta->{result_format_options} = $self->format_options;
+        $res->[3]{result_format_options} = $self->format_options;
     }
 
     if ($resmeta->{is_stream}) {
