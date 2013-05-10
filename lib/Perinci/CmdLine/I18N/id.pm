@@ -30,26 +30,26 @@ msgstr "%1 versi %2"
 msgid  "Usage"
 msgstr "Cara pakai"
 
-msgid  "%1 --help (or -h, -?)"
-msgstr "%1 --help (atau -h, -?)"
+msgid  "--help (or -h, -?)"
+msgstr "--help (atau -h, -?)"
 
-msgid  "%1 --version (or -v)"
-msgstr "%1 --version (atau -v)"
+msgid  "--version (or -v)"
+msgstr "--version (atau -v)"
 
-msgid  "%1 --list (or -l)"
-msgstr "%1 --list (atau -l)"
+msgid  "--list (or -l)"
+msgstr "--list (atau -l)"
 
 # usage when there are no subcommands
-msgid  "%1 (options)"
-msgstr "%1 [opsi]"
+msgid  "(options)"
+msgstr "[opsi]"
 
 # help when there are subcommands and no default subcommand
-msgid  "%1 (common options) SUBCOMMAND (options)"
-msgstr "%1 [opsi umum] SUBPERINTAH [opsi]"
+msgid  "(common options) SUBCOMMAND (options)"
+msgstr "[opsi umum] SUBPERINTAH [opsi]"
 
 # help when there are subcommands and there is a default subcommand
-msgid  "%1 (common options) (options)"
-msgstr "%1 [opsi umm] [opsi]"
+msgid  "--cmd=OTHER_SUBCOMMAND (common options) (options)"
+msgstr "--cmd=SUBPERINTAH_LAIN [opsi umum] [opsi]"
 
 msgid  "Options"
 msgstr "Opsi"
@@ -58,11 +58,15 @@ msgid  "Common options"
 msgstr "Opsi umum"
 
 msgid  "Undo options"
-msgstr "Opsi undo"
+msgstr "Opsi pembatalan"
 
 # --format
 msgid  "Choose output format, e.g. json, text"
 msgstr "Pilih format hasil, mis: json, text"
+
+# --format-options
+msgid  "Pass options to formatter"
+msgstr "Berikan opsi pada pemformat"
 
 # --undo
 msgid  "Undo previous action"
@@ -95,6 +99,29 @@ msgstr "Tampilkan pesan bantuan ini"
 # --list
 msgid  "List available subcommands"
 msgstr "Daftar subperintah yang ada"
+
+# --cmd
+msgid  "Select subcommand"
+msgstr "Pilih subperintah"
+
+# --action currently undocumented
+
+# --quiet, --verbose, --debug, --trace, --log-level
+msgid  "Set log level to quiet"
+msgstr "Set level log ke diam (error ke atas)"
+
+msgid  "Set log level to verbose"
+msgstr "Set level log ke riuh (info ke atas)"
+
+msgid  "Set log level to debug"
+msgstr "Set level log ke debug ke atas"
+
+msgid  "Set log level to trace"
+msgstr "Set level log ke trace ke atas"
+
+msgid  "Set log level"
+msgstr "Set level log"
+
 
 msgid  "List of available subcommands"
 msgstr "Daftar subperintah yang ada"

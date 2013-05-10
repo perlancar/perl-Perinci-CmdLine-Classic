@@ -30,26 +30,26 @@ msgstr "%1 version %2"
 msgid  "Usage"
 msgstr "Usage"
 
-msgid  "%1 --help (or -h, -?)"
-msgstr "%1 --help (or -h, -?)"
+msgid  "--help (or -h, -?)"
+msgstr "--help (or -h, -?)"
 
-msgid  "%1 --version (or -v)"
-msgstr "%1 --version (or -v)"
+msgid  "--version (or -v)"
+msgstr "--version (or -v)"
 
-msgid  "%1 --list (or -l)"
-msgstr "%1 --list (or -l)"
+msgid  "--list (or -l)"
+msgstr "--list (or -l)"
 
 # usage when there are no subcommands
-msgid  "%1 (options)"
-msgstr "%1 [options]"
+msgid  "(options)"
+msgstr "[options]"
 
 # help when there are subcommands and no default subcommand
-msgid  "%1 (common options) SUBCOMMAND (options)"
-msgstr "%1 [common options] SUBCOMMAND [options]"
+msgid  "SUBCOMMAND (options)"
+msgstr "SUBCOMMAND [options]"
 
 # help when there are subcommands and there is a default subcommand
-msgid  "%1 (common options) (options)"
-msgstr "%1 [common options] [options]"
+msgid  "--cmd=OTHER_SUBCOMMAND (options)"
+msgstr "--cmd=OTHER_SUBCOMMAND [options]"
 
 msgid  "Options"
 msgstr "Options"
@@ -63,6 +63,10 @@ msgstr "Undo options"
 # --format
 msgid  "Choose output format, e.g. json, text"
 msgstr "Choose output format, e.g. json, text"
+
+# --format-options
+msgid  "Pass options to formatter"
+msgstr "Pass options to formatter"
 
 # --undo
 msgid  "Undo previous action"
@@ -95,6 +99,29 @@ msgstr "Display this help message"
 # --list
 msgid  "List available subcommands"
 msgstr "List available subcommands"
+
+# --cmd
+msgid  "Select subcommand"
+msgstr "Select subcommand"
+
+# --action currently undocumented
+
+# --quiet, --verbose, --debug, --trace, --log-level
+msgid  "Set log level to quiet"
+msgstr "Set log level to quiet (error and up)"
+
+msgid  "Set log level to verbose"
+msgstr "Set log level to verbose (info and up)"
+
+msgid  "Set log level to debug"
+msgstr "Set log level to debug and up"
+
+msgid  "Set log level to trace"
+msgstr "Set log level to trace and up"
+
+msgid  "Set log level"
+msgstr "Set log level"
+
 
 msgid  "List of available subcommands"
 msgstr "List of available subcommands"

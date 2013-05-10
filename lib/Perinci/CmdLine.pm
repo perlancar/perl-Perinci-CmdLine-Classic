@@ -33,7 +33,6 @@ has url => (is => 'rw');
 has summary => (is => 'rw');
 has subcommands => (is => 'rw');
 has default_subcommand => (is => 'rw');
-has common_opts => (is => 'rw');
 has exit => (is => 'rw', default=>sub{1});
 has log_any_app => (is => 'rw', default=>sub{$ENV{LOG} // 1});
 has custom_completer => (is => 'rw');
@@ -94,6 +93,156 @@ has _pa => (
         $log->tracef("Creating Perinci::Access object with args: %s", \%args);
         Perinci::Access->new(%args);
     }
+);
+has common_opts => (
+    is      => 'rw',
+    lazy    => 1,
+    default => sub {
+        my ($self) = @_;
+
+        my %opts;
+
+        # 'action=subcommand' can be used to override --help (or --list,
+        # --version) if one of function arguments happens to be 'help', 'list',
+        # or 'version'. currently this is undocumented.
+        $opts{action} = {
+            getopt  => "action=s",
+            handler => sub {
+                if ($_[1] eq 'subcommand') {
+                    $self->{_force_subcommand} = 1;
+                }
+            },
+        };
+
+        $opts{version} = {
+            getopt  => "version|v",
+            usage   => "--version (or -v)",
+            summary => "Show version",
+            handler => sub {
+                die "ERROR: 'url' not set, required for --version\n"
+                    unless $self->url;
+                unshift @{$self->{_actions}}, 'version';
+                $self->{_check_required_args} = 0;
+            },
+        };
+
+        $opts{help} = {
+            getopt  => "help|h|?",
+            usage   => "--help (or -h, -?)",
+            summary => "Display this help message",
+            handler => sub {
+                unshift @{$self->{_actions}}, 'help';
+                $self->{_check_required_args} = 0;
+            },
+            order   => 0, # high
+        };
+
+        $opts{format} = {
+            getopt  => "format=s",
+            summary => "Choose output format, e.g. json, text",
+            handler => sub {
+                $self->format_set(1);
+                $self->format($_[1]);
+            },
+        };
+
+        $opts{format_options} = {
+            getopt  => "format-options=s",
+            summary => "Pass options to formatter",
+            handler => sub {
+                $self->format_options_set(1);
+                $self->format_options(__json_decode($_[1]));
+            },
+        };
+
+        if ($self->subcommands) {
+            $opts{list} = {
+                getopt  => "list|l",
+                usage   => "--list (or -l)",
+                summary => "List available subcommands",
+                handler => sub {
+                    unshift @{$self->{_actions}}, 'list';
+                    $self->{_check_required_args} = 0;
+                },
+            };
+        }
+
+        if (defined $self->default_subcommand) {
+            # 'cmd=SUBCOMMAND_NAME' can be used to select other subcommands when
+            # default_subcommand is in effect.
+            $opts{cmd} = {
+                getopt  => "cmd=s",
+                handler => sub {
+                    $self->{_selected_subcommand} = $_[1];
+                },
+            };
+        }
+
+        # convenience for Log::Any::App-using apps
+        if ($self->log_any_app) {
+            # since the cmdline opts is consumed, Log::Any::App doesn't see
+            # this. we currently work around this via setting env.
+            for my $o (qw/quiet verbose debug trace/) {
+                $opts{$o} = {
+                    getopt  => $o,
+                    summary => "Set log level to $o",
+                    handler => sub {
+                        $ENV{uc $o} = 1;
+                    },
+                };
+            }
+            $opts{log_level} = {
+                getopt  => "log-level=s",
+                summary => "Set log level",
+                handler => sub {
+                    $ENV{LOG_LEVEL} = $_[1];
+                },
+            };
+        }
+
+        if ($self->undo) {
+            $opts{history} = {
+                category => 'Undo options',
+                getopt  => 'history',
+                summary => 'List actions history',
+                handler => sub {
+                    unshift @{$self->{_actions}}, 'history';
+                    $self->{_check_required_args} = 0;
+                },
+            };
+            $opts{clear_history} = {
+                category => 'Undo options',
+                getopt  => "clear-history",
+                summary => 'Clear actions history',
+                handler => sub {
+                    unshift @{$self->{_actions}}, 'clear_history';
+                    $self->{_check_required_args} = 0;
+                },
+            };
+            $opts{undo} = {
+                category => 'Undo options',
+                getopt  => 'undo',
+                summary => 'Undo previous action',
+                handler => sub {
+                    unshift @{$self->{_actions}}, 'undo';
+                    #$self->{_tx_id} = $_[1];
+                    $self->{_check_required_args} = 0;
+                },
+            };
+            $opts{redo} = {
+                category => 'Undo options',
+                getopt  => 'redo',
+                summary => 'Redo previous undone action',
+                handler => sub {
+                    unshift @{$self->{_actions}}, 'redo';
+                    #$self->{_tx_id} = $_[1];
+                    $self->{_check_required_args} = 0;
+                },
+            };
+        }
+
+        \%opts;
+    },
 );
 
 sub __json_decode {
@@ -367,7 +516,7 @@ sub run_completion {
     }
 
     my @top_opts; # contain --help, -h, etc.
-    for my $o (keys %{{@{ $self->{_getopts_common} }}}) {
+    for my $o (keys %{{@{ $self->{_go_specs_common} }}}) {
         $o =~ s/^--//;
         $o =~ s/=.+$//;
         my @o = split /\|/, $o;
@@ -399,7 +548,7 @@ sub run_completion {
         # duplication, as Perinci::Sub::GetArgs::Argv also does something
         # similar.
         my $common_opts = [];
-        for my $k (keys %{{@{ $self->{_getopts_common} }}}) {
+        for my $k (keys %{{@{ $self->{_go_specs_common} }}}) {
             $k =~ s/^--?//;
             $k =~ s/^([\w?-]+(?:\|[\w?-]+)*)(?:\W.*)?/$1/;
             for (split /\|/, $k) {
@@ -443,7 +592,28 @@ sub before_generate_doc {
         die "ERROR: Can't meta '$url': $res->[0] - $res->[1]\n"
             unless $res->[0] == 200;
         $self->{_meta} = $res->[2];
+        $self->_add_common_opts_after_meta;
     }
+}
+
+# some common opts can be added only after we get the function metadata
+sub _add_common_opts_after_meta {
+    my $self = shift;
+
+    if (risub($self->{_meta})->can_dry_run) {
+        $self->common_opts->{dry_run} = {
+            getopt  => 'dry-run',
+            summary => "Run in simulation mode (also via DRY_RUN=1)",
+            handler => sub {
+                $self->{_dry_run} = 1;
+                $ENV{VERBOSE} = 1;
+            },
+        };
+    }
+
+    # update the cached getopt specs
+    my @go_opts = $self->_gen_go_specs_from_common_opts;
+    $self->{_go_specs_common} = \@go_opts;
 }
 
 sub doc_parse_summary {
@@ -477,145 +647,133 @@ sub doc_parse_usage {}
 
 sub doc_gen_usage {
     my ($self) = @_;
-    my $text;
+
+    my $co = $self->common_opts;
+    my @con = sort {
+        ($co->{$a}{order}//1) <=> ($co->{$b}{order}//1) || $a cmp $b
+    } keys %$co;
+
+
+    $self->{_common_opts} = \@con; # save for doc_gen_options
+    $self->add_doc_lines($self->loc("Usage").":");
+    my $pn = $self->program_name;
+    for my $con (@con) {
+        my $cov = $co->{$con};
+        next unless $cov->{usage};
+        $self->add_doc_lines("    $pn ".$self->loc($cov->{usage}));
+    }
     if ($self->subcommands) {
         if (defined $self->default_subcommand) {
-            $text = <<_;
-Usage:
-
-    [_1] --help (or -h, -?)
-    [_1] --version (or -v)
-    [_1] --list (or -l)
-    [_1] (common options) (options)
-    [_1] --cmd=OTHER_SUBCOMMAND (common options) (options)
-_
+            $self->add_doc_lines("    $pn ".$self->loc("--cmd=OTHER_SUBCOMMAND (options)"));
         } else {
-            $text = <<_;
-Usage:
-
-    [_1] --help (or -h, -?)
-    [_1] --version (or -v)
-    [_1] --list (or -l)
-    [_1] SUBCOMMAND (common options) (options)
-_
+            $self->add_doc_lines("    $pn ".$self->loc("SUBCOMMAND (options)"));
         }
     } else {
-        $text = <<_;
-Usage:
-
-    [_1] --help (or -h, -?)
-    [_1] --version (or -v)
-    [_1] (common options) (options)
-_
+        $self->add_doc_lines("    $pn ".$self->loc("(options)"));
     }
-
-    $self->add_doc_lines($self->loc($text, $self->program_name), "");
-}
-
-sub doc_parse_common_options {}
-
-sub doc_gen_common_options {
-    my ($self) = @_;
-
-    my $text = <<_;
-Common options:
-
-    --format=FMT    Choose output format
-_
-    $self->add_doc_lines($self->loc($text), "");
-
-    $text = <<_;
-Undo options:
-
-    --undo          Undo previous action
-    --redo          Redo previous undone action
-    --history       List actions history
-    --clear-history Clear actions history
-_
-    $self->add_doc_lines($self->loc($text), "") if $self->undo;
+    $self->add_doc_lines("");
 }
 
 sub doc_parse_options {}
 
 sub doc_gen_options {
+    require SHARYANTO::Getopt::Long::Util;
+
     my ($self) = @_;
     my $info = $self->{_info};
     my $meta = $self->{_meta};
     my $args_p = $meta->{args};
-    return if !$info || $info->{type} ne 'function' || !$args_p || !%$args_p;
+    my $sc = $self->subcommands;
 
-    $self->add_doc_lines($self->loc("Options") . ":\n", "");
+    # stored gathered options by category, e.g. $catopts{"Common options"} (an
+    # array containing options)
+    my %catopts;
 
-    # XXX categorize
-    for my $an (sort {
-        ($args_p->{$a}{pos} // 99) <=> ($args_p->{$b}{pos} // 99) ||
-            $a cmp $b
-    } keys %$args_p) {
-        my $a = $args_p->{$an};
-        my $s = $a->{schema} || [any=>{}];
-        my $ane = $an; $ane =~ s/_/-/g; $ane =~ s/\W/-/g;
-        $ane = "no$ane" if $s->[0] eq 'bool' && $s->[1]{default};
-        for my $al0 (keys %{ $a->{cmdline_aliases} // {}}) {
-            my $al = $al0; $al =~ s/_/-/g;
-            $al = length($al) > 1 ? "--$al" : "-$al";
-            $ane .= ", $al";
-        }
-        my $def = defined($s->[1]{default}) && $s->[0] ne 'bool' ?
-            " (default: ".dump1($s->[1]{default}).")" : "";
-        my $src = $a->{cmdline_src} // "";
-        my $text = sprintf(
-            "  --%s [%s]%s\n",
-            $ane,
-            Perinci::ToUtil::sah2human_short($s),
-            join(
-                "",
-                (defined($a->{pos}) ? " (" .
-                     $self->loc("or as argument #[_1]",
-                                ($a->{pos}+1).($a->{greedy} ? "+":"")).")":""),
-                ($src eq 'stdin' ?
-                     " (" . $self->loc("or from stdin") . ")" : ""),
-                ($src eq 'stdin_or_files' ?
-                     " (" . $self->loc("or from stdin/files") . ")" : ""),
-                $def
-            ),
-        );
-        $self->add_doc_lines($text);
-        my $in;
-        if ($s->[1]{in} && @{ $s->[1]{in} }) {
-            $in = dump1($s->[1]{in});
-        }
-        my $summary     = $self->langprop($a, "summary");
-        my $description = $self->langprop($a, "description");
-        if ($in || $summary || $description || $in) {
-            $self->inc_indent(2);
-            $self->add_doc_lines(
-                "",
-                ucfirst($self->loc("value in")). ": $in")
-                if $in;
-            $self->add_doc_lines("", $summary . ".") if $summary;
-            $self->add_doc_lines("", $description) if $description;
-            $self->dec_indent(2);
-            $self->add_doc_lines("");
+    my $t_opts = $self->loc("Options");
+    my $t_copts = $self->loc("Common options");
+
+    # gather common opts
+    my $co = $self->common_opts;
+    my @con = sort {
+        ($co->{$a}{order}//1) <=> ($co->{$b}{order}//1) || $a cmp $b
+    } keys %$co;
+    for my $con (@con) {
+        my $cov = $co->{$con};
+        my $cat = $cov->{category} ? $self->loc($cov->{category}) :
+            ($sc ? $t_copts : $t_opts);
+        my $go = $cov->{getopt};
+        push @{ $catopts{$cat} }, {
+            getopt=>SHARYANTO::Getopt::Long::Util::gospec2human($cov->{getopt}),
+            summary=> $cov->{summary} ? $self->loc($cov->{summary}) : "",
+        };
+    }
+
+    # gather function opts (XXX: categorize according to tags)
+    if ($info && $info->{type} eq 'function' && $args_p && %$args_p) {
+        for my $an (sort {
+            ($args_p->{$a}{pos} // 99) <=> ($args_p->{$b}{pos} // 99) ||
+                $a cmp $b
+            } keys %$args_p) {
+            my $a = $args_p->{$an};
+            my $s = $a->{schema} || [any=>{}];
+            my $ane = $an; $ane =~ s/_/-/g; $ane =~ s/\W/-/g;
+            $ane = "no$ane" if $s->[0] eq 'bool' && $s->[1]{default};
+            for my $al0 (keys %{ $a->{cmdline_aliases} // {}}) {
+                my $al = $al0; $al =~ s/_/-/g;
+                $al = length($al) > 1 ? "--$al" : "-$al";
+                $ane .= ", $al";
+            }
+            my $def = defined($s->[1]{default}) && $s->[0] ne 'bool' ?
+                " (default: ".dump1($s->[1]{default}).")" : "";
+            my $src = $a->{cmdline_src} // "";
+            my $in;
+            if ($s->[1]{in} && @{ $s->[1]{in} }) {
+                $in = dump1($s->[1]{in});
+            }
+            push @{ $catopts{$t_opts} }, {
+                getopt => "--$ane",
+                getopt_note => sprintf(
+                    "[%s]%s",
+                    Perinci::ToUtil::sah2human_short($s),
+                    join(
+                        "",
+                        (defined($a->{pos}) ? " (" .
+                             $self->loc("or as argument #[_1]",
+                                        ($a->{pos}+1).($a->{greedy} ? "+":"")).")":""),
+                        ($src eq 'stdin' ?
+                             " (" . $self->loc("or from stdin") . ")" : ""),
+                        ($src eq 'stdin_or_files' ?
+                             " (" . $self->loc("or from stdin/files") . ")" : ""),
+                        $def
+                    )),
+                summary => $self->langprop($a, "summary"),
+                description => $self->langprop($a, "description"),
+                in => $in,
+            };
         }
     }
 
-    my @spec;
-    if (risub($meta)->can_dry_run) {
-        push @spec, {opt=>"dry-run", type=>"bool",
-                     summary=>$self->loc(
-                         "Run in simulation mode ".
-                             "(can also be set via environment DRY_RUN=1)")};
-    }
-    if (@spec) {
-        $self->add_doc_lines($self->loc("Special options"). ":\n", "");
-        for my $spec (@spec) {
-            $self->add_doc_lines("  --$spec->{opt} [$spec->{type}]\n");
-            $self->inc_indent(2);
-            $self->add_doc_lines("", $spec->{summary}.".") if $spec->{summary};
-            $self->dec_indent(2);
-            $self->add_doc_lines("");
+    # output gathered options
+    for my $cat (sort keys %catopts) {
+        $self->add_doc_lines("$cat:\n", "");
+        for my $o (@{ $catopts{$cat} }) {
+            $self->inc_indent(1);
+            $self->add_doc_lines($o->{getopt} . ($o->{getopt_note} ? " $o->{getopt_note}" : ""));
+            if ($o->{in} || $o->{summary} || $o->{description}) {
+                $self->inc_indent(1);
+                $self->add_doc_lines(
+                    "",
+                    ucfirst($self->loc("value in")). ": $o->{in}")
+                    if $o->{in};
+                $self->add_doc_lines("", $o->{summary} . ".") if $o->{summary};
+                $self->add_doc_lines("", $o->{description}) if $o->{description};
+                $self->dec_indent(1);
+                $self->add_doc_lines("");
+            } else {
+                $self->add_doc_lines("");
+            }
+            $self->dec_indent(1);
         }
-        $self->add_doc_lines("");
     }
 
     #$self->add_doc_lines("");
@@ -687,7 +845,6 @@ sub run_help {
     $self->{doc_sections} //= [
         'summary',
         'usage',
-        'common_options',
         'options',
         'description',
         'examples',
@@ -800,110 +957,37 @@ sub run_redo {
     $self->{_res}[0] == 200 ? 0 : 1;
 }
 
-sub gen_common_opts {
-    require Getopt::Long;
+sub _gen_go_specs_from_common_opts {
+    my $self = shift;
 
-    my ($self) = @_;
-    $log->tracef("-> gen_common_opts()");
-
-    my @getopts = (
-        "action=s" => sub {
-            # 'action=subcommand' can be used to override --help (or --list,
-            # --version) if one of function arguments happens to be 'help',
-            # 'list', or 'version'. currently this is undocumented.
-            if ($_[1] eq 'subcommand') {
-                $self->{_force_subcommand} = 1;
-            }
-        },
-        "version|v" => sub {
-            die "ERROR: 'url' not set, required for --version\n"
-                unless $self->url;
-            unshift @{$self->{_actions}}, 'version';
-            $self->{_check_required_args} = 0;
-        },
-        "help|h|?" => sub {
-            unshift @{$self->{_actions}}, 'help';
-            $self->{_check_required_args} = 0;
-        },
-
-        "format=s" => sub {
-            $self->format_set(1);
-            $self->format($_[1]);
-        },
-        "format-options=s" => sub {
-            $self->format_options_set(1);
-            $self->format_options(__json_decode($_[1]));
-        },
-    );
-
-    if ($self->subcommands) {
-        push @getopts, (
-            "list|l"     => sub {
-                unshift @{$self->{_actions}}, 'list';
-                $self->{_check_required_args} = 0;
-            },
-        );
-        if (defined $self->default_subcommand) {
-            push @getopts, (
-                "cmd=s" => sub {
-                    # 'cmd=SUBCOMMAND_NAME' can be used to select other
-                    # subcommands when default_subcommand is in effect.
-                    $self->{_selected_subcommand} = $_[1];
-                },
-            );
-        }
+    my @go_opts;
+    my $co = $self->common_opts;
+    for my $con (sort {
+        ($co->{$a}{order}//1) <=> ($co->{$b}{order}//1) || $a cmp $b
+    } keys %$co) {
+        my $cov = $co->{$con};
+        die "Invalid common option '$con': empty getopt"
+            unless $cov->{getopt};
+        push @go_opts, $cov->{getopt} => $cov->{handler};
     }
 
-    # convenience for Log::Any::App-using apps
-    if ($self->log_any_app) {
-        # since the cmdline opts is consumed, Log::Any::App doesn't see
-        # this. we currently work around this via setting env.
-        for my $o (qw/quiet verbose debug trace/) {
-            push @getopts, $o => sub {
-                $ENV{uc $o} = 1;
-            };
-        }
-        push @getopts, "log-level=s" => sub {
-            $ENV{LOG_LEVEL} = $_[1];
-        };
-    }
-
-    if ($self->undo) {
-        push @getopts, "history" => sub {
-            unshift @{$self->{_actions}}, 'history';
-            $self->{_check_required_args} = 0;
-        };
-        push @getopts, "clear-history" => sub {
-            unshift @{$self->{_actions}}, 'clear_history';
-            $self->{_check_required_args} = 0;
-        };
-        push @getopts, "undo" => sub {
-            unshift @{$self->{_actions}}, 'undo';
-            #$self->{_tx_id} = $_[1];
-            $self->{_check_required_args} = 0;
-        };
-        push @getopts, "redo" => sub {
-            unshift @{$self->{_actions}}, 'redo';
-            #$self->{_tx_id} = $_[1];
-            $self->{_check_required_args} = 0;
-        };
-    }
-
-    $log->tracef("GetOptions spec for parsing common options: %s", \@getopts);
-    $log->tracef("<- gen_common_opts()");
-    return \@getopts;
+    @go_opts;
 }
 
 sub parse_common_opts {
+    require Getopt::Long;
+
     $log->tracef("-> parse_common_opts()");
     my ($self) = @_;
 
     my @orig_ARGV = @ARGV;
     $self->{_orig_argv} = \@orig_ARGV;
 
+    my @go_opts = $self->_gen_go_specs_from_common_opts;
+    $self->{_go_specs_common} = \@go_opts;
     my $old_go_opts = Getopt::Long::Configure(
         "pass_through", "no_ignore_case", "no_getopt_compat");
-    Getopt::Long::GetOptions(@{$self->{_getopts_common}});
+    Getopt::Long::GetOptions(@go_opts);
     $log->tracef("result of GetOptions for common options: remaining argv=%s, ".
                      "actions=%s", \@ARGV, $self->{_actions});
     Getopt::Long::Configure($old_go_opts);
@@ -933,15 +1017,9 @@ sub parse_subcommand_opts {
     }
     my $meta = $res->[2];
     $self->{_meta} = $meta;
+    $self->_add_common_opts_after_meta;
 
-    # parse --dry-run
-    my %merge_args;
-    if (risub($meta)->can_dry_run) {
-        push @{$self->{_getopts_common}}, "dry-run" => sub {
-            $self->{_dry_run} = 1;
-            $ENV{VERBOSE} = 1;
-        };
-    }
+    # also set dry-run on environment
     do { $self->{_dry_run} = 1; $ENV{VERBOSE} = 1 } if $ENV{DRY_RUN};
 
     # parse argv
@@ -981,9 +1059,9 @@ sub parse_subcommand_opts {
         },
     );
     if ($self->{_force_subcommand}) {
-        $ga_args{extra_getopts_before} = $self->{_getopts_common};
+        $ga_args{extra_getopts_before} = $self->{_go_specs_common};
     } else {
-        $ga_args{extra_getopts_after}  = $self->{_getopts_common};
+        $ga_args{extra_getopts_after}  = $self->{_go_specs_common};
     }
     $res = Perinci::Sub::GetArgs::Argv::get_args_from_argv(%ga_args);
 
@@ -996,7 +1074,7 @@ sub parse_subcommand_opts {
 
     die "ERROR: Failed parsing arguments: $res->[0] - $res->[1]\n"
         unless $res->[0] == 200;
-    $self->{_args} = { %merge_args, %{ $res->[2] } };
+    $self->{_args} = $res->[2];
     $log->tracef("result of GetArgs for subcommand: remaining argv=%s, args=%s".
                      ", actions=%s", \@ARGV, $self->{_args}, $self->{_actions});
 
@@ -1093,11 +1171,6 @@ sub run {
 
     $self->{_actions} = []; # first action will be tried first, then 2nd, ...
 
-    my $getopts_common = $self->gen_common_opts();
-
-    # store for other methods, e.g. run_subcommand() & run_completion()
-    $self->{_getopts_common} = $getopts_common;
-
     #
     # parse common opts first so we can catch --help, --list, etc.
     #
@@ -1145,7 +1218,7 @@ sub run {
 1;
 # ABSTRACT: Rinci/Riap-based command-line application framework
 
-=for Pod::Coverage ^(BUILD|run_.+|doc_.+|before_.+|after_.+|format_result|format_row|display_result|gen_common_opts|get_subcommand|list_subcommands|parse_common_opts|parse_subcommand_opts|format_set|format_options|format_options_set)$
+=for Pod::Coverage ^(BUILD|run_.+|doc_.+|before_.+|after_.+|format_result|format_row|display_result|get_subcommand|list_subcommands|parse_common_opts|parse_subcommand_opts|format_set|format_options|format_options_set)$
 
 =head1 SYNOPSIS
 
@@ -1364,10 +1437,12 @@ argument. To use other subcommands, you will have to use --cmd option.
 A list of common options, which are command-line options that are not associated
 with any subcommand. Each option is itself a specification hash containing these
 keys: C<category> (str, optional, for grouping options in help/usage message,
-defaults to C<Common options>), C<getopt> (str, required, Getopt::Long
-specification), C<usage> (str, optional, displayed in usage line in help/usage
-text, C<%1> will be replaced by program name), C<summary> (str, optional, be
-displayed in description of the option in help/usage text). A partial example
+defaults to C<Common options>), C<getopt> (str, required, for Getopt::Long
+specification), C<handler> (code, required, for Getopt::Long specification),
+C<usage> (str, optional, displayed in usage line in help/usage text, C<%1> will
+be replaced by program name), C<summary> (str, optional, be displayed in
+description of the option in help/usage text), C<order> (int, optional, for
+ordering where lower means higher precedence, defaults to 1). A partial example
 from the default:
 
  {
@@ -1376,6 +1451,7 @@ from the default:
          getopt      => 'help|h|?',
          usage       => '%1 --help (or -h, -?)',
          handler     => sub { ... },
+         order       => 0,
      },
      format => {
          category    => 'Common options',
@@ -1418,8 +1494,7 @@ Sometimes you want to add subcommands as common options instead. For example:
      getopt      => 'halt',
      summary     => 'Halt the server',
      handler     => sub {
-         my ($self, $val) = @_;
-         $self->{_selected_subcommand} = 'shutdown';
+         $cmd->{_selected_subcommand} = 'shutdown';
      },
  };
 

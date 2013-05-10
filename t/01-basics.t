@@ -501,27 +501,6 @@ subtest 'cmdline_src' => sub {
     done_testing;
 };
 
-test_run(name      => 'extra_opts',
-         args      => {
-             subcommands => {
-                 f2=>{url=>'/Foo/f2'},
-                 f2r=>{url=>'/Foo/f2r'},
-             },
-             extra_opts => {
-                 rev => {
-                     handler => sub {
-                         my $self = shift;
-                         unshift @{$self->{_actions}}, 'subcommand';
-                         $self->{_selected_subcommand} = 'f2r';
-                     },
-                 },
-             },
-         },
-         argv      => [qw/--rev budi/],
-         exit_code => 0,
-         output_re => qr/idub/,
-     );
-
 test_run(name      => 'dry_run (using dry_run) (w/o)',
          args      => {url=>'/Foo/dry_run'},
          argv      => [],
