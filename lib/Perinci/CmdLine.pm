@@ -661,7 +661,7 @@ sub doc_gen_usage {
     for my $con (@con) {
         my $cov = $co->{$con};
         next unless $cov->{usage};
-        $self->add_doc_lines("    $pn ".$self->loc($cov->{usage}));
+        $self->add_doc_lines("    $pn ".$self->locopt($cov->{usage}));
     }
     if ($self->subcommands) {
         if (defined $self->default_subcommand) {
@@ -700,12 +700,12 @@ sub doc_gen_options {
     } keys %$co;
     for my $con (@con) {
         my $cov = $co->{$con};
-        my $cat = $cov->{category} ? $self->loc($cov->{category}) :
+        my $cat = $cov->{category} ? $self->locopt($cov->{category}) :
             ($sc ? $t_copts : $t_opts);
         my $go = $cov->{getopt};
         push @{ $catopts{$cat} }, {
             getopt=>SHARYANTO::Getopt::Long::Util::gospec2human($cov->{getopt}),
-            summary=> $cov->{summary} ? $self->loc($cov->{summary}) : "",
+            summary=> $cov->{summary} ? $self->locopt($cov->{summary}) : "",
         };
     }
 
