@@ -1352,13 +1352,15 @@ our function) is added to this list. After we are finished filling out the
 C<_actions> array, the first action is chosen by running a method called C<<
 run_<ACTION> >>. For example if the chosen action is C<help>, C<run_help()> is
 called. These C<run_*> methods must execute the action, display the output, and
-return an exit code. Program will end with this exit code.
+return an exit code. Program will end with this exit code. A C<run_*> method can
+choose to decline handling the action by returning undef, in which case the next
+action will be tried, and so on until a defined exit code is returned.
 
-B<The subcommand action and determining function to call>. The C<subcommand>
-action (implemented by C<run_subcommand()>) is the one that actually does the
-real job, calling the function and displaying its result. The C<_subcommand>
-attribute stores information on the subcommand to run, including its Riap URL.
-If there are subcommands, e.g.:
+B<The subcommand action and determining which subcommand (function) to call>.
+The C<subcommand> action (implemented by C<run_subcommand()>) is the one that
+actually does the real job, calling the function and displaying its result. The
+C<_subcommand> attribute stores information on the subcommand to run, including
+its Riap URL. If there are subcommands, e.g.:
 
  my $cmd = Perinci::CmdLine->new(
      subcommands => {
@@ -1376,8 +1378,10 @@ then which subcommand to run is determined by the command-line argument, e.g.:
  % myapp sub1 ...
 
 then C<_subcommand> attribute will contain C<< {url=>'/MyApp/func1'} >>. When no
-subcommand is specified on the command line, either the C<help> action will be
-executed, or C<subcommand> action if C<default_subcommand> attribute is set.
+subcommand is specified on the command line, C<run_subcommand()> will decline
+handling the action and returning undef, and the next action e.g. C<help> will
+be executed. But if C<default_subcommand> attribute is set, C<run_subcommand()>
+will run the default subcommand instead.
 
 When there are no subcommands, e.g.:
 
@@ -1385,7 +1389,7 @@ When there are no subcommands, e.g.:
 
 C<_subcommand> will simply contain C<< {url=>'/MyApp/func'} >>.
 
-C<run_subcommand()> will then call the function specified in the C<url> in the
+C<run_subcommand()> will call the function specified in the C<url> in the
 C<_subcommand> using C<Perinci::Access>. (Actually, C<run_help()> or
 C<run_completion()> can be called instead, depending on which action to run.)
 
