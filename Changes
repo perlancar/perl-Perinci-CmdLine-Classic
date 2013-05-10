@@ -1,5 +1,15 @@
 Revisi0;115;0con history for Perinci-CmdLine
 
+0.78     2013-05-10 (SHARYANTO)
+
+         Tweaks.
+
+         - Text in common_opt (category, usage, summary) is now not required to
+           be translateable.
+
+         - Update 'id' translation.
+
+
 0.77     2013-05-10 (SHARYANTO)
 
          [BUG FIXES]
