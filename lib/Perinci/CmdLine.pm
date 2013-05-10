@@ -277,6 +277,7 @@ sub format_result {
             unless $Perinci::Result::Format::Formats{$format};
     if ($self->format_options_set) {
         $res->[3]{result_format_options} = $self->format_options;
+        $resmeta = $res->[3];
     }
 
     if ($resmeta->{is_stream}) {
