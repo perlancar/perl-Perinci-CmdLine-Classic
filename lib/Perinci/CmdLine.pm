@@ -1438,16 +1438,40 @@ argument. To use other subcommands, you will have to use --cmd option.
 
 =head2 common_opts => HASH
 
-A list of common options, which are command-line options that are not associated
+A hash of common options, which are command-line options that are not associated
 with any subcommand. Each option is itself a specification hash containing these
-keys: C<category> (str, optional, for grouping options in help/usage message,
-defaults to C<Common options>), C<getopt> (str, required, for Getopt::Long
-specification), C<handler> (code, required, for Getopt::Long specification),
-C<usage> (str, optional, displayed in usage line in help/usage text, C<%1> will
-be replaced by program name), C<summary> (str, optional, be displayed in
-description of the option in help/usage text), C<order> (int, optional, for
-ordering where lower means higher precedence, defaults to 1). A partial example
-from the default:
+keys:
+
+=over
+
+=item * category (str)
+
+Optional, for grouping options in help/usage message, defaults to C<Common
+options>.
+
+=item * getopt (str)
+
+Required, for Getopt::Long specification.
+
+=item * handler (code)
+
+Required, for Getopt::Long specification.
+
+=item * usage (str)
+
+Optional, displayed in usage line in help/usage text.
+
+=item * summary (str)
+
+Optional, displayed in description of the option in help/usage text.
+
+=item * order (int)
+
+Optional, for ordering. Lower number means higher precedence, defaults to 1.
+
+=back
+
+A partial example from the default set by the framework:
 
  {
      help => {
@@ -1473,11 +1497,11 @@ from the default:
 
 The default contains: help (getopt C<help|h|?>), version (getopt C<version|v>),
 action (getopt C<action>), format (getopt C<format=s>), format_options (getopt
-C<format-options=s>). If there are more than one subcommands, this will be
+C<format-options=s>). If there are more than one subcommands, this will also be
 added: list (getopt C<list|l>). If dry-run is supported by function, there will
 also be: dry_run (getopt C<dry-run>). If undo is turned on, there will also be:
-undo_undo (getopt C<undo>), undo_redo (getopt C<redo>), undo_history (getopt
-C<history>), undo_clear_history (getopt C<clear-history>).
+undo (getopt C<undo>), redo (getopt C<redo>), history (getopt C<history>),
+clear_history (getopt C<clear-history>).
 
 Sometimes you do not want some options, e.g. to remove C<format> and
 C<format_options>:
