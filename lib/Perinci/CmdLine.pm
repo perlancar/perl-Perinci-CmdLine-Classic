@@ -802,11 +802,9 @@ my ($ph1, $ph2); # patch handles
 sub _setup_progress_output {
     my $self = shift;
 
-    require Progress::Any;
     if ($ENV{PROGRESS} // (-t STDOUT)) {
-        require Progress::Any::Output::TermProgressBar;
-        state $out = Progress::Any::Output::TermProgressBar->new;
-        Progress::Any->set_output(output => $out);
+        require Progress::Any::Output;
+        Progress::Any::Output->set("TermProgressBarColor");
         if ($self->{_log_any_app_loaded}) {
             # we need to patch the logger adapters so it won't interfere with
             # progress meter's output
@@ -833,10 +831,6 @@ sub _setup_progress_output {
                 },
             );
         }
-    } else {
-        require Progress::Any::Output::Null;
-            Progress::Any->set_output(
-                output => Progress::Any::Output::Null->new);
     }
 }
 
