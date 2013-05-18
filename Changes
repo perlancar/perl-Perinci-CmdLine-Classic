@@ -1,5 +1,11 @@
 Revisi0;115;0con history for Perinci-CmdLine
 
+0.79     2013-05-18 (SHARYANTO)
+
+         - Use Progress::Any::Output::TermProgressBarColor to replace
+         Progress::Any::Output::TermProgress.
+
+
 0.78     2013-05-10 (SHARYANTO)
 
          Tweaks.
