@@ -805,6 +805,7 @@ sub _setup_progress_output {
     if ($ENV{PROGRESS} // (-t STDOUT)) {
         require Progress::Any::Output;
         Progress::Any::Output->set("TermProgressBarColor");
+        my $out = $Progress::Any::outputs{''}[0];
         if ($self->{_log_any_app_loaded}) {
             # we need to patch the logger adapters so it won't interfere with
             # progress meter's output
@@ -813,7 +814,17 @@ sub _setup_progress_output {
                 'Log::Log4perl::Appender::Screen', 'log',
                 'replace', sub {
                     my ($self, %params) = @_;
-                    $out->_message($params{message});
+
+                    # clean currently displayed progress bar first
+                    if ($out->{lastlen}) {
+                        print
+                            "\b" x $out->{lastlen},
+                            " " x $out->{lastlen},
+                            "\b" x $out->{lastlen};
+                        undef $out->{lastlen};
+                    }
+
+                    say $params{message};
                 },
             );
             $ph2 = Monkey::Patch::Action::patch_package(
@@ -827,7 +838,20 @@ sub _setup_progress_output {
                         $msg = Term::ANSIColor::colored($msg, $color);
                     }
                     # END copy-paste'ish
-                    $out->_message($msg);
+
+                    # clean currently displayed progress bar first
+                    if ($out->{lastlen}) {
+                        print
+                            "\b" x $out->{lastlen},
+                            " " x $out->{lastlen},
+                            "\b" x $out->{lastlen};
+                        undef $out->{lastlen};
+                    }
+
+                    # XXX duplicated code above, perhaps move this to
+                    # TermProgressBarColor's clean_bar() or something
+
+                    say $msg;
                 },
             );
         }
