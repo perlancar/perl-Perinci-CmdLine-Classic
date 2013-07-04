@@ -806,55 +806,56 @@ sub _setup_progress_output {
         require Progress::Any::Output;
         Progress::Any::Output->set("TermProgressBarColor");
         my $out = $Progress::Any::outputs{''}[0];
-        if ($self->{_log_any_app_loaded}) {
-            # we need to patch the logger adapters so it won't interfere with
-            # progress meter's output
-            require Monkey::Patch::Action;
-            $ph1 = Monkey::Patch::Action::patch_package(
-                'Log::Log4perl::Appender::Screen', 'log',
-                'replace', sub {
-                    my ($self, %params) = @_;
+        # we need to patch the logger adapters so it won't interfere with
+        # progress meter's output
+        require Monkey::Patch::Action;
+        $ph1 = Monkey::Patch::Action::patch_package(
+            'Log::Log4perl::Appender::Screen', 'log',
+            'replace', sub {
+                my ($self, %params) = @_;
 
-                    # clean currently displayed progress bar first
-                    if ($out->{lastlen}) {
-                        print
-                            "\b" x $out->{lastlen},
+                my $msg = $params{message};
+                $msg =~ s/\n//g;
+
+                # clean currently displayed progress bar first
+                if ($out->{lastlen}) {
+                    print
+                        "\b" x $out->{lastlen},
                             " " x $out->{lastlen},
-                            "\b" x $out->{lastlen};
-                        undef $out->{lastlen};
-                    }
+                                "\b" x $out->{lastlen};
+                    undef $out->{lastlen};
+                }
 
-                    say $params{message};
-                },
-            );
-            $ph2 = Monkey::Patch::Action::patch_package(
-                'Log::Log4perl::Appender::ScreenColoredLevels', 'log',
-                'replace', sub {
-                    my ($self, %params) = @_;
-                    # BEGIN copy-paste'ish from ScreenColoredLevels.pm
-                    my $msg = $params{message};
-                    $msg =~ s/\n//g;
-                    if (my $color=$self->{color}->{$params{log4p_level}}) {
-                        $msg = Term::ANSIColor::colored($msg, $color);
-                    }
-                    # END copy-paste'ish
+                say $msg;
+            },
+        ) if defined &{"Log::Log4perl::Appender::Screen::log"};
+        $ph2 = Monkey::Patch::Action::patch_package(
+            'Log::Log4perl::Appender::ScreenColoredLevels', 'log',
+            'replace', sub {
+                my ($self, %params) = @_;
+                # BEGIN copy-paste'ish from ScreenColoredLevels.pm
+                my $msg = $params{message};
+                $msg =~ s/\n//g;
+                if (my $color=$self->{color}->{$params{log4p_level}}) {
+                    $msg = Term::ANSIColor::colored($msg, $color);
+                }
+                # END copy-paste'ish
 
-                    # clean currently displayed progress bar first
-                    if ($out->{lastlen}) {
-                        print
-                            "\b" x $out->{lastlen},
+                # clean currently displayed progress bar first
+                if ($out->{lastlen}) {
+                    print
+                        "\b" x $out->{lastlen},
                             " " x $out->{lastlen},
-                            "\b" x $out->{lastlen};
-                        undef $out->{lastlen};
-                    }
+                                "\b" x $out->{lastlen};
+                    undef $out->{lastlen};
+                }
 
-                    # XXX duplicated code above, perhaps move this to
-                    # TermProgressBarColor's clean_bar() or something
+                # XXX duplicated code above, perhaps move this to
+                # TermProgressBarColor's clean_bar() or something
 
-                    say $msg;
-                },
-            );
-        }
+                say $msg;
+            }
+        ) if defined &{"Log::Log4perl::Appender::ScreenColoredLevels::log"};
     }
 }
 
