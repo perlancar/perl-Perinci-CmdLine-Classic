@@ -7,6 +7,7 @@ use Log::Any '$log';
 
 use Data::Dump::OneLine qw(dump1);
 use Moo;
+use experimental 'smartmatch'; # must be after Moo
 use Perinci::Object;
 use Perinci::ToUtil;
 use Scalar::Util qw(reftype blessed);
