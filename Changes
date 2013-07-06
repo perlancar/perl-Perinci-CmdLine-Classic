@@ -1,5 +1,12 @@
 Revision history for Perinci-CmdLine
 
+0.80     2013-07-06 (SHARYANTO)
+
+         - Add 'use experimental "smartmatch"' for 5.18+.
+
+         - Handle error when COLOR=0.
+
+
 0.79     2013-05-18 (SHARYANTO)
 
          - Use Progress::Any::Output::TermProgressBarColor to replace
