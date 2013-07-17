@@ -1836,6 +1836,19 @@ for remote code as well as local Perl code.
 
 See L<Perinci::Result::Format>.
 
+=head2 My function has argument named 'format', but it is blocked by common option --format!
+
+To add/remove/rename common options, see the documentation on C<common_opts>
+attribute. In this case, you want:
+
+ delete $cmd->common_opts->{format};
+ #delete $cmd->common_opts->{format_options}; # you might also want this
+
+or perhaps rename it:
+
+ $cmd->common_opts->{output_format} = $cmd->common_opts->{format};
+ delete $cmd->common_opts->{format};
+
 =head2 How to accept input from STDIN (or files)?
 
 If you specify 'cmdline_src' to 'stdin' to a 'str' argument, the argument's
