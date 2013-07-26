@@ -1,5 +1,11 @@
 Revision history for Perinci-CmdLine
 
+0.83     2013-07-26 (SHARYANTO)
+
+         No functional changes. Adjust to new SHARYANTO::Role::Doc::Section
+         0.53.
+
+
 0.82     2013-07-26 (SHARYANTO)
 
          [ENHANCEMENTS]
