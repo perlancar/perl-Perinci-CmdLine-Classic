@@ -14,8 +14,8 @@ use Scalar::Util qw(reftype blessed);
 
 # VERSION
 
-with 'Perinci::To::Text::AddDocLinesRole';
 with 'SHARYANTO::Role::Doc::Section';
+with 'SHARYANTO::Role::Doc::Section::AddTextLines';
 with 'SHARYANTO::Role::I18N';
 with 'SHARYANTO::Role::I18NRinci';
 
@@ -598,6 +598,8 @@ sub before_generate_doc {
         $self->{_meta} = $res->[2];
         $self->_add_common_opts_after_meta;
     }
+
+    $self->{_res} = {};
 }
 
 # some common opts can be added only after we get the function metadata
@@ -620,36 +622,31 @@ sub _add_common_opts_after_meta {
     $self->{_go_specs_common} = \@go_opts;
 }
 
-sub doc_parse_summary {
+sub gen_doc_section_summary {
     my ($self) = @_;
 
     my $sc = $self->{_subcommand};
+    my $res = $self->{_res};
 
-    $self->doc_parse->{name} = $self->program_name .
+    $res->{name} = $self->program_name .
         ($sc && length($sc->{name}) ? " $sc->{name}" : "");
 
     if ($self->{_meta}) {
-        $self->doc_parse->{summary} =
+        $res->{summary} =
             $self->langprop($self->{_meta}, "summary");
     }
-}
-
-sub doc_gen_summary {
-    my ($self) = @_;
 
     my $name_summary = join(
         "",
-        $self->doc_parse->{name} // "",
-        ($self->doc_parse->{name} && $self->doc_parse->{summary} ? ' - ' : ''),
-        $self->doc_parse->{summary} // ""
+        $res->{name} // "",
+        ($res->{name} && $res->{summary} ? ' - ' : ''),
+        $res->{summary} // ""
     );
 
     $self->add_doc_lines($name_summary, "");
 }
 
-sub doc_parse_usage {}
-
-sub doc_gen_usage {
+sub gen_doc_section_usage {
     my ($self) = @_;
 
     my $co = $self->common_opts;
@@ -678,9 +675,7 @@ sub doc_gen_usage {
     $self->add_doc_lines("");
 }
 
-sub doc_parse_options {}
-
-sub doc_gen_options {
+sub gen_doc_section_options {
     require SHARYANTO::Getopt::Long::Util;
 
     my ($self) = @_;
@@ -761,10 +756,10 @@ sub doc_gen_options {
     for my $cat (sort keys %catopts) {
         $self->add_doc_lines("$cat:\n", "");
         for my $o (@{ $catopts{$cat} }) {
-            $self->inc_indent(1);
+            $self->inc_doc_indent(1);
             $self->add_doc_lines($o->{getopt} . ($o->{getopt_note} ? " $o->{getopt_note}" : ""));
             if ($o->{in} || $o->{summary} || $o->{description}) {
-                $self->inc_indent(2);
+                $self->inc_doc_indent(2);
                 $self->add_doc_lines(
                     ucfirst($self->loc("value in")). ": $o->{in}",
                     "")
@@ -772,34 +767,28 @@ sub doc_gen_options {
                 $self->add_doc_lines($o->{summary} . ".") if $o->{summary};
                 $self->add_doc_lines("", $o->{description})
                     if $o->{description};
-                $self->dec_indent(2);
+                $self->dec_doc_indent(2);
                 $self->add_doc_lines("");
             } else {
                 $self->add_doc_lines("");
             }
-            $self->dec_indent(1);
+            $self->dec_doc_indent(1);
         }
     }
 
     #$self->add_doc_lines("");
 }
 
-sub doc_parse_description {
+sub gen_doc_section_description {
+    # not yet
 }
 
-sub doc_gen_description {
+sub gen_doc_section_examples {
+    # not yet
 }
 
-sub doc_parse_examples {
-}
-
-sub doc_gen_examples {
-}
-
-sub doc_parse_links {
-}
-
-sub doc_gen_links {
+sub gen_doc_section_links {
+    # not yet
 }
 
 my ($ph1, $ph2); # patch handles
@@ -874,7 +863,7 @@ sub run_help {
         'examples',
         'links',
     ];
-    print $self->generate_doc();
+    print $self->gen_doc();
     0;
 }
 
