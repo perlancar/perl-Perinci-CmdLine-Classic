@@ -766,11 +766,12 @@ sub doc_gen_options {
             if ($o->{in} || $o->{summary} || $o->{description}) {
                 $self->inc_indent(2);
                 $self->add_doc_lines(
-                    "",
-                    ucfirst($self->loc("value in")). ": $o->{in}")
+                    ucfirst($self->loc("value in")). ": $o->{in}",
+                    "")
                     if $o->{in};
                 $self->add_doc_lines($o->{summary} . ".") if $o->{summary};
-                $self->add_doc_lines("", $o->{description}) if $o->{description};
+                $self->add_doc_lines("", $o->{description})
+                    if $o->{description};
                 $self->dec_indent(2);
                 $self->add_doc_lines("");
             } else {
