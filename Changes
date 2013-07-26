@@ -1,5 +1,18 @@
 Revision history for Perinci-CmdLine
 
+0.82     2013-07-26 (SHARYANTO)
+
+         [ENHANCEMENTS]
+
+         - Allow disabling paging, when cmdline.page_result result metadata is
+           active, using PAGER=0.
+
+         - Column width now observes the COLUMNS environment.
+
+         - Add command line script: peri-func-usage to display usage text for
+           any Riap function.
+
+
 0.81     2013-07-26 (SHARYANTO)
 
          - Change options display in usage text to be more compact (remove blank
