@@ -762,14 +762,14 @@ sub doc_gen_options {
             $self->inc_indent(1);
             $self->add_doc_lines($o->{getopt} . ($o->{getopt_note} ? " $o->{getopt_note}" : ""));
             if ($o->{in} || $o->{summary} || $o->{description}) {
-                $self->inc_indent(1);
+                $self->inc_indent(2);
                 $self->add_doc_lines(
                     "",
                     ucfirst($self->loc("value in")). ": $o->{in}")
                     if $o->{in};
-                $self->add_doc_lines("", $o->{summary} . ".") if $o->{summary};
+                $self->add_doc_lines($o->{summary} . ".") if $o->{summary};
                 $self->add_doc_lines("", $o->{description}) if $o->{description};
-                $self->dec_indent(1);
+                $self->dec_indent(2);
                 $self->add_doc_lines("");
             } else {
                 $self->add_doc_lines("");
