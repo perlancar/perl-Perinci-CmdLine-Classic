@@ -468,8 +468,8 @@ sub run_version {
     say $self->loc("[_1] version [_2]", $self->program_name, $ver);
     {
         no strict 'refs';
-        say "  ", $self->loc("[_1] version [_2]",
-                             "Perinci::CmdLine", $Perinci::CmdLine::VERSION);
+        say "  ", $self->loc("[_1] version [_2]", "Perinci::CmdLine",
+                             $Perinci::CmdLine::VERSION || "dev");
     }
 
     0;
