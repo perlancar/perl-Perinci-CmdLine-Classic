@@ -1,5 +1,16 @@
 Revision history for Perinci-CmdLine
 
+0.81     2013-07-26 (SHARYANTO)
+
+         - Change options display in usage text to be more compact (remove blank
+           line after --foo line, but indent the options summary/description
+           text more deeply).
+
+         - Add FAQ item about modifying the common options.
+
+         - Mark dev version as 'dev' in --help.
+
+
 0.80     2013-07-06 (SHARYANTO)
 
          - Add 'use experimental "smartmatch"' for 5.18+.
