@@ -2,8 +2,8 @@ Revision history for Perinci-CmdLine
 
 0.83     2013-07-26 (SHARYANTO)
 
-         No functional changes. Adjust to new SHARYANTO::Role::Doc::Section
-         0.53.
+         - No functional changes. Adjust to new SHARYANTO::Role::Doc::Section
+           0.53.
 
 
 0.82     2013-07-26 (SHARYANTO)
@@ -40,12 +40,10 @@ Revision history for Perinci-CmdLine
 0.79     2013-05-18 (SHARYANTO)
 
          - Use Progress::Any::Output::TermProgressBarColor to replace
-         Progress::Any::Output::TermProgress.
+           Progress::Any::Output::TermProgress.
 
 
 0.78     2013-05-10 (SHARYANTO)
-
-         Tweaks.
 
          - Text in common_opt (category, usage, summary) is now not required to
            be translateable.
@@ -84,12 +82,12 @@ Revision history for Perinci-CmdLine
 
 0.74     2013-04-16 (SHARYANTO)
 
-         No functional changes. Avoid perl undef warning.
+         - No functional changes. Avoid perl undef warning.
 
 
 0.73     2013-04-15 (SHARYANTO)
 
-         Provide format_row().
+         - Provide format_row().
 
 
 0.72     2013-04-14 (SHARYANTO)
@@ -111,8 +109,8 @@ Revision history for Perinci-CmdLine
 
 0.71     2013-04-05 (SHARYANTO)
 
-         No functional changes. Workaround problem which causes non-pretty text
-         tables to be displayed by default.
+         - No functional changes. Workaround problem which causes non-pretty
+           text tables to be displayed by default.
 
 
 0.70     2013-04-05 (SHARYANTO)
@@ -136,7 +134,7 @@ Revision history for Perinci-CmdLine
 
 0.67     2012-10-29 (SHARYANTO)
 
-         No functional changes. Fix dependencies.
+         - No functional changes. Fix dependencies.
 
 
 0.66     2012-10-24 (SHARYANTO)
@@ -150,8 +148,8 @@ Revision history for Perinci-CmdLine
 
 0.65     2012-09-06 (SHARYANTO)
 
-         Remove example script bin/symlink-u due to circular dependency
-         [RT#79482].
+         - Remove example script bin/symlink-u due to circular dependency
+           [RT#79482].
 
 
 0.64     2012-09-04 (SHARYANTO)
@@ -209,21 +207,21 @@ Revision history for Perinci-CmdLine
 
 0.56     2012-07-25 (SHARYANTO)
 
-         No functional changes. Increase dep version
-         Data::Format::Pretty::Console 0.16.
+         - No functional changes. Increase dep version
+           Data::Format::Pretty::Console 0.16.
 
 
 0.55     2012-07-23 (SHARYANTO)
 
-         Support 'cmdline_src' arg spec key (Rinci 1.1.20+).
+         - Support 'cmdline_src' arg spec key (Rinci 1.1.20+).
 
 
 0.54     2012-07-19 (SHARYANTO)
 
-         No functional changes. Add dependencies to
-         Perinci::Access::TCP::{Server,Client} for convenience. Requires
-         Perinci::Sub::GetArgs::Argv 0.18 which supports parsing nonscalar
-         arguments as JSON as well as YAML, also for convenience.
+         - No functional changes. Add dependencies to
+           Perinci::Access::TCP::{Server,Client} for convenience. Requires
+           Perinci::Sub::GetArgs::Argv 0.18 which supports parsing nonscalar
+           arguments as JSON as well as YAML, also for convenience.
 
 
 0.53     2012-07-12 (SHARYANTO)
@@ -255,10 +253,9 @@ Revision history for Perinci-CmdLine
          - Remove options --yaml, --json, --text, --text-pretty, --text-simple;
            use --format for now. This is to reduce the possibility of collision
            with function argument options (especially things like --text are
-           common as function arguments).
-
-           In general Perinci::CmdLine should introduce as few command-line
-           options as possible to avoid collisions.
+           common as function arguments). In general Perinci::CmdLine should
+           introduce as few command-line options as possible to avoid
+           collisions.
 
          [FIXES]
 
@@ -313,7 +310,7 @@ Revision history for Perinci-CmdLine
 
 0.46     2012-03-30 (SHARYANTO)
 
-         No functional changes. Fix typo.
+         - No functional changes. Fix typo.
 
 
 0.45     2012-03-30 (SHARYANTO)
@@ -409,60 +406,60 @@ Revision history for Perinci-CmdLine
 
 0.38     2012-02-23 (SHARYANTO)
 
-         Rename distribution from Sub-Spec-CmdLine to Perinci-CmdLine. Now
-         Rinci/Riap-based (transparent remote access). Refactor into OO. Some
-         features missing for now. Tests not updated yet.
+         - Rename distribution from Sub-Spec-CmdLine to Perinci-CmdLine. Now
+           Rinci/Riap-based (transparent remote access). Refactor into OO. Some
+           features missing for now. Tests not updated yet.
 
 
 0.37     2012-01-20 (SHARYANTO)
 
-         No functional changes. Mark deprecation.
+         - No functional changes. Mark deprecation.
 
 
 0.36     2011-08-25 (SHARYANTO)
 
-         No functional changes. gen_usage() split to its own dist:
-         Sub-Spec-To-Text. Update to Sub::Spec 0.15.
+         - No functional changes. gen_usage() split to its own dist:
+           Sub-Spec-To-Text. Update to Sub::Spec 0.15.
 
 
 0.35     2011-08-11 (SHARYANTO)
 
-         Uses Data::Format::Pretty for result formatting. JSON output is now
-         pretty-printed by default.
+         - Uses Data::Format::Pretty for result formatting. JSON output is now
+           pretty-printed by default.
 
 
 0.34     2011-08-03 (SHARYANTO)
 
-         No functional changes. Fixed test script to adjust to new
-         Object::BlankStr [CT]. Updated dependencies.
+         - No functional changes. Fixed test script to adjust to new
+           Object::BlankStr [CT]. Updated dependencies.
 
 
 0.33     2011-07-26 (SHARYANTO)
 
          [INCOMPATIBLE CHANGES]
 
-         Refactoring: move parse_argv() to
-         Sub::Spec::GetArgs::Argv::get_args_from_argv().
+         - Refactoring: move parse_argv() to
+           Sub::Spec::GetArgs::Argv::get_args_from_argv().
 
          [ENHANCEMENTS]
 
-         Localize Getopt::Long::Configure() effect.
+         - Localize Getopt::Long::Configure() effect.
 
 
 0.32     2011-07-10 (SHARYANTO)
 
          [BUG FIXES]
 
-         * runpm: fix -I.
+         - runpm: fix -I.
 
 
 0.31     2011-07-10 (SHARYANTO)
 
          [ENHANCEMENTS]
 
-         * bin/runpm: add --help (-h) and -I (--library) options.
+         - bin/runpm: add --help (-h) and -I (--library) options.
 
-         * run(): add dash_to_underscore option to allow subcommands using
+         - run(): add dash_to_underscore option to allow subcommands using
            dashes instead of underscores.
 
 
@@ -470,13 +467,13 @@ Revision history for Perinci-CmdLine
 
          [INCOMPATIBLE CHANGES]
 
-         * To reduce the trap of implicit YAML parsing, parsing is only done for
+         - To reduce the trap of implicit YAML parsing, parsing is only done for
            nonscalar arguments.
 
 
 0.29     2011-06-01 (SHARYANTO)
 
-         No functional changes.
+         - No functional changes.
 
          [ETC]
 
@@ -507,178 +504,178 @@ Revision history for Perinci-CmdLine
 
 0.26     2011-03-04 (SHARYANTO)
 
-         Require Sub::Spec::Runner 0.09.
+         - Require Sub::Spec::Runner 0.09.
 
 
 0.25     2011-02-28 (SHARYANTO)
 
-         On non-success response from sub, print output (error message) even if
-         spec enables cmdline_suppress_output.
+         - On non-success response from sub, print output (error message) even
+           if spec enables cmdline_suppress_output.
 
 
 0.24     2011-02-28 (SHARYANTO)
 
-         Now based on Sub::Spec::Runner for dependency checking before run.
+         - Now based on Sub::Spec::Runner for dependency checking before run.
 
 
 0.23     2011-02-23 (SHARYANTO)
 
-         Fix dependency (Sub::Spec version).
+         - Fix dependency (Sub::Spec version).
 
-         Don't add error message when Getopt::Long already prints to stderr.
+         - Don't add error message when Getopt::Long already prints to stderr.
 
 
 0.22     2011-02-22 (SHARYANTO)
 
-         Use Sub::Spec::Utils.
+         - Use Sub::Spec::Utils.
 
 
 0.21     2011-02-21 (SHARYANTO)
 
-         Add some more documentation.
+         - Add some more documentation.
 
-         Requires recent versions of Test::More & Sub::Spec::BashComplete.
+         - Requires recent versions of Test::More & Sub::Spec::BashComplete.
 
 
 0.20     2011-02-18 (SHARYANTO)
 
-         Escape completion output since BashComplete now doesn't.
+         - Escape completion output since BashComplete now doesn't.
 
-         Added some doc.
+         - Added some doc.
 
 
 0.19     2011-02-18 (SHARYANTO)
 
-         Provide runpm script.
+         - Provide runpm script.
 
 
 0.18     2011-02-18 (SHARYANTO)
 
-         run(): More fixes for completion.
+         - run(): More fixes for completion.
 
-         spec: cmdline_aliases is renamed to arg_aliases.
+         - spec: cmdline_aliases is renamed to arg_aliases.
 
-         Fix test [CT].
+         - Fix test [CT].
 
 
 0.17     2011-02-17 (SHARYANTO)
 
-         run(): Fixed stupid parenthesis bug.
+         - run(): Fixed stupid parenthesis bug.
 
 
 0.16     2011-02-17 (SHARYANTO)
 
-         run(): A couple more fixes for bash completion.
+         - run(): A couple more fixes for bash completion.
 
-         parse_argv(): Also add --nofoo for bool cmdline_aliases.
+         - parse_argv(): Also add --nofoo for bool cmdline_aliases.
 
 
 0.15     2011-02-17 (SHARYANTO)
 
-         Yet more fixes for bash completion.
+         - Yet more fixes for bash completion.
 
-         Fixed: parse_argv(): do not convert all remaining $argv to YAML so they
-         can be reused (e.g. parse_argv'd) again
+         - Fixed: parse_argv(): do not convert all remaining $argv to YAML so
+           they can be reused (e.g. parse_argv'd) again
 
-         run(): add option 'custom_completer' to pass to
-         Sub::Spec::BashComplete.
+         - run(): add option 'custom_completer' to pass to
+           Sub::Spec::BashComplete.
 
 
 0.14     2011-02-17 (SHARYANTO)
 
-         Fixes for bash completion.
+         - Fixes for bash completion.
 
 
 0.13     2011-02-17 (SHARYANTO)
 
-       [INCOMPATIBLE CHANGES]
+         [INCOMPATIBLE CHANGES]
 
-         run(): rename 'require' argument to 'load'.
+         - run(): rename 'require' argument to 'load'.
 
-       [IMPROVEMENTS]
+         [IMPROVEMENTS]
 
-         parse_argv(): Respect arg spec: 'cmdline_aliases' for specifying
-         option aliases.
+         - parse_argv(): Respect arg spec: 'cmdline_aliases' for specifying
+           option aliases.
 
-         run(): Allow 'subcommands' argument to be coderef.
+         - run(): Allow 'subcommands' argument to be coderef.
 
-         run(): Pass more info (arguments) to coderef 'help' argument.
+         - run(): Pass more info (arguments) to coderef 'help' argument.
 
-         run(): Add option 'allow_unknown_args' for non-strict argv parsing.
+         - run(): Add option 'allow_unknown_args' for non-strict argv parsing.
 
-         gen_usage(): Add option: 'options_name'.
+         - gen_usage(): Add option: 'options_name'.
 
 
 0.12     2011-02-16 (SHARYANTO)
 
-         Fixes for bash completion.
+         - Fixes for bash completion.
 
-         Add arguments to run(): help, spec, run, per-subcommand category.
+         - Add arguments to run(): help, spec, run, per-subcommand category.
 
-         Other bug fixes.
+         - Other bug fixes.
 
 
 0.11     2011-02-16 (SHARYANTO)
 
-         Add support for bash completion (requires Sub::Spec::BashComplete).
+         - Add support for bash completion (requires Sub::Spec::BashComplete).
 
 
 0.10     2011-02-16 (SHARYANTO)
 
-         Add strict=>0 option in parse_argv(), for use by
-         Sub::Spec::BashComplete.
+         - Add strict=>0 option in parse_argv(), for use by
+           Sub::Spec::BashComplete.
 
-         Some small refactoring.
+         - Some small refactoring.
 
 
 0.09     2011-02-15 (SHARYANTO)
 
-         Add --version.
+         - Add --version.
 
 
 0.08     2011-02-15 (SHARYANTO)
 
-         Fixes for subcommands support.
+         - Fixes for subcommands support.
 
-         Respect spec clause: cmdline_suppress_output.
+         - Respect spec clause: cmdline_suppress_output.
 
 
 0.07     2011-02-11 (SHARYANTO)
 
-         Formatting fix: missing newline in error message.
+         - Formatting fix: missing newline in error message.
 
 
 0.06     2011-02-11 (SHARYANTO)
 
-         Add 'cmd' option to gen_usage().
+         - Add 'cmd' option to gen_usage().
 
-         Formatting tweaks.
+         - Formatting tweaks.
 
 
 0.05     2011-02-11 (SHARYANTO)
 
-         Remove 'required_args'.
+         - Remove 'required_args'.
 
 
 0.04     2011-02-10 (SHARYANTO)
 
-         Formatting fixes.
+         - Formatting fixes.
 
 
 0.03     2011-02-10 (SHARYANTO)
 
-         Formatting tweaks.
+         - Formatting tweaks.
 
-         Fix schema clause ('in', not 'choices').
+         - Fix schema clause ('in', not 'choices').
 
 
 0.02     2011-02-09 (SHARYANTO)
 
-         Incompatible change: rename arg_order to arg_pos.
+         - Incompatible change: rename arg_order to arg_pos.
 
-         Documentation.
+         - Documentation.
 
 
 0.01     2011-02-09 (SHARYANTO)
 
-         First release.
+         - First release.
