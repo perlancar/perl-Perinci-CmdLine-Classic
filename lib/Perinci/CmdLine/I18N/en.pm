@@ -149,3 +149,7 @@ msgstr "or from stdin"
 msgid  "or from stdin/files"
 msgstr "or from stdin/files"
 
+# etc
+
+msgid  "value in"
+msgstr "value in"

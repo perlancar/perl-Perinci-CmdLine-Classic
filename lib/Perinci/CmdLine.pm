@@ -582,7 +582,7 @@ sub run_completion {
     0;
 }
 
-sub before_generate_doc {
+sub before_gen_doc {
     my ($self) = @_;
 
     my $sc = $self->{_subcommand};

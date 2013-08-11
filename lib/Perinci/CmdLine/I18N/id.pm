@@ -149,3 +149,7 @@ msgstr "atau dari masukan standar"
 msgid  "or from stdin/files"
 msgstr "atau dari berkas/masukan standar"
 
+# etc
+
+msgid  "value in"
+msgstr "nilai salah satu dari"

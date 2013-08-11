@@ -3,6 +3,7 @@
 use 5.010;
 use strict;
 use warnings;
+use Log::Any '$log';
 
 use Perinci::CmdLine;
 
@@ -25,6 +26,7 @@ sub generate_usage {
     my %args = @_;
     # XXX schema
     my $url = $args{url} or return [400, "Please specify url"];
+    #$log->errorf("TMP: url=%s", $url);
 
     my $progname = $url; $progname =~ s!.+/!!;
     my $cmd = Perinci::CmdLine->new(
