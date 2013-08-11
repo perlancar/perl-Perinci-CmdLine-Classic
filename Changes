@@ -1,5 +1,13 @@
 Revision history for Perinci-CmdLine
 
+0.84     2013-08-11 (SHARYANTO)
+
+         [BUG FIXES]
+
+         - Forgot to update method name which caused '--help' and the
+           peri-func-usage to not work properly.
+
+
 0.83     2013-07-26 (SHARYANTO)
 
          - No functional changes. Adjust to new SHARYANTO::Role::Doc::Section
