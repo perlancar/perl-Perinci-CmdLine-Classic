@@ -591,15 +591,15 @@ sub before_gen_doc {
         my $res = $self->_pa->request(info => $url);
         die "ERROR: Can't info '$url': $res->[0] - $res->[1]\n"
             unless $res->[0] == 200;
-        $self->{_info} = $res->[2];
+        $self->{_doc_info} = $res->[2];
         $res = $self->_pa->request(meta => $url);
         die "ERROR: Can't meta '$url': $res->[0] - $res->[1]\n"
             unless $res->[0] == 200;
-        $self->{_meta} = $res->[2];
+        $self->{_doc_meta} = $res->[2];
         $self->_add_common_opts_after_meta;
     }
 
-    $self->{_res} = {};
+    $self->{_doc_res} = {};
 }
 
 # some common opts can be added only after we get the function metadata
@@ -626,14 +626,14 @@ sub gen_doc_section_summary {
     my ($self) = @_;
 
     my $sc = $self->{_subcommand};
-    my $res = $self->{_res};
+    my $res = $self->{_doc_res};
 
     $res->{name} = $self->program_name .
         ($sc && length($sc->{name}) ? " $sc->{name}" : "");
 
-    if ($self->{_meta}) {
+    if ($self->{_doc_meta}) {
         $res->{summary} =
-            $self->langprop($self->{_meta}, "summary");
+            $self->langprop($self->{_doc_meta}, "summary");
     }
 
     my $name_summary = join(
@@ -679,8 +679,8 @@ sub gen_doc_section_options {
     require SHARYANTO::Getopt::Long::Util;
 
     my ($self) = @_;
-    my $info = $self->{_info};
-    my $meta = $self->{_meta};
+    my $info = $self->{_doc_info};
+    my $meta = $self->{_doc_meta};
     my $args_p = $meta->{args};
     my $sc = $self->subcommands;
 

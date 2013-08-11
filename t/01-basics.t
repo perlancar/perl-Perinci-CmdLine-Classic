@@ -589,4 +589,3 @@ sub test_complete {
         is($stdout // "", join("", map {"$_\n"} @{$args{result}}), "result");
     };
 }
-
