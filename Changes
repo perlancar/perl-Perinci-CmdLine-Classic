@@ -1,5 +1,13 @@
 Revision history for Perinci-CmdLine
 
+0.85     2013-08-15 (SHARYANTO)
+
+         [BUG FIXES]
+
+         - No functional changes. Add missing dependencies to Perinci::To::Text
+           [CT].
+
+
 0.84     2013-08-11 (SHARYANTO)
 
          [BUG FIXES]

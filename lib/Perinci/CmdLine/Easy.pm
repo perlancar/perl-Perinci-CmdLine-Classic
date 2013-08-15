@@ -98,6 +98,8 @@ sub run_cmdline_app {
 1;
 # ABSTRACT: A simple interface to run a subroutine as command-line app
 
+=for Pod::Coverage .+
+
 =head1 SYNOPSIS
 
 In your command-line script (e.g. named list-cpan-dists):
