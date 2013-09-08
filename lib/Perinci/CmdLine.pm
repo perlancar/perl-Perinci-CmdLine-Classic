@@ -461,7 +461,7 @@ sub run_version {
     my $res = $self->_pa->request(meta => $url);
     my $ver;
     if ($res->[0] == 200) {
-        $ver = $res->[2]{entity_version} // "?";
+        $ver = $res->[2]{entity_v} // "?";
     } else {
         $log->warnf("Can't request 'meta' action on %s: %d - %s",
                     $url, $res->[0], $res->[1]);
