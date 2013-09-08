@@ -38,7 +38,6 @@ has exit => (is => 'rw', default=>sub{1});
 has log_any_app => (is => 'rw', default=>sub{$ENV{LOG} // 1});
 has custom_completer => (is => 'rw');
 has custom_arg_completer => (is => 'rw');
-has dash_to_underscore => (is => 'rw', default=>sub{1});
 has pass_cmdline_object => (is => 'rw', default=>sub{0});
 has undo => (is=>'rw', default=>sub{0});
 has undo_dir => (
@@ -561,6 +560,7 @@ sub run_completion {
             }
         }
 
+        use Data::Dump qw(dump); warn dump($sc);
         $res = Perinci::BashComplete::bash_complete_riap_func_arg(
             url=>$sc->{url}, words=>$words, cword=>$cword,
             common_opts => $common_opts,
@@ -1109,7 +1109,6 @@ sub _set_subcommand {
         } elsif (@ARGV) {
             $scn = shift @ARGV;
             $self->{_scn_in_argv} = $scn;
-            $scn =~ s/-/_/g if $self->dash_to_underscore;
         } else {
             goto L1;
         }
@@ -1568,11 +1567,6 @@ its documentation for more details.
 
 Will be passed to L<Perinci::BashComplete>. See its documentation for more
 details.
-
-=head2 dash_to_underscore => BOOL (optional, default 1)
-
-If set to 1, subcommand like C<a-b-c> will be converted to C<a_b_c>. This is for
-convenience when typing in command line.
 
 =head2 pass_cmdline_object => BOOL (optional, default 0)
 

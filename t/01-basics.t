@@ -332,20 +332,6 @@ test_run(name      => 'default_subcommand (2, other subcommand via --cmd)',
          exit_code => 0,
      );
 
-test_run(name      => 'arg: dash_to_underscore=0',
-         args      => {module=>'Foo', dash_to_underscore=>0,
-                       subcommands=>{ok=>{}, want_odd=>{}}},
-         argv      => [qw/want-odd 3/],
-         dies      => 1,
-     );
-test_run(name      => 'arg: dash_to_underscore=1 (default)',
-         args      => {subcommands=>{
-             ok=>{url=>'/Foo/ok'},
-             want_odd=>{url=>'/Foo/want_odd'}}},
-         argv      => [qw/want-odd 3/],
-         exit_code => 0,
-     );
-
 for (qw(--help -h -?)) {
     test_run(name      => "general help ($_)",
              args      => {url=>'/Foo/'},
