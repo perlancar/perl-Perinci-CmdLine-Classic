@@ -69,8 +69,9 @@ has _pa => (
         require Perinci::Access;
         my %args = %{$self->pa_args // {}};
         if ($self->undo) {
-            require Perinci::Access::InProcess;
-            my $pai = Perinci::Access::InProcess->new(
+            require Perinci::Access::Perl;
+            require Perinci::Access::Schemeless;
+            my %opts = (
                 use_tx => 1,
                 custom_tx_manager => sub {
                     my $pa = shift;
@@ -87,8 +88,8 @@ has _pa => (
                 },
             );
             $args{handlers} = {
-                pl   => $pai,
-                riap => $pai,
+                pl => Perinci::Access::Perl->new(%opts),
+                '' => Perinci::Access::Schemeless->new(%opts),
             };
         }
         $log->tracef("Creating Perinci::Access object with args: %s", \%args);
