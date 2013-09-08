@@ -560,12 +560,12 @@ sub run_completion {
             }
         }
 
-        use Data::Dump qw(dump); warn dump($sc);
         $res = Perinci::BashComplete::bash_complete_riap_func_arg(
             url=>$sc->{url}, words=>$words, cword=>$cword,
             common_opts => $common_opts,
             custom_completer=>$self->custom_completer,
-            custom_arg_completer => $self->custom_arg_completer
+            custom_arg_completer => $self->custom_arg_completer,
+            pa => $self->_pa,
         );
 
     } else {
@@ -575,7 +575,8 @@ sub run_completion {
         my $scs = $self->list_subcommands;
         push @ary, keys %$scs;
         $res = Perinci::BashComplete::complete_array(
-            word=>$word, array=>\@ary);
+            word=>$word, array=>\@ary,
+        );
     }
 
     # display completion result for bash
