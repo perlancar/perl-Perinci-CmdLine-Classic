@@ -1,6 +1,6 @@
 Revision history for Perinci-CmdLine
 
-0.87     2013-09-08 (SHARYANTO) (not yet released)
+0.87     2013-09-08 (SHARYANTO)
 
          [REMOVED FEATURES]
 
@@ -8,6 +8,10 @@ Revision history for Perinci-CmdLine
            confusing. If you specify subcommands using underscores, -l will list
            the underscored version but tab completion is using the dashed
            version. To simplify stuffs, now no transformation is done.
+
+         [BUG FIXES]
+
+         - Forgot to pass 'pa' argument to Perinci::BashComplete function.
 
 
 0.86     2013-09-08 (SHARYANTO)
