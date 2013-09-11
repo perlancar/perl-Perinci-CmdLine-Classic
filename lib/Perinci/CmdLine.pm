@@ -44,8 +44,10 @@ has undo_dir => (
     is => 'rw',
     lazy => 1,
     default => sub {
+        require File::HomeDir;
+
         my $self = shift;
-        my $dir = $ENV{HOME} . "/." . $self->program_name;
+        my $dir = File::HomeDir->my_home . "/." . $self->program_name;
         mkdir $dir unless -d $dir;
         $dir .= "/.undo";
         mkdir $dir unless -d $dir;
