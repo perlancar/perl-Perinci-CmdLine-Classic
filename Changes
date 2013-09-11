@@ -1,5 +1,13 @@
 Revision history for Perinci-CmdLine
 
+0.88     2013-09-11 (SHARYANTO)
+
+         - No functional changes. Demote Perinci::Tx::Manager from
+           RuntimeRequires to RuntimeRecommends because not all applications use
+           it and it currently does not install on Windows (some deps like
+           File::Lock, which deps on Data::Structure::Util, does not build).
+
+
 0.87     2013-09-08 (SHARYANTO)
 
          [REMOVED FEATURES]
