@@ -1,5 +1,11 @@
 Revision history for Perinci-CmdLine
 
+0.89     2013-09-20 (SHARYANTO)
+
+         - No functional changes. Force upgrade of deps to show previous error
+           (Rinci 1.1.38).
+
+
 0.88     2013-09-11 (SHARYANTO)
 
          - No functional changes. Demote Perinci::Tx::Manager from
