@@ -650,6 +650,32 @@ sub gen_doc_section_summary {
     $self->add_doc_lines($name_summary, "");
 }
 
+sub _usage_args {
+    my $self = shift;
+
+    my $m = $self->{_doc_meta};
+    return "" unless $m;
+    my $aa = $m->{args};
+    return "" unless $aa;
+
+    # arguments with pos defined
+    my @a = sort { $aa->{$a}{pos} <=> $aa->{$b}{pos} }
+        grep { defined($aa->{$_}{pos}) } keys %$aa;
+    my $res = "";
+    for (@a) {
+        $res .= " ";
+        my $label = uc($_);
+        $label .= " ..." if $aa->{$_}{greedy};
+        if ($aa->{$_}{req}) {
+            $res .= $label;
+        } else {
+            $res .= "[$label]";
+        }
+        last if $aa->{$_}{greedy};
+    }
+    $res;
+}
+
 sub gen_doc_section_usage {
     my ($self) = @_;
 
@@ -674,7 +700,8 @@ sub gen_doc_section_usage {
             $self->add_doc_lines("    $pn ".$self->loc("SUBCOMMAND (options)"));
         }
     } else {
-        $self->add_doc_lines("    $pn ".$self->loc("(options)"));
+        $self->add_doc_lines("    $pn ".$self->loc("(options)").
+                                 $self->_usage_args);
     }
     $self->add_doc_lines("");
 }
