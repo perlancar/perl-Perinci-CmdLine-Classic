@@ -903,8 +903,7 @@ sub run_subcommand {
 
     my ($self) = @_;
     my $sc = $self->{_subcommand};
-
-    my %fargs = %{$self->{_args}};
+    my %fargs = %{$self->{_args} // {}};
     $fargs{-cmdline} = $self if $sc->{pass_cmdline_object} //
         $self->pass_cmdline_object;
 
@@ -1052,10 +1051,17 @@ sub parse_subcommand_opts {
     $log->tracef("-> parse_subcommand_opts()");
 
     my $res = $self->_pa->request(meta=>$sc->{url});
-    unless ($res->[0] == 200) {
+    if ($res->[0] == 200) {
+        # prefill arguments using 'args' from subcommand specification, if any
+        $self->{_args} = {};
+        if ($sc->{args}) {
+            for (keys %{ $sc->{args} }) {
+                $self->{_args}{$_} = $sc->{args}{$_};
+            }
+        }
+    } else {
         $log->warnf("Can't get metadata from %s: %d - %s", $sc->{url},
                     $res->[0], $res->[1]);
-        $self->{_args} = {};
         $log->tracef("<- parse_subcommand_opts() (bailed)");
         return;
     }
@@ -1118,7 +1124,9 @@ sub parse_subcommand_opts {
 
     die "ERROR: Failed parsing arguments: $res->[0] - $res->[1]\n"
         unless $res->[0] == 200;
-    $self->{_args} = $res->[2];
+    for (keys %{ $res->[2] }) {
+        $self->{_args}{$_} = $res->[2]{$_};
+    }
     $log->tracef("result of GetArgs for subcommand: remaining argv=%s, args=%s".
                      ", actions=%s", \@ARGV, $self->{_args}, $self->{_actions});
 
@@ -1458,14 +1466,66 @@ If unset, will be retrieved from function metadata when needed.
 Should be a hash of subcommand specifications or a coderef.
 
 Each subcommand specification is also a hash(ref) and should contain these keys:
-C<url>. It can also contain these keys: C<summary> (str, will be retrieved from
-function metadata if unset), C<tags> (array of str, for categorizing
-subcommands), C<log_any_app> (bool, whether to load Log::Any::App, default is
-true, for subcommands that need fast startup you can try turning this off for
-said subcommands), C<undo> (bool, can be set to 0 to disable transaction for
-this subcommand; this is only relevant when C<undo> attribute is set to true),
-C<pass_cmdline_object> (bool, to override C<pass_cmdline_object> attribute on a
-per-subcommand basis).
+
+=over
+
+=item * C<url> (str, required)
+
+Location of function (accessed via Riap).
+
+=item * C<summary> (str, optional)
+
+Will be retrieved from function metadata at C<url> if unset
+
+=item * C<tags> (array of str, optional)
+
+For grouping or categorizing subcommands, e.g. when displaying list of
+subcommands.
+
+=item * C<log_any_app> (bool, optional)
+
+Whether to load Log::Any::App, default is true. For subcommands that need fast
+startup you can try turning this off for said subcommands.
+
+=item * C<undo> (bool, optional)
+
+Can be set to 0 to disable transaction for this subcommand; this is only
+relevant when C<undo> attribute is set to true.
+
+=item * C<pass_cmdline_object> (bool, optional, default 0)
+
+To override C<pass_cmdline_object> attribute on a per-subcommand basis.
+
+=item * C<args> (hash, optional)
+
+If specified, will send the arguments (as well as arguments specified via the
+command-line). This can be useful for a function that serves more than one
+subcommand, e.g.:
+
+ subcommands => {
+     sub1 => {
+         summary => 'Subcommand one',
+         url     => '/some/func',
+         args    => {flag=>'one'},
+     },
+     sub2 => {
+         summary => 'Subcommand two',
+         url     => '/some/func',
+         args    => {flag=>'two'},
+     },
+ }
+
+In the example above, both subcommand C<sub1> and C<sub2> point to function at
+C</some/func>. But the function can differentiate between the two via the
+C<flag> argument being sent.
+
+ % cmdprog sub1 --foo 1 --bar 2
+ % cmdprog sub2 --foo 2
+
+In the first invocation, function will receive arguments C<< {foo=>1, bar=>2,
+flag=>'one'} >> and for the second: C<< {foo=>2, flag=>'two'} >>.
+
+=back
 
 Subcommands can also be a coderef, for dynamic list of subcommands. The coderef
 will be called as a method with hash arguments. It can be called in two cases.

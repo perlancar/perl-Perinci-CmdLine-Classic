@@ -39,7 +39,11 @@ $SPEC{ok} = {
 sub ok {
     my %args = @_;
     [200, "OK",
-     {"First argument"=>$args{arg1}, "Second argument"=>$args{arg2}}];
+     {
+         "First argument"=>$args{arg1},
+         "Second argument"=>$args{arg2},
+         "Third argument"=>$args{arg3},
+     }];
 }
 
 $SPEC{want_odd} = {
@@ -304,6 +308,28 @@ test_run(name      => 'subcommands',
          argv      => [qw/wo 3/],
          exit_code => 0,
      );
+
+subtest 'subcommand specification' => sub {
+    my %cmdspec = (
+        subcommands=>{
+            ok1=>{url=>'/Foo/ok', args=>{arg3=>'mandiri'}},
+            ok2=>{url=>'/Foo/ok', args=>{arg3=>'fiesta'}},
+        },
+    );
+
+    test_run(name      => 'args specification',
+             args      => \%cmdspec,
+             argv      => [qw/ok1 a virus/],
+             exit_code => 0,
+             output_re => qr/a.+virus.+mandiri/s,
+     );
+    test_run(name      => 'args specification',
+             args      => \%cmdspec,
+             argv      => [qw/ok2 a virus/],
+             exit_code => 0,
+             output_re => qr/a.+virus.+fiesta/s,
+     );
+};
 
 test_run(name      => 'unknown subcommand = error',
          args      => {subcommands=>{
