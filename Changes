@@ -1,5 +1,13 @@
 Revision history for Perinci-CmdLine
 
+0.90     2013-09-23 (SHARYANTO)
+
+         - Add 'args' subcommand specification to prefill function arguments
+           when calling (useful for function that serves multiple subcommands).
+
+         - Show positional arguments in usage message.
+
+
 0.89     2013-09-20 (SHARYANTO)
 
          - No functional changes. Force upgrade of deps to show previous error
