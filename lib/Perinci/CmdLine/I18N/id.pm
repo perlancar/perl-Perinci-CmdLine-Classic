@@ -30,8 +30,8 @@ msgstr "%1 versi %2"
 msgid  "Usage"
 msgstr "Cara pakai"
 
-msgid  "--help (or -h, -?)"
-msgstr "--help (atau -h, -?)"
+msgid  "--help (or -h, -?) [--verbose]"
+msgstr "--help (atau -h, -?) [--verbose]"
 
 msgid  "--version (or -v)"
 msgstr "--version (atau -v)"
@@ -137,6 +137,9 @@ msgstr "Untuk pesan bantuan umum, ketik '%1'"
 
 msgid  "For help on a subcommand, type '%1'"
 msgstr "Untuk pesan bantuan subperintah tertentu, ketik '%1'"
+
+msgid  "For more complete help, try '--help --verbose'"
+msgstr "Untuk pesan bantuan lebih lengkap, gunakan '--help --verbose'"
 
 # usage/function
 

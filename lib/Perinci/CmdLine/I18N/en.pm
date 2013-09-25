@@ -30,8 +30,8 @@ msgstr "%1 version %2"
 msgid  "Usage"
 msgstr "Usage"
 
-msgid  "--help (or -h, -?)"
-msgstr "--help (or -h, -?)"
+msgid  "--help (or -h, -?) [--verbose]"
+msgstr "--help (or -h, -?) [--verbose]"
 
 msgid  "--version (or -v)"
 msgstr "--version (or -v)"
@@ -137,6 +137,9 @@ msgstr "For general help, type '%1'"
 
 msgid  "For help on a subcommand, type '%1'"
 msgstr "For help on a subcommand, type '%1'"
+
+msgid  "For more complete help, try '--help --verbose'"
+msgstr "For more complete help, try '--help --verbose'"
 
 # usage/function
 

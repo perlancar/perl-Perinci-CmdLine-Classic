@@ -14,6 +14,7 @@ use Scalar::Util qw(reftype blessed);
 
 # VERSION
 
+with 'SHARYANTO::Role::ColorTheme';
 with 'SHARYANTO::Role::Doc::Section';
 with 'SHARYANTO::Role::Doc::Section::AddTextLines';
 with 'SHARYANTO::Role::I18N';
@@ -131,7 +132,7 @@ has common_opts => (
 
         $opts{help} = {
             getopt  => "help|h|?",
-            usage   => "--help (or -h, -?)",
+            usage   => "--help (or -h, -?) [--verbose]",
             summary => "Display this help message",
             handler => sub {
                 unshift @{$self->{_actions}}, 'help';
@@ -629,16 +630,17 @@ sub _add_common_opts_after_meta {
 sub gen_doc_section_summary {
     my ($self) = @_;
 
-    my $sc = $self->{_subcommand};
     my $res = $self->{_doc_res};
-
-    $res->{name} = $self->program_name .
-        ($sc && length($sc->{name}) ? " $sc->{name}" : "");
-
     if ($self->{_doc_meta}) {
         $res->{summary} =
             $self->langprop($self->{_doc_meta}, "summary");
     }
+    return unless $res->{summary};
+
+    my $sc = $self->{_subcommand};
+
+    $res->{name} = $self->program_name .
+        ($sc && length($sc->{name}) ? " $sc->{name}" : "");
 
     my $name_summary = join(
         "",
@@ -706,7 +708,7 @@ sub gen_doc_section_usage {
     $self->add_doc_lines("");
 }
 
-sub gen_doc_section_options {
+sub gen_doc_section_options_compact {
     require SHARYANTO::Getopt::Long::Util;
 
     my ($self) = @_;
@@ -810,6 +812,16 @@ sub gen_doc_section_options {
     #$self->add_doc_lines("");
 }
 
+sub gen_doc_section_options_verbose {
+    # not yet
+}
+
+sub gen_doc_section_hint_verbose {
+    my ($self) = @_;
+    $self->add_doc_lines(
+        $self->loc("For more complete help, try '--help --verbose'").".");
+}
+
 sub gen_doc_section_description {
     # not yet
 }
@@ -820,6 +832,46 @@ sub gen_doc_section_examples {
 
 sub gen_doc_section_links {
     # not yet
+}
+
+sub run_help {
+    my ($self) = @_;
+
+    if ($ENV{VERBOSE}) {
+        $self->_verbose_help;
+    } else {
+        $self->_compact_help;
+    }
+
+    print $self->gen_doc();
+    0;
+}
+
+sub _compact_help {
+    my ($self) = @_;
+
+    $self->{doc_sections} //= [
+        'summary',
+        'usage',
+        'examples',
+        'options_compact',
+        'hint_verbose',
+    ];
+    0;
+}
+
+sub _verbose_help {
+    my ($self) = @_;
+
+    $self->{doc_sections} //= [
+        'summary',
+        'usage',
+        'examples',
+        'description',
+        'options_verbose',
+        'links',
+    ];
+    0;
 }
 
 my ($ph1, $ph2); # patch handles
@@ -881,21 +933,6 @@ sub _setup_progress_output {
             }
         ) if defined &{"Log::Log4perl::Appender::ScreenColoredLevels::log"};
     }
-}
-
-sub run_help {
-    my ($self) = @_;
-
-    $self->{doc_sections} //= [
-        'summary',
-        'usage',
-        'options',
-        'description',
-        'examples',
-        'links',
-    ];
-    print $self->gen_doc();
-    0;
 }
 
 sub run_subcommand {
