@@ -257,7 +257,20 @@ sub __json_decode {
 
 sub BUILD {
     my ($self, $args) = @_;
-    #$self->{indent} = $args->{indent} // "    ";
+
+    # pick a default color theme
+    unless ($self->{color_theme}) {
+        my $ct;
+        if ($self->{use_color}) {
+            my $bg = $self->detect_terminal->{default_bgcolor} // '';
+            $ct = 'Default::default' .
+                ($bg eq 'ffffff' ? '_whitebg' : '');
+        } else {
+            $ct = 'Default::no_color';
+        }
+        $self->color_theme($ct);
+    }
+
 }
 
 sub format_result {
@@ -604,7 +617,7 @@ sub before_gen_doc {
         $self->_add_common_opts_after_meta;
     }
 
-    $self->{_doc_res} = {};
+    $self->{_doc_section_results} = {};
 }
 
 # some common opts can be added only after we get the function metadata
@@ -630,26 +643,23 @@ sub _add_common_opts_after_meta {
 sub gen_doc_section_summary {
     my ($self) = @_;
 
-    my $res = $self->{_doc_res};
+    my $res = $self->{_doc_section_results}{summary} = {};
+    my $summary;
     if ($self->{_doc_meta}) {
-        $res->{summary} =
-            $self->langprop($self->{_doc_meta}, "summary");
+        $summary = $self->langprop($self->{_doc_meta}, "summary");
     }
-    return unless $res->{summary};
+    return unless $summary;
 
     my $sc = $self->{_subcommand};
-
-    $res->{name} = $self->program_name .
+    my $name = $self->program_name .
         ($sc && length($sc->{name}) ? " $sc->{name}" : "");
 
-    my $name_summary = join(
+    $res->{content} = join(
         "",
-        $res->{name} // "",
-        ($res->{name} && $res->{summary} ? ' - ' : ''),
-        $res->{summary} // ""
+        $self->_color('program_name', $name),
+        ($name && $summary ? ' - ' : ''),
+        $summary // "",
     );
-
-    $self->add_doc_lines($name_summary, "");
 }
 
 sub _usage_args {
@@ -832,6 +842,59 @@ sub gen_doc_section_examples {
 
 sub gen_doc_section_links {
     # not yet
+}
+
+sub _color {
+    my ($self, $color_name, $text) = @_;
+    my $color_code = $color_name ?
+        $self->get_theme_color_as_ansi($color_name) : "";
+    my $reset_code = $color_code ? "\e[0m" : "";
+    "$color_code$text$reset_code";
+}
+
+# we use Text::ANSITable instead of role's default add_doc_lines() method so we
+# can get prettier output
+sub gen_doc {
+    my ($self, %opts) = @_;
+
+    # BEGIN reimp. since we lack NEXT::, we can't call overridden role method
+    # gen_doc(), so we reimplement it here.
+    $self->before_gen_doc(%opts) if $self->can("before_gen_doc");
+    for my $s (@{ $self->doc_sections // [] }) {
+        my $meth = "gen_doc_section_$s";
+        $log->tracef("=> $meth()");
+        $self->$meth(%opts);
+    }
+    $self->after_gen_doc(%opts) if $self->can("after_gen_doc");
+    # END reimp.
+
+    require Text::ANSITable;
+    my $t = Text::ANSITable->new;
+    $t->border_style('Default::none_ascii');
+    $t->cell_pad(0);
+    $t->show_header(0);
+    $t->columns(["text"]);
+
+    my $rownum = 0;
+    for my $section (@{ $self->{doc_sections} }) {
+        my $sres = $self->{_doc_section_results}{$section};
+        next unless $sres;
+
+        # section heading
+        if (defined $sres->{title}) {
+            $t->set_cell($rownum, 0, $self->_color('heading', $sres->{title}));
+            $rownum++;
+        }
+
+        # section content
+        if (defined $sres->{content}) {
+            $t->set_cell($rownum, 0, $sres->{content});
+            $t->set_cell_style($rownum, 0, {formats=>[ [lins=>{text=>"  "}] ]});
+            $rownum++;
+        }
+    }
+
+    $t->draw;
 }
 
 sub run_help {
