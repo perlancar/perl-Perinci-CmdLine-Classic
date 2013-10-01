@@ -658,7 +658,7 @@ sub _help_draw_curtbl {
 # ansitables are used to draw formatted help. they are 100% wide, with no
 # borders (except space), but you can customize the number of columns (which
 # will be divided equally)
-sub _help_new_table {
+sub _help_add_table {
     require Text::ANSITable;
 
     my ($self, %args) = @_;
@@ -678,7 +678,7 @@ sub _help_new_table {
     $self->{_help_curtbl} = $t;
 }
 
-sub _help_new_row {
+sub _help_add_row {
     my ($self, $row, $args) = @_;
     $args //= {};
     my $wrap    = $args->{wrap}   // 0;
@@ -686,7 +686,7 @@ sub _help_new_row {
     my $columns = @$row;
 
     # start a new table if necessary
-    $self->_help_new_table(columns=>$columns)
+    $self->_help_add_table(columns=>$columns)
         if !$self->{_help_curtbl} ||
                 $columns != @{ $self->{_help_curtbl}{columns} };
 
@@ -729,7 +729,7 @@ sub help_section_summary {
         ($name && $summary ? ' - ' : ''),
         $summary // "",
     );
-    $self->_help_new_row([$ct], {wrap=>1});
+    $self->_help_add_row([$ct], {wrap=>1});
 }
 
 sub _usage_args {
@@ -787,8 +787,8 @@ sub help_section_usage {
             $ct .= ($ct ? "\n" : "") . $pn .
                 " " . $self->loc("(options)"). $self->_usage_args;
     }
-    $self->_help_new_row([$self->_color('heading', $self->loc("Usage"))]);
-    $self->_help_new_row([$ct], {indent=>1});
+    $self->_help_add_row([$self->_color('heading', $self->loc("Usage"))]);
+    $self->_help_add_row([$ct], {indent=>1});
 }
 
 sub help_section_options {
@@ -931,7 +931,7 @@ sub help_section_options {
 
     # output gathered options
     for my $cat (sort keys %catopts) {
-        $self->_help_new_row([$self->_color('heading', $cat)]);
+        $self->_help_add_row([$self->_color('heading', $cat)]);
         my @opts = sort {
             my $va = $a->{getopt};
             my $vb = $b->{getopt};
@@ -943,7 +943,7 @@ sub help_section_options {
                 my $ct = $self->_color('option_name', $o->{getopt}) .
                     ($o->{getopt_type} ? " [$o->{getopt_type}]" : "").
                         ($o->{getopt_note} ? $o->{getopt_note} : "");
-                $self->_help_new_row([$ct], {indent=>1});
+                $self->_help_add_row([$ct], {indent=>1});
                 if ($o->{in} || $o->{summary} || $o->{description}) {
                     my $ct = "";
                     $ct .= ($ct ? "\n\n":"").ucfirst($self->loc("value in")).
@@ -951,7 +951,7 @@ sub help_section_options {
                     $ct .= ($ct ? "\n\n":"")."$o->{summary}." if $o->{summary};
                     $ct .= ($ct ? "\n\n":"").$o->{description}
                         if $o->{description};
-                    $self->_help_new_row([$ct], {indent=>2, wrap=>1});
+                    $self->_help_add_row([$ct], {indent=>2, wrap=>1});
                 }
             }
         } else {
@@ -969,7 +969,7 @@ sub help_section_options {
                 }
                 last unless @row;
                 for (@row+1 .. $columns) { push @row, "" }
-                $self->_help_new_row(\@row, {indent=>1});
+                $self->_help_add_row(\@row, {indent=>1});
             }
         }
     }
@@ -977,7 +977,7 @@ sub help_section_options {
 
 sub help_section_hint_verbose {
     my ($self) = @_;
-    $self->_help_new_row(["\n" . $self->loc(
+    $self->_help_add_row(["\n" . $self->loc(
         "For more complete help, try '--help --verbose'")."."], {wrap=>1});
 }
 
@@ -987,12 +987,11 @@ sub help_section_description {
     my $desc = $self->langprop($self->{_help_meta}, "description");
     return unless $desc;
 
-    $self->_help_new_row([$self->_color('heading', $self->loc("Description"))]);
-    $self->_help_new_row([$desc], {wrap=>1, indent=>1});
+    $self->_help_add_row([$self->_color('heading', $self->loc("Description"))]);
+    $self->_help_add_row([$desc], {wrap=>1, indent=>1});
 }
 
 sub help_section_examples {
-    # not yet
 }
 
 sub help_section_links {
