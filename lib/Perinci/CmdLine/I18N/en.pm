@@ -60,6 +60,9 @@ msgstr "Common options"
 msgid  "Undo options"
 msgstr "Undo options"
 
+msgid  "required"
+msgstr "required"
+
 # --format
 msgid  "Choose output format, e.g. json, text"
 msgstr "Choose output format, e.g. json, text"

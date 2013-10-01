@@ -15,8 +15,6 @@ use Scalar::Util qw(reftype blessed);
 # VERSION
 
 with 'SHARYANTO::Role::ColorTheme';
-with 'SHARYANTO::Role::Doc::Section';
-with 'SHARYANTO::Role::Doc::Section::AddTextLines';
 with 'SHARYANTO::Role::I18N';
 with 'SHARYANTO::Role::I18NRinci';
 
@@ -626,26 +624,6 @@ sub run_completion {
     0;
 }
 
-sub before_gen_doc {
-    my ($self) = @_;
-
-    my $sc = $self->{_subcommand};
-    my $url = $sc ? $sc->{url} : $self->url;
-    if ($url) {
-        my $res = $self->_pa->request(info => $url);
-        die "ERROR: Can't info '$url': $res->[0] - $res->[1]\n"
-            unless $res->[0] == 200;
-        $self->{_doc_info} = $res->[2];
-        $res = $self->_pa->request(meta => $url);
-        die "ERROR: Can't meta '$url': $res->[0] - $res->[1]\n"
-            unless $res->[0] == 200;
-        $self->{_doc_meta} = $res->[2];
-        $self->_add_common_opts_after_meta;
-    }
-
-    $self->{_doc_section_results} = {};
-}
-
 # some common opts can be added only after we get the function metadata
 sub _add_common_opts_after_meta {
     my $self = shift;
@@ -666,33 +644,96 @@ sub _add_common_opts_after_meta {
     $self->{_go_specs_common} = \@go_opts;
 }
 
-sub gen_doc_section_summary {
-    my ($self) = @_;
+sub _help_draw_curtbl {
+    my $self = shift;
 
-    my $res = $self->{_doc_section_results}{summary} = {};
-    my $summary;
-    if ($self->{_doc_meta}) {
-        $summary = $self->langprop($self->{_doc_meta}, "summary");
+    if ($self->{_help_curtbl}) {
+        print $self->{_help_curtbl}->draw;
+        undef $self->{_help_curtbl};
     }
+}
+
+# ansitables are used to draw formatted help. they are 100% wide, with no
+# borders (except space), but you can customize the number of columns (which
+# will be divided equally)
+sub _help_new_table {
+    require Text::ANSITable;
+
+    my ($self, %args) = @_;
+    my $columns = $args{columns} // 1;
+
+    $self->_help_draw_curtbl;
+    my $tw = $self->term_width;
+    my $cw = int($tw/$columns)-1;
+    my $t = Text::ANSITable->new;
+    $t->border_style('Default::spacei_ascii');
+    $t->cell_pad(0);
+    $t->cell_width($cw);
+    $t->show_header(0);
+    $t->column_wrap(0); # we'll do our own wrapping, before indent
+    $t->columns([0..$columns-1]);
+
+    $self->{_help_curtbl} = $t;
+}
+
+sub _help_new_row {
+    my ($self, $row, $args) = @_;
+    $args //= {};
+    my $wrap    = $args->{wrap}   // 0;
+    my $indent  = $args->{indent} // 0;
+    my $columns = @$row;
+
+    # start a new table if necessary
+    $self->_help_new_table(columns=>$columns)
+        if !$self->{_help_curtbl} ||
+                $columns != @{ $self->{_help_curtbl}{columns} };
+
+    my $t = $self->{_help_curtbl};
+    my $rownum = @{ $t->{rows} };
+
+    $t->add_row($row);
+
+    for (0..@{$t->{columns}}-1) {
+        my %styles = (formats=>[]);
+        push @{ $styles{formats} }, [wrap=>{width=>$t->{cell_width}-$indent*2}]
+            if $wrap;
+        push @{ $styles{formats} }, [lins=>{text=>"  " x $indent}]
+            if $indent && $_ == 0;
+        $t->set_cell_style($rownum, $_, \%styles);
+    }
+}
+
+sub _color {
+    my ($self, $color_name, $text) = @_;
+    my $color_code = $color_name ?
+        $self->get_theme_color_as_ansi($color_name) : "";
+    my $reset_code = $color_code ? "\e[0m" : "";
+    "$color_code$text$reset_code";
+}
+
+sub help_section_summary {
+    my ($self, %opts) = @_;
+
+    my $summary = $self->langprop($self->{_help_meta}, "summary");
     return unless $summary;
 
     my $sc = $self->{_subcommand};
     my $name = $self->program_name .
         ($sc && length($sc->{name}) ? " $sc->{name}" : "");
 
-    $res->{content} = join(
+    my $ct = join(
         "",
         $self->_color('program_name', $name),
         ($name && $summary ? ' - ' : ''),
         $summary // "",
-        "\n",
     );
+    $self->_help_new_row([$ct], {wrap=>1});
 }
 
 sub _usage_args {
     my $self = shift;
 
-    my $m = $self->{_doc_meta};
+    my $m = $self->{_help_meta};
     return "" unless $m;
     my $aa = $m->{args};
     return "" unless $aa;
@@ -715,53 +756,48 @@ sub _usage_args {
     $res;
 }
 
-sub gen_doc_section_usage {
-    my ($self) = @_;
-
-    my $res = $self->{_doc_section_results}{usage} = {};
+sub help_section_usage {
+    my ($self, %opts) = @_;
 
     my $co = $self->common_opts;
     my @con = sort {
         ($co->{$a}{order}//1) <=> ($co->{$b}{order}//1) || $a cmp $b
     } keys %$co;
 
-
     $self->{_common_opts} = \@con; # save for doc_gen_options
-    $res->{title} = $self->loc("Usage");
 
-    my $pn = $self->program_name;
+    my $pn = $self->_color('program_name', $self->program_name);
     my $ct = "";
     for my $con (@con) {
         my $cov = $co->{$con};
         next unless $cov->{usage};
-        $ct .= ($ct ? "\n" : "") . $self->_color('program_name', $pn) .
-            " " . $self->locopt($cov->{usage});
+        $ct .= ($ct ? "\n" : "") . $pn . " " . $self->locopt($cov->{usage});
     }
     if ($self->subcommands) {
         if (defined $self->default_subcommand) {
-            $ct .= ($ct ? "\n" : "") . $self->_color('program_name', $pn) .
+            $ct .= ($ct ? "\n" : "") . $pn .
                 " " . $self->loc("--cmd=OTHER_SUBCOMMAND (options)");
         } else {
-            $ct .= ($ct ? "\n" : "") . $self->_color('program_name', $pn) .
+            $ct .= ($ct ? "\n" : "") . $pn .
                 " " . $self->loc("SUBCOMMAND (options)");
         }
     } else {
-            $ct .= ($ct ? "\n" : "") . $self->_color('program_name', $pn) .
+            $ct .= ($ct ? "\n" : "") . $pn .
                 " " . $self->loc("(options)"). $self->_usage_args;
     }
-    $res->{content} = $ct;
+    $self->_help_new_row([$self->_color('heading', $self->loc("Usage"))]);
+    $self->_help_new_row([$ct], {indent=>1});
 }
 
-sub gen_doc_section_options {
+sub help_section_options {
     require SHARYANTO::Getopt::Long::Util;
 
-    my ($self) = @_;
-    my $info = $self->{_doc_info};
-    my $meta = $self->{_doc_meta};
+    my ($self, %opts) = @_;
+    my $verbose = $opts{verbose};
+    my $info = $self->{_help_info};
+    my $meta = $self->{_help_meta};
     my $args_p = $meta->{args};
     my $sc = $self->subcommands;
-
-    my $res = $self->{_doc_section_results}{hint_verbose} = {};
 
     # stored gathered options by category, e.g. $catopts{"Common options"} (an
     # array containing options)
@@ -794,13 +830,37 @@ sub gen_doc_section_options {
             } keys %$args_p) {
             my $a = $args_p->{$an};
             my $s = $a->{schema} || [any=>{}];
+            my $got = Perinci::ToUtil::sah2human_short($s);
             my $ane = $an; $ane =~ s/_/-/g; $ane =~ s/\W/-/g;
-            $ane = "no$ane" if $s->[0] eq 'bool' && $s->[1]{default};
+
+            if ($s->[0] eq 'bool') {
+                if ($s->[1]{default}) {
+                    $ane = "no$ane";
+                    $got = undef;
+                } elsif (defined $s->[1]{default}) {
+                    $ane = $ane;
+                    $got = undef;
+                } else {
+                    $ane = "[no]$ane";
+                    $got = undef;
+                }
+            } elsif ($s->[0] eq 'float' || $s->[0] eq 'num') {
+                $ane .= "=f";
+            } elsif ($s->[0] eq 'int') {
+                $ane .= "=i";
+            } else {
+                $ane .= "=s";
+            }
+
+            # add aliases which does not have code
             for my $al0 (keys %{ $a->{cmdline_aliases} // {}}) {
+                my $alspec = $a->{cmdline_aliases}{$al0};
+                next if $alspec->{code};
                 my $al = $al0; $al =~ s/_/-/g;
                 $al = length($al) > 1 ? "--$al" : "-$al";
                 $ane .= ", $al";
             }
+
             my $def = defined($s->[1]{default}) && $s->[0] ne 'bool' ?
                 " (default: ".dump1($s->[1]{default}).")" : "";
             my $src = $a->{cmdline_src} // "";
@@ -810,157 +870,154 @@ sub gen_doc_section_options {
             }
             push @{ $catopts{$t_opts} }, {
                 getopt => "--$ane",
-                getopt_note => sprintf(
-                    "[%s]%s",
-                    Perinci::ToUtil::sah2human_short($s),
-                    join(
-                        "",
-                        (defined($a->{pos}) ? " (" .
-                             $self->loc("or as argument #[_1]",
-                                        ($a->{pos}+1).($a->{greedy} ? "+":"")).")":""),
-                        ($src eq 'stdin' ?
-                             " (" . $self->loc("or from stdin") . ")" : ""),
-                        ($src eq 'stdin_or_files' ?
-                             " (" . $self->loc("or from stdin/files") . ")" : ""),
-                        $def
-                    )),
+                getopt_type => $got,
+                getopt_note =>join(
+                    "",
+                    ($a->{req} ? " (" . $self->loc("required") . ")" : ""),
+                    (defined($a->{pos}) ? " (" .
+                         $self->loc("or as argument #[_1]",
+                                    ($a->{pos}+1).($a->{greedy} ? "+":"")).")":""),
+                    ($src eq 'stdin' ?
+                         " (" . $self->loc("or from stdin") . ")" : ""),
+                    ($src eq 'stdin_or_files' ?
+                         " (" . $self->loc("or from stdin/files") . ")" : ""),
+                    $def
+                ),
                 summary => $self->langprop($a, "summary"),
                 description => $self->langprop($a, "description"),
                 in => $in,
             };
+
+            # add aliases which have code as separate options
+            for my $al0 (keys %{ $a->{cmdline_aliases} // {}}) {
+                my $alspec = $a->{cmdline_aliases}{$al0};
+                next unless $alspec->{code};
+                push @{ $catopts{$t_opts} }, {
+                    getopt => length($al0) > 1 ? "--$al0" : "-$al0",
+                    getopt_type => $got,
+                    getopt_note => undef,
+                    summary => $self->langprop($alspec, "summary"),
+                    description => $self->langprop($alspec, "description"),
+                    #in => $in,
+                };
+            }
+
         }
     }
 
     # output gathered options
     for my $cat (sort keys %catopts) {
-        $self->add_doc_lines("$cat:\n", "");
-        for my $o (@{ $catopts{$cat} }) {
-            $self->inc_doc_indent(1);
-            $self->add_doc_lines($o->{getopt} . ($o->{getopt_note} ? " $o->{getopt_note}" : ""));
-            if ($o->{in} || $o->{summary} || $o->{description}) {
-                $self->inc_doc_indent(2);
-                $self->add_doc_lines(
-                    ucfirst($self->loc("value in")). ": $o->{in}",
-                    "")
-                    if $o->{in};
-                $self->add_doc_lines($o->{summary} . ".") if $o->{summary};
-                $self->add_doc_lines("", $o->{description})
-                    if $o->{description};
-                $self->dec_doc_indent(2);
-                $self->add_doc_lines("");
-            } else {
-                $self->add_doc_lines("");
+        $self->_help_new_row([$self->_color('heading', $cat)]);
+        my @opts = sort {
+            my $va = $a->{getopt};
+            my $vb = $b->{getopt};
+            for ($va, $vb) { s/^--(\[no\])?// }
+            $va cmp $vb;
+        } @{$catopts{$cat}};
+        if ($verbose) {
+            for my $o (@opts) {
+                my $ct = $self->_color('option_name', $o->{getopt}) .
+                    ($o->{getopt_type} ? " [$o->{getopt_type}]" : "").
+                        ($o->{getopt_note} ? $o->{getopt_note} : "");
+                $self->_help_new_row([$ct], {indent=>1});
+                if ($o->{in} || $o->{summary} || $o->{description}) {
+                    my $ct = "";
+                    $ct .= "\n\n".ucfirst($self->loc("value in")). ": $o->{in}"
+                        if $o->{in};
+                    $ct .= ($ct ? "\n\n":"")."$o->{summary}." if $o->{summary};
+                    $ct .= ($ct ? "\n\n":"").$o->{description}
+                        if $o->{description};
+                    $self->_help_new_row([$ct], {indent=>2, wrap=>1});
+                }
             }
-            $self->dec_doc_indent(1);
+        } else {
+            # for compactness, display in columns
+            my $tw = $self->term_width;
+            my $columns = int($tw/40);
+            while (1) {
+                my @row;
+                for (1..$columns) {
+                    last unless @opts;
+                    my $o = shift @opts;
+                    push @row, $self->_color('option_name', $o->{getopt}) .
+                        ($o->{getopt_type} ? " [$o->{getopt_type}]" : "");
+                }
+                last unless @row;
+                $self->_help_new_row(\@row, {indent=>1});
+            }
         }
     }
-
-    #$self->add_doc_lines("");
 }
 
-sub xgen_doc_section_options_verbose {
-    # not yet
-}
-
-sub gen_doc_section_hint_verbose {
+sub help_section_hint_verbose {
     my ($self) = @_;
-    my $res = $self->{_doc_section_results}{hint_verbose} = {};
-    $res->{content} = "\n" . $self->loc(
-        "For more complete help, try '--help --verbose'").".";
+    $self->_help_new_row(["\n" . $self->loc(
+        "For more complete help, try '--help --verbose'")."."], {wrap=>1});
 }
 
-sub gen_doc_section_description {
-    # not yet
-}
-
-sub gen_doc_section_examples {
-    # not yet
-}
-
-sub gen_doc_section_links {
-    # not yet
-}
-
-sub _color {
-    my ($self, $color_name, $text) = @_;
-    my $color_code = $color_name ?
-        $self->get_theme_color_as_ansi($color_name) : "";
-    my $reset_code = $color_code ? "\e[0m" : "";
-    "$color_code$text$reset_code";
-}
-
-# we use Text::ANSITable instead of role's default add_doc_lines() method so we
-# can get prettier output
-sub gen_doc {
+sub help_section_description {
     my ($self, %opts) = @_;
 
-    # BEGIN reimp. since we lack NEXT::, we can't call overridden role method
-    # gen_doc(), so we reimplement it here.
-    $self->before_gen_doc(%opts) if $self->can("before_gen_doc");
-    for my $s (@{ $self->doc_sections // [] }) {
-        my $meth = "gen_doc_section_$s";
-        $log->tracef("=> $meth()");
-        $self->$meth(%opts);
-    }
-    $self->after_gen_doc(%opts) if $self->can("after_gen_doc");
-    # END reimp.
+    my $desc = $self->langprop($self->{_help_meta}, "description");
+    return unless $desc;
 
-    require Text::ANSITable;
-    my $t = Text::ANSITable->new;
-    $t->border_style('Default::none_ascii');
-    $t->cell_pad(0);
-    $t->show_header(0);
-    $t->columns(["text"]);
+    $self->_help_new_row([$self->_color('heading', $self->loc("Description"))]);
+    $self->_help_new_row([$desc], {wrap=>1, indent=>1});
+}
 
-    my $rownum = 0;
-    for my $section (@{ $self->{doc_sections} }) {
-        my $sres = $self->{_doc_section_results}{$section};
-        next unless $sres;
+sub help_section_examples {
+    # not yet
+}
 
-        # section heading
-        if (defined $sres->{title}) {
-            $t->set_cell($rownum, 0, $self->_color('heading', $sres->{title}));
-            $rownum++;
-        }
-
-        # section content
-        if (defined $sres->{content}) {
-            $t->set_cell($rownum, 0, $sres->{content});
-            my @formats;
-            push @formats, [lins=>{text=>"  "}] if $sres->{title};
-            $t->set_cell_style($rownum, 0, {formats=>\@formats});
-            $rownum++;
-        }
-    }
-
-    $t->draw;
+sub help_section_links {
+    # not yet
 }
 
 sub run_help {
     my ($self) = @_;
 
     my $verbose = $ENV{VERBOSE} // 0;
+    my %opts = (verbose=>$verbose);
 
+    # get function metadata first
+    my $sc = $self->{_subcommand};
+    my $url = $sc ? $sc->{url} : $self->url;
+    my $res = $self->_pa->request(info => $url);
+    die "ERROR: Can't info '$url': $res->[0] - $res->[1]\n"
+        unless $res->[0] == 200;
+    $self->{_help_info} = $res->[2];
+    $res = $self->_pa->request(meta => $url);
+    die "ERROR: Can't meta '$url': $res->[0] - $res->[1]\n"
+        unless $res->[0] == 200;
+    $self->{_help_meta} = $res->[2];
+
+    # determine which help sections should we generate
+    my @hsects;
     if ($verbose) {
-        $self->{doc_sections} //= [
+        @hsects = (
             'summary',
             'usage',
-            ###'examples',
-            ###'description',
-            ###'options',
-            #'links',
-        ];
+            'examples',
+            'description',
+            'options',
+            'links',
+        );
     } else {
-        $self->{doc_sections} //= [
+        @hsects = (
             'summary',
             'usage',
-            ###'examples',
-            ###'options',
+            'examples',
+            'options',
             'hint_verbose',
-        ];
+        );
     }
 
-    print $self->gen_doc(verbose=>$verbose);
+    for my $s (@hsects) {
+        my $meth = "help_section_$s";
+        $log->tracef("=> $meth(%s)", \%opts);
+        $self->$meth(%opts);
+    }
+    $self->_help_draw_curtbl;
     0;
 }
 

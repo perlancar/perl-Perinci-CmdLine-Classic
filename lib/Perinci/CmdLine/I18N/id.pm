@@ -60,6 +60,9 @@ msgstr "Opsi umum"
 msgid  "Undo options"
 msgstr "Opsi pembatalan"
 
+msgid  "required"
+msgstr "wajib"
+
 # --format
 msgid  "Choose output format, e.g. json, text"
 msgstr "Pilih format hasil, mis: json, text"
