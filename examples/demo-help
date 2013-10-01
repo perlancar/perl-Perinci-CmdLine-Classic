@@ -113,6 +113,17 @@ _
             schema => 'hash',
             summary => 'In some display it can be truncated',
         },
+        foo1 => {
+            summary => 'This is a foo-related option',
+            schema => 'num',
+            tags => ['category:Foo'],
+        },
+        foo2 => {
+            summary => 'This is another foo-related option',
+            "summary.alt.lang.id_ID" => 'Ini opsi lain yang terkait dengan foo',
+            schema => [int => between => [1, 10]],
+            tags => ['category:Foo'],
+        },
     },
 };
 sub demo_help {

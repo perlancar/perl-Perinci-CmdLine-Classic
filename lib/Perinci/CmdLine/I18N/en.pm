@@ -30,7 +30,7 @@ msgstr "%1 version %2"
 msgid  "Usage"
 msgstr "Usage"
 
-msgid  "--help (or -h, -?) [--verbose]"
+msgid  "--help (or -h, -?) (--verbose)"
 msgstr "--help (or -h, -?) [--verbose]"
 
 msgid  "--version (or -v)"
@@ -59,6 +59,9 @@ msgstr "Common options"
 
 msgid  "Undo options"
 msgstr "Undo options"
+
+msgid  "%1 options"
+msgstr "%1 options"
 
 msgid  "required"
 msgstr "required"

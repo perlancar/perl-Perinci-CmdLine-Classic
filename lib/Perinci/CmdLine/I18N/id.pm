@@ -30,7 +30,7 @@ msgstr "%1 versi %2"
 msgid  "Usage"
 msgstr "Cara pakai"
 
-msgid  "--help (or -h, -?) [--verbose]"
+msgid  "--help (or -h, -?) (--verbose)"
 msgstr "--help (atau -h, -?) [--verbose]"
 
 msgid  "--version (or -v)"
@@ -59,6 +59,9 @@ msgstr "Opsi umum"
 
 msgid  "Undo options"
 msgstr "Opsi pembatalan"
+
+msgid  "%1 options"
+msgstr "Opsi kategori '%1'"
 
 msgid  "required"
 msgstr "wajib"

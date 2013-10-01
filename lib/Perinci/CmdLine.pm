@@ -130,7 +130,7 @@ has common_opts => (
 
         $opts{help} = {
             getopt  => "help|h|?",
-            usage   => "--help (or -h, -?) [--verbose]",
+            usage   => "--help (or -h, -?) (--verbose)",
             summary => "Display this help message",
             handler => sub {
                 unshift @{$self->{_actions}}, 'help';
@@ -874,7 +874,20 @@ sub help_section_options {
             if ($s->[1]{in} && @{ $s->[1]{in} }) {
                 $in = dump1($s->[1]{in});
             }
-            push @{ $catopts{$t_opts} }, {
+
+            my $cat;
+            for (@{ $a->{tags} // []}) {
+                next unless /^category:(.+)/;
+                $cat = $1;
+                last;
+            }
+            if ($cat) {
+                $cat = $self->loc("[_1] options", ucfirst($cat));
+            } else {
+                $cat = $t_opts;
+            }
+
+            push @{ $catopts{$cat} }, {
                 getopt => "--$ane",
                 getopt_type => $got,
                 getopt_note =>join(
@@ -899,7 +912,7 @@ sub help_section_options {
             for my $al0 (keys %{ $a->{cmdline_aliases} // {}}) {
                 my $alspec = $a->{cmdline_aliases}{$al0};
                 next unless $alspec->{code};
-                push @{ $catopts{$t_opts} }, {
+                push @{ $catopts{$cat} }, {
                     getopt => length($al0) > 1 ? "--$al0" : "-$al0",
                     getopt_type => $got,
                     getopt_note => undef,
@@ -1801,7 +1814,7 @@ A partial example from the default set by the framework:
      help => {
          category    => 'Common options',
          getopt      => 'help|h|?',
-         usage       => '%1 --help (or -h, -?)',
+         usage       => '--help (or -h, -?)',
          handler     => sub { ... },
          order       => 0,
      },
