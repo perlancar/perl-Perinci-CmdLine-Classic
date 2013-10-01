@@ -685,6 +685,7 @@ sub gen_doc_section_summary {
         $self->_color('program_name', $name),
         ($name && $summary ? ' - ' : ''),
         $summary // "",
+        "\n",
     );
 }
 
@@ -729,25 +730,29 @@ sub gen_doc_section_usage {
     $res->{title} = $self->loc("Usage");
 
     my $pn = $self->program_name;
+    my $ct = "";
     for my $con (@con) {
         my $cov = $co->{$con};
         next unless $cov->{usage};
-        $self->add_doc_lines("    $pn ".$self->locopt($cov->{usage}));
+        $ct .= ($ct ? "\n" : "") . $self->_color('program_name', $pn) .
+            " " . $self->locopt($cov->{usage});
     }
     if ($self->subcommands) {
         if (defined $self->default_subcommand) {
-            $self->add_doc_lines("    $pn ".$self->loc("--cmd=OTHER_SUBCOMMAND (options)"));
+            $ct .= ($ct ? "\n" : "") . $self->_color('program_name', $pn) .
+                " " . $self->loc("--cmd=OTHER_SUBCOMMAND (options)");
         } else {
-            $self->add_doc_lines("    $pn ".$self->loc("SUBCOMMAND (options)"));
+            $ct .= ($ct ? "\n" : "") . $self->_color('program_name', $pn) .
+                " " . $self->loc("SUBCOMMAND (options)");
         }
     } else {
-        $self->add_doc_lines("    $pn ".$self->loc("(options)").
-                                 $self->_usage_args);
+            $ct .= ($ct ? "\n" : "") . $self->_color('program_name', $pn) .
+                " " . $self->loc("(options)"). $self->_usage_args;
     }
-    $self->add_doc_lines("");
+    $res->{content} = $ct;
 }
 
-sub xgen_doc_section_options_compact {
+sub gen_doc_section_options {
     require SHARYANTO::Getopt::Long::Util;
 
     my ($self) = @_;
@@ -855,21 +860,22 @@ sub xgen_doc_section_options_verbose {
     # not yet
 }
 
-sub xgen_doc_section_hint_verbose {
+sub gen_doc_section_hint_verbose {
     my ($self) = @_;
-    $self->add_doc_lines(
-        $self->loc("For more complete help, try '--help --verbose'").".");
+    my $res = $self->{_doc_section_results}{hint_verbose} = {};
+    $res->{content} = "\n" . $self->loc(
+        "For more complete help, try '--help --verbose'").".";
 }
 
-sub xgen_doc_section_description {
+sub gen_doc_section_description {
     # not yet
 }
 
-sub xgen_doc_section_examples {
+sub gen_doc_section_examples {
     # not yet
 }
 
-sub xgen_doc_section_links {
+sub gen_doc_section_links {
     # not yet
 }
 
@@ -931,40 +937,28 @@ sub gen_doc {
 sub run_help {
     my ($self) = @_;
 
-    if ($ENV{VERBOSE}) {
-        $self->_verbose_help;
+    my $verbose = $ENV{VERBOSE} // 0;
+
+    if ($verbose) {
+        $self->{doc_sections} //= [
+            'summary',
+            'usage',
+            ###'examples',
+            ###'description',
+            ###'options',
+            #'links',
+        ];
     } else {
-        $self->_compact_help;
+        $self->{doc_sections} //= [
+            'summary',
+            'usage',
+            ###'examples',
+            ###'options',
+            'hint_verbose',
+        ];
     }
 
-    print $self->gen_doc();
-    0;
-}
-
-sub _compact_help {
-    my ($self) = @_;
-
-    $self->{doc_sections} //= [
-        'summary',
-        'usage',
-        #'examples',
-        #'options_compact',
-        #'hint_verbose',
-    ];
-    0;
-}
-
-sub _verbose_help {
-    my ($self) = @_;
-
-    $self->{doc_sections} //= [
-        'summary',
-        'usage',
-        #'examples',
-        #'description',
-        #'options_verbose',
-        #'links',
-    ];
+    print $self->gen_doc(verbose=>$verbose);
     0;
 }
 
