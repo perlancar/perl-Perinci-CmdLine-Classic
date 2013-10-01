@@ -36,7 +36,7 @@ has summary => (is => 'rw');
 has subcommands => (is => 'rw');
 has default_subcommand => (is => 'rw');
 has exit => (is => 'rw', default=>sub{1});
-has log_any_app => (is => 'rw', default=>sub{$ENV{LOG} // 1});
+has log_any_app => (is => 'rw', default=>sub{1});
 has custom_completer => (is => 'rw');
 has custom_arg_completer => (is => 'rw');
 has pass_cmdline_object => (is => 'rw', default=>sub{0});
@@ -246,6 +246,32 @@ has common_opts => (
         }
 
         \%opts;
+    },
+);
+has action_metadata => (
+    is => 'rw',
+    default => sub {
+        +{
+            clear_history => {
+            },
+            help => {
+                default_log => 0,
+            },
+            history => {
+            },
+            list => {
+                default_log => 0,
+            },
+            redo => {
+            },
+            subcommand => {
+            },
+            undo => {
+            },
+            version => {
+                default_log => 0,
+            },
+        },
     },
 );
 
@@ -1223,8 +1249,12 @@ sub parse_subcommand_opts {
     # We load Log::Any::App rather late here, to be able to customize level via
     # --debug, --dry-run, etc.
     unless ($ENV{COMP_LINE}) {
-        $self->_load_log_any_app if
-            $self->{_subcommand}{log_any_app} // $self->log_any_app;
+        my $do_log = $self->{_subcommand}{log_any_app};
+        $do_log //= $ENV{LOG};
+        $do_log //= $self->{action_metadata}{$self->{_actions}[0]}{default_log}
+            if @{ $self->{_actions} };
+        $do_log //= $self->log_any_app;
+        $self->_load_log_any_app if $do_log;
     }
 
     die "ERROR: Failed parsing arguments: $res->[0] - $res->[1]\n"
@@ -1565,6 +1595,21 @@ using the first argument (see B<subcommands>).
 =head2 summary => STR
 
 If unset, will be retrieved from function metadata when needed.
+
+=head2 action_metadata => HASH
+
+Contains a list of known actions and their metadata. Keys should be action
+names, values should be metadata. Metadata is a hash containing these keys:
+
+=over
+
+=item * default_log => BOOL
+
+Whether to enable logging by default (Log::Any::App) when C<LOG> environment
+variable is not set. To speed up program startup, logging is by default turned
+off for simple actions like C<help>, C<list>, C<version>.
+
+=back
 
 =head2 subcommands => {NAME => {ARGUMENT=>...}, ...} | CODEREF
 
