@@ -254,11 +254,13 @@ has action_metadata => (
             },
             help => {
                 default_log => 0,
+                use_utf8 => 1,
             },
             history => {
             },
             list => {
                 default_log => 0,
+                use_utf8 => 1,
             },
             redo => {
             },
@@ -268,6 +270,7 @@ has action_metadata => (
             },
             version => {
                 default_log => 0,
+                use_utf8 => 1,
             },
         },
     },
@@ -359,9 +362,6 @@ sub display_result {
     return unless $res;
 
     my $resmeta = $res->[3] // {};
-
-    # XXX allow programs to opt out from this
-    binmode(STDOUT, ":utf8");
 
     my $handle;
     {
@@ -952,6 +952,7 @@ sub help_section_options {
                             ($o->{getopt_note} ? $o->{getopt_note} : "");
                 }
                 last unless @row;
+                for (@row+1 .. $columns) { push @row, "" }
                 $self->_help_new_row(\@row, {indent=>1});
             }
         }
@@ -1445,6 +1446,14 @@ sub run {
     my $exit_code;
     while (@{$self->{_actions}}) {
         my $action = shift @{$self->{_actions}};
+
+        my $am = $self->action_metadata->{$action};
+        my $utf8 = $am->{use_utf8};
+        $utf8 //= $self->use_utf8; # involves detect_terminal
+        if ($utf8) {
+            binmode(STDOUT, ":utf8");
+        }
+
         my $meth = "run_$action";
         $log->tracef("-> %s()", $meth);
         $exit_code = $self->$meth;
