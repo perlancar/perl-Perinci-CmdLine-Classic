@@ -832,18 +832,20 @@ sub help_section_options {
             my $s = $a->{schema} || [any=>{}];
             my $got = Perinci::ToUtil::sah2human_short($s);
             my $ane = $an; $ane =~ s/_/-/g; $ane =~ s/\W/-/g;
+            my $summary = $self->langprop($a, "summary");
 
             my $suf = "";
             if ($s->[0] eq 'bool') {
+                $got = undef;
                 if ($s->[1]{default}) {
                     $ane = "no$ane";
-                    $got = undef;
+                    my $negsummary = $self->langprop(
+                        $a, "x.perinci.cmdline.negative_summary");
+                    $summary = $negsummary if $negsummary;
                 } elsif (defined $s->[1]{default}) {
-                    $ane = $ane;
-                    $got = undef;
+                    #$ane = $ane;
                 } else {
                     $ane = "[no]$ane";
-                    $got = undef;
                 }
             } elsif ($s->[0] eq 'float' || $s->[0] eq 'num') {
                 $ane .= "=f";
@@ -888,7 +890,7 @@ sub help_section_options {
                     $def
                 ),
                 req => $a->{req},
-                summary => $self->langprop($a, "summary"),
+                summary => $summary,
                 description => $self->langprop($a, "description"),
                 in => $in,
             };
