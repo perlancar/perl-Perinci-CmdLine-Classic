@@ -363,7 +363,7 @@ for (qw(--help -h -?)) {
              args      => {url=>'/Foo/'},
              argv      => [$_],
              exit_code => 0,
-             output_re => qr/^Usage:/m,
+             output_re => qr/Usage/m,
          );
 }
 
@@ -387,7 +387,7 @@ test_run(name      => "common option (--help) overrides function argument",
          args      => {subcommands=>{f1=>{url=>'/Foo/f1'}}},
          argv      => [qw/f1 --help/],
          exit_code => 0,
-         output_re => qr/^Usage:/m,
+         output_re => qr/Usage/m,
      );
 test_run(name      => "common option (--help) does not override ".
              "function argument when using --action=subcommand",
@@ -400,7 +400,7 @@ test_run(name      => "common option (--help) bypass required argument check",
          args      => {url=>'/Foo/f2'},
          argv      => [qw/--help/],
          exit_code => 0,
-         output_re => qr/^Usage:/m,
+         output_re => qr/Usage/m,
      );
 
 # disabled for now, fail under 'prove'? wtf?
