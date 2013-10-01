@@ -1,0 +1,48 @@
+#!/usr/bin/perl
+
+use 5.010;
+use strict;
+use utf8;
+use warnings;
+
+use Perinci::CmdLine;
+
+our %SPEC;
+
+$SPEC{foo} = {
+    v => 1.1,
+};
+sub foo {
+    my %args = @_;
+    [200];
+}
+
+Perinci::CmdLine->new(
+    url => '/main/foo',
+    subcommands => {
+        sc1 => {
+            url => '/main/foo',
+            summary => 'Summary for sc1',
+            tags => ['category:Foo'],
+        },
+        sc2 => {
+            url => '/main/foo',
+            summary => 'Summary for sc2',
+            tags => ['category:Foo'],
+        },
+        sc3 => {
+            url => '/main/foo',
+        },
+        sc4 => {
+            url => '/main/foo',
+            summary => 'Summary for sc4',
+            "summary.alt.lang.id_ID" => 'Ringkasan untuk sc4',
+            "summary.alt.lang.fr_FR" => 'Résumé pour sc4',
+            "summary.alt.lang.zh_CN" => 'sc4的摘要',
+            tags => ['category:Bar'],
+        },
+        sc5 => {
+            url => '/main/foo',
+        },
+    },
+)->run;
