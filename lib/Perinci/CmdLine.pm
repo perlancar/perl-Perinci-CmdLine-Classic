@@ -691,6 +691,8 @@ sub _usage_args {
 sub gen_doc_section_usage {
     my ($self) = @_;
 
+    my $res = $self->{_doc_section_results}{usage} = {};
+
     my $co = $self->common_opts;
     my @con = sort {
         ($co->{$a}{order}//1) <=> ($co->{$b}{order}//1) || $a cmp $b
@@ -698,7 +700,8 @@ sub gen_doc_section_usage {
 
 
     $self->{_common_opts} = \@con; # save for doc_gen_options
-    $self->add_doc_lines($self->loc("Usage").":");
+    $res->{title} = $self->loc("Usage");
+
     my $pn = $self->program_name;
     for my $con (@con) {
         my $cov = $co->{$con};
@@ -718,7 +721,7 @@ sub gen_doc_section_usage {
     $self->add_doc_lines("");
 }
 
-sub gen_doc_section_options_compact {
+sub xgen_doc_section_options_compact {
     require SHARYANTO::Getopt::Long::Util;
 
     my ($self) = @_;
@@ -822,25 +825,25 @@ sub gen_doc_section_options_compact {
     #$self->add_doc_lines("");
 }
 
-sub gen_doc_section_options_verbose {
+sub xgen_doc_section_options_verbose {
     # not yet
 }
 
-sub gen_doc_section_hint_verbose {
+sub xgen_doc_section_hint_verbose {
     my ($self) = @_;
     $self->add_doc_lines(
         $self->loc("For more complete help, try '--help --verbose'").".");
 }
 
-sub gen_doc_section_description {
+sub xgen_doc_section_description {
     # not yet
 }
 
-sub gen_doc_section_examples {
+sub xgen_doc_section_examples {
     # not yet
 }
 
-sub gen_doc_section_links {
+sub xgen_doc_section_links {
     # not yet
 }
 
@@ -889,7 +892,9 @@ sub gen_doc {
         # section content
         if (defined $sres->{content}) {
             $t->set_cell($rownum, 0, $sres->{content});
-            $t->set_cell_style($rownum, 0, {formats=>[ [lins=>{text=>"  "}] ]});
+            my @formats;
+            push @formats, [lins=>{text=>"  "}] if $sres->{title};
+            $t->set_cell_style($rownum, 0, {formats=>\@formats});
             $rownum++;
         }
     }
@@ -916,9 +921,9 @@ sub _compact_help {
     $self->{doc_sections} //= [
         'summary',
         'usage',
-        'examples',
-        'options_compact',
-        'hint_verbose',
+        #'examples',
+        #'options_compact',
+        #'hint_verbose',
     ];
     0;
 }
@@ -929,10 +934,10 @@ sub _verbose_help {
     $self->{doc_sections} //= [
         'summary',
         'usage',
-        'examples',
-        'description',
-        'options_verbose',
-        'links',
+        #'examples',
+        #'description',
+        #'options_verbose',
+        #'links',
     ];
     0;
 }
