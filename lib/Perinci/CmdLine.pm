@@ -833,6 +833,7 @@ sub help_section_options {
             my $got = Perinci::ToUtil::sah2human_short($s);
             my $ane = $an; $ane =~ s/_/-/g; $ane =~ s/\W/-/g;
 
+            my $suf = "";
             if ($s->[0] eq 'bool') {
                 if ($s->[1]{default}) {
                     $ane = "no$ane";
@@ -848,6 +849,9 @@ sub help_section_options {
                 $ane .= "=f";
             } elsif ($s->[0] eq 'int') {
                 $ane .= "=i";
+            } elsif ($s->[0] eq 'hash' || $s->[0] eq 'array') {
+                $suf = "-json";
+                $ane = "$ane-json=val";
             } else {
                 $ane .= "=s";
             }
@@ -858,7 +862,7 @@ sub help_section_options {
                 next if $alspec->{code};
                 my $al = $al0; $al =~ s/_/-/g;
                 $al = length($al) > 1 ? "--$al" : "-$al";
-                $ane .= ", $al";
+                $ane .= ", $al$suf";
             }
 
             my $def = defined($s->[1]{default}) && $s->[0] ne 'bool' ?
@@ -883,6 +887,7 @@ sub help_section_options {
                          " (" . $self->loc("or from stdin/files") . ")" : ""),
                     $def
                 ),
+                req => $a->{req},
                 summary => $self->langprop($a, "summary"),
                 description => $self->langprop($a, "description"),
                 in => $in,
@@ -896,6 +901,7 @@ sub help_section_options {
                     getopt => length($al0) > 1 ? "--$al0" : "-$al0",
                     getopt_type => $got,
                     getopt_note => undef,
+                    #req => $a->{req},
                     summary => $self->langprop($alspec, "summary"),
                     description => $self->langprop($alspec, "description"),
                     #in => $in,
@@ -940,7 +946,8 @@ sub help_section_options {
                     last unless @opts;
                     my $o = shift @opts;
                     push @row, $self->_color('option_name', $o->{getopt}) .
-                        ($o->{getopt_type} ? " [$o->{getopt_type}]" : "");
+                        #($o->{getopt_type} ? " [$o->{getopt_type}]" : "") .
+                            ($o->{getopt_note} ? $o->{getopt_note} : "");
                 }
                 last unless @row;
                 $self->_help_new_row(\@row, {indent=>1});
