@@ -120,6 +120,7 @@ has common_opts => (
             getopt  => "version|v",
             usage   => "--version (or -v)",
             summary => "Show version",
+            show_in_compact_help => 0,
             handler => sub {
                 die "ERROR: 'url' not set, required for --version\n"
                     unless $self->url;
@@ -132,6 +133,7 @@ has common_opts => (
             getopt  => "help|h|?",
             usage   => "--help (or -h, -?) (--verbose)",
             summary => "Display this help message",
+            show_in_compact_help => 0,
             handler => sub {
                 unshift @{$self->{_actions}}, 'help';
                 $self->{_check_required_args} = 0;
@@ -813,6 +815,7 @@ sub help_section_options {
     } keys %$co;
     for my $con (@con) {
         my $cov = $co->{$con};
+        next if !$verbose && !($cov->{show_in_compact_help} // 1);
         my $cat = $cov->{category} ? $self->locopt($cov->{category}) :
             ($sc ? $t_copts : $t_opts);
         my $go = $cov->{getopt};
@@ -1802,6 +1805,12 @@ Optional, displayed in usage line in help/usage text.
 
 Optional, displayed in description of the option in help/usage text.
 
+=item * show_in_compact_help (bool, default: 1)
+
+A flag, can be set to 0 if we want to skip showing this option in --help, to
+save some space. The default is for C<help> and C<version> to have this flag
+value set to 0, since they are already obvious from the usage message.
+
 =item * order (int)
 
 Optional, for ordering. Lower number means higher precedence, defaults to 1.
@@ -1817,6 +1826,7 @@ A partial example from the default set by the framework:
          usage       => '--help (or -h, -?)',
          handler     => sub { ... },
          order       => 0,
+         show_in_compact_help => 0,
      },
      format => {
          category    => 'Common options',
