@@ -1,19 +1,21 @@
 Revision history for Perinci-CmdLine
 
-0.91     2013-09-26 (SHARYANTO) (not yet released)
-
-         - This release mainly deals with tweaking --help output.
+0.91     2013-10-01 (SHARYANTO) (not yet released)
 
          [ENHANCEMENTS]
+
+         - For "simple" actions like 'help', 'list', 'version', logging is
+           turned off by default to reduce startup overhead. However, you can
+           still turn on logging via LOG=1.
 
          - Generate colored help message, yay.
 
          - Show examples and function description in help message.
 
          - Provide two versions of help: compact (--help) and verbose (--help
-           --verbose). The purpose is to make compact help more compact (by
-           stripping options summary/description) and less frequently exceed
-           screen height.
+           --verbose). The purpose is to make compact help more compact and less
+           "scroll-y" (by stripping options summary/description) and less
+           frequently exceed screen height.
 
          - Don't show 'name - summary' line in help if summary is not specified.
 
