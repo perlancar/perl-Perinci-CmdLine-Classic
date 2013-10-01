@@ -1792,11 +1792,32 @@ equivalent to executing the 'shutdown' subcommand:
 If set to 0, instead of exiting with exit(), run() will return the exit code
 instead.
 
-=head2 log_any_app => BOOL
+=head2 log_any_app => BOOL (default: 1)
 
-Whether to load L<Log::Any::App>. Default is yes, or to look at LOG environment
-variable. For faster startup, you might want to disable this or just use LOG=0
-when running your scripts.
+Whether to load L<Log::Any::App> (enable logging output) by default. Whether or
+not logging output is actually done is determined using this order of rules:
+
+=over
+
+=item * If running shell completion (C<COMP_LINE> is defined), logging is off
+
+=item * If LOG environment is defined, use that
+
+=item * If subcommand's log_any_app setting is defined, use that
+
+This allows you, e.g. to turn off logging by default for subcommands that need
+faster startup time. You can still turn on logging for those subcommands by
+LOG=1.
+
+=item * If action's default_log setting is defined, use that
+
+For example, actions like C<help>, C<list>, and C<version> has C<default_log>
+set to 0, for faster startup time. You can still turn on logging for those
+subcommands by LOG=1.
+
+=item * Use log_any_app attribute setting
+
+=back
 
 =head2 custom_completer => CODEREF
 
