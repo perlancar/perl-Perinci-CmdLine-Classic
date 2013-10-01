@@ -26,6 +26,10 @@ Revision history for Perinci-CmdLine
          - Don't show 'name - summary' line in help message if summary is not
            specified.
 
+         - To save a bit of screen space, don't list --help and --version in
+           compact help message, since they are already obvious from the usage
+           section.
+
          - Observe 'x.perinci.cmdline.negative_summary' Rinci metadata
            attribute. If there is a bool option with default=1 (e.g. --public,
            with summary 'Only show public items') the help message now displays
