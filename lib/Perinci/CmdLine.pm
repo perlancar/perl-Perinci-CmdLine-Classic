@@ -930,8 +930,8 @@ sub help_section_options {
                 $self->_help_new_row([$ct], {indent=>1});
                 if ($o->{in} || $o->{summary} || $o->{description}) {
                     my $ct = "";
-                    $ct .= "\n\n".ucfirst($self->loc("value in")). ": $o->{in}"
-                        if $o->{in};
+                    $ct .= ($ct ? "\n\n":"").ucfirst($self->loc("value in")).
+                        ": $o->{in}" if $o->{in};
                     $ct .= ($ct ? "\n\n":"")."$o->{summary}." if $o->{summary};
                     $ct .= ($ct ? "\n\n":"").$o->{description}
                         if $o->{description};

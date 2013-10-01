@@ -34,8 +34,8 @@ Revision history for Perinci-CmdLine
            This can now be put in said attribute. It can also be localized (e.g.
            'x.perinci.cmdline.negative_summary.alt.lang.id_ID').
 
-         - Add examples/usage which contains various options to show how --help
-           and '--help --verbose' would display it.
+         - Add examples/demo-help which contains various options to show how
+           --help and '--help --verbose' would display it.
 
          - For "simple" actions like 'help', 'list', 'version', logging is
            turned off by default to reduce startup overhead. However, you can
