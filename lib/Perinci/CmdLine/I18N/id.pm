@@ -66,6 +66,12 @@ msgstr "Opsi kategori '%1'"
 msgid  "required"
 msgstr "wajib"
 
+msgid  "Examples"
+msgstr "Contoh"
+
+msgid  "Links"
+msgstr "Tautan"
+
 # --format
 msgid  "Choose output format, e.g. json, text"
 msgstr "Pilih format hasil, mis: json, text"

@@ -66,6 +66,12 @@ msgstr "%1 options"
 msgid  "required"
 msgstr "required"
 
+msgid  "Examples"
+msgstr "Examples"
+
+msgid  "Links"
+msgstr "Links"
+
 # --format
 msgid  "Choose output format, e.g. json, text"
 msgstr "Choose output format, e.g. json, text"

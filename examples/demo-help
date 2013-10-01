@@ -27,6 +27,20 @@ variables]):
 * --help (COLUMNS=70)
 
 _
+    examples => [
+        {
+            argv => [qw/--pos0 ate --pos1 apple/],
+            summary => 'This is summary for the first example',
+        },
+        {
+            argv => ['ate', 'banana', '--str1', 'during lunch', '--nobad'],
+            summary => 'Summary for the second example',
+        },
+        {
+            args => {pos0=>"drunk", pos1=>"mango", ary1=>[1,3,77]},
+            summary => 'This is summary for the third and best example',
+        },
+    ],
     args => {
         pos0 => {
             schema => 'str*',

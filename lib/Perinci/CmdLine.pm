@@ -705,6 +705,11 @@ sub _help_add_row {
     }
 }
 
+sub _help_add_heading {
+    my ($self, $heading) = @_;
+    $self->_help_add_row([$self->_color('heading', $heading)]);
+}
+
 sub _color {
     my ($self, $color_name, $text) = @_;
     my $color_code = $color_name ?
@@ -787,7 +792,7 @@ sub help_section_usage {
             $ct .= ($ct ? "\n" : "") . $pn .
                 " " . $self->loc("(options)"). $self->_usage_args;
     }
-    $self->_help_add_row([$self->_color('heading', $self->loc("Usage"))]);
+    $self->_help_add_heading($self->loc("Usage"));
     $self->_help_add_row([$ct], {indent=>1});
 }
 
@@ -931,7 +936,7 @@ sub help_section_options {
 
     # output gathered options
     for my $cat (sort keys %catopts) {
-        $self->_help_add_row([$self->_color('heading', $cat)]);
+        $self->_help_add_heading($cat);
         my @opts = sort {
             my $va = $a->{getopt};
             my $vb = $b->{getopt};
@@ -987,11 +992,52 @@ sub help_section_description {
     my $desc = $self->langprop($self->{_help_meta}, "description");
     return unless $desc;
 
-    $self->_help_add_row([$self->_color('heading', $self->loc("Description"))]);
+    $self->_help_add_heading($self->loc("Description"));
     $self->_help_add_row([$desc], {wrap=>1, indent=>1});
 }
 
 sub help_section_examples {
+    my ($self, %opts) = @_;
+
+    my $verbose = $opts{verbose};
+    my $meta = $self->{_help_meta};
+    my $egs = $meta->{examples};
+    return unless $egs && @$egs;
+
+    $self->_help_add_heading($self->loc("Examples"));
+    my $pn = $self->_color('program_name', $self->program_name);
+    require String::ShellQuote;
+    for my $eg (@$egs) {
+        my $argv;
+        if ($eg->{argv}) {
+            $argv = $eg->{argv};
+        } else {
+            require Perinci::Sub::ConvertArgs::Argv;
+            my $res = Perinci::Sub::ConvertArgs::Argv::convert_args_to_argv(
+                args => $eg->{args}, meta => $meta);
+            die "BUG: Can't convert args to argv: $res->[0] - $res->[1]"
+                unless $res->[0] == 200;
+            $argv = $res->[2];
+        }
+        my $ct = $pn;
+        for my $arg (@$argv) {
+            $arg = String::ShellQuote::shell_quote($arg);
+            if ($arg =~ /^-/) {
+                $ct .= " ".$self->_color('option_name', $arg);
+            } else {
+                $ct .= " $arg";
+            }
+        }
+        $self->_help_add_row([$ct], {indent=>1});
+        if ($verbose) {
+            $ct = "";
+            my $summary = $self->langprop($eg, 'summary');
+            if ($summary) { $ct .= "$summary." }
+            my $desc = $self->langprop($eg, 'description');
+            if ($desc) { $ct .= "\n\n$desc" }
+            $self->_help_add_row([$ct], {indent=>2}) if $ct;
+        }
+    }
 }
 
 sub help_section_links {
