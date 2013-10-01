@@ -761,6 +761,8 @@ sub gen_doc_section_options {
     my $args_p = $meta->{args};
     my $sc = $self->subcommands;
 
+    my $res = $self->{_doc_section_results}{hint_verbose} = {};
+
     # stored gathered options by category, e.g. $catopts{"Common options"} (an
     # array containing options)
     my %catopts;
