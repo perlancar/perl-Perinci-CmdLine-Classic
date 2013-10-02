@@ -287,18 +287,18 @@ sub __json_decode {
 sub BUILD {
     my ($self, $args) = @_;
 
-    # pick a default color theme
-    unless ($self->{color_theme}) {
-        my $ct;
-        if ($self->{use_color}) {
+    # pick default color theme and set it
+    $ct = $self->{color_theme} // $ENV{PERINCI_CMDLINE_COLOR_THEME};
+    if (!$ct) {
+        if ($self->use_color) {
             my $bg = $self->detect_terminal->{default_bgcolor} // '';
             $ct = 'Default::default' .
                 ($bg eq 'ffffff' ? '_whitebg' : '');
         } else {
             $ct = 'Default::no_color';
         }
-        $self->color_theme($ct);
     }
+    $self->color_theme($ct);
 
 }
 
@@ -1735,7 +1735,7 @@ names, values should be metadata. Metadata is a hash containing these keys:
 
 =over
 
-=item * default_log => BOOL
+=item * default_log => BOOL (optional)
 
 Whether to enable logging by default (Log::Any::App) when C<LOG> environment
 variable is not set. To speed up program startup, logging is by default turned
@@ -2194,6 +2194,10 @@ status - 300).
 =item * PERINCI_CMDLINE_PROGRAM_NAME => STR
 
 Can be used to set CLI program name.
+
+=item * PERINCI_CMDLINE_COLOR_THEME => STR
+
+Can be used to set C<color_theme>.
 
 =item * PROGRESS => BOOL
 

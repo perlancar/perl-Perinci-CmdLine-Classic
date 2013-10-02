@@ -27,7 +27,7 @@ our %color_themes = (
             program_name  => {ansi_fg=>"\e[1m"}, # bold
             option_name   => 'cc6633',
             #option_value  => undef,
-            argument      => undef,
+            #argument      => undef,
         },
     },
 
