@@ -13,7 +13,7 @@ our %SPEC;
 $SPEC{num2word_fr} = {
     v => 1.1,
     summary => 'Convert numbers to French words',
-    "summary.alt.lang.fr_FR" => "Convertir des nombres de mots français",
+    "summary.alt.lang.fr_FR" => "Convertir des nombres en mots français",
     examples => [
         {
             argv => [101],
