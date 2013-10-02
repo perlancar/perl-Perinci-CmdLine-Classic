@@ -698,8 +698,9 @@ sub _help_add_row {
 
     for (0..@{$t->{columns}}-1) {
         my %styles = (formats=>[]);
-        push @{ $styles{formats} }, [wrap=>{width=>$t->{cell_width}-$indent*2}]
-            if $wrap;
+        push @{ $styles{formats} },
+            [wrap=>{ansi=>1, mb=>1, width=>$t->{cell_width}-$indent*2}]
+                if $wrap;
         push @{ $styles{formats} }, [lins=>{text=>"  " x $indent}]
             if $indent && $_ == 0;
         $t->set_cell_style($rownum, $_, \%styles);
