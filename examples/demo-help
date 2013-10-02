@@ -2,7 +2,9 @@
 
 use 5.010;
 use strict;
+use utf8;
 use warnings;
+
 use Perinci::CmdLine;
 
 our %SPEC;
@@ -21,6 +23,10 @@ variables]):
 * --help-verbose
 
 * --help (LANG=id_ID)
+
+* --help (LANG=fr_FR)
+
+* --help (LANG=zh_CN)
 
 * --help (COLOR=0)
 
@@ -135,6 +141,8 @@ _
         foo2 => {
             summary => 'This is another foo-related option',
             "summary.alt.lang.id_ID" => 'Ini opsi lain yang terkait dengan foo',
+            "summary.alt.lang.fr_FR" => "C'est une autre option liée à foo",
+            "summary.alt.lang.zh_CN" => '这是另一种跟foo有关的选项',
             schema => [int => between => [1, 10]],
             tags => ['category:Foo'],
         },

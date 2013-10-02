@@ -15,6 +15,7 @@ use Scalar::Util qw(reftype blessed);
 # VERSION
 
 with 'SHARYANTO::Role::ColorTheme';
+#with 'SHARYANTO::Role::TermAttrs'; already loaded by ColorTheme
 with 'SHARYANTO::Role::I18N';
 with 'SHARYANTO::Role::I18NRinci';
 
@@ -288,7 +289,7 @@ sub BUILD {
     my ($self, $args) = @_;
 
     # pick default color theme and set it
-    $ct = $self->{color_theme} // $ENV{PERINCI_CMDLINE_COLOR_THEME};
+    my $ct = $self->{color_theme} // $ENV{PERINCI_CMDLINE_COLOR_THEME};
     if (!$ct) {
         if ($self->use_color) {
             my $bg = $self->detect_terminal->{default_bgcolor} // '';
@@ -1508,9 +1509,13 @@ sub run {
     while (@{$self->{_actions}}) {
         my $action = shift @{$self->{_actions}};
 
+        # determine whether to binmode(STDOUT,":utf8")
         my $am = $self->action_metadata->{$action};
         my $utf8 = $am->{use_utf8};
-        $utf8 //= $self->use_utf8; # involves detect_terminal
+        if (!defined($utf8) && $self->{_subcommand}) {
+            $utf8 //= $self->{_subcommand}{use_utf8};
+        }
+        $utf8 //= $self->use_utf8;
         if ($utf8) {
             binmode(STDOUT, ":utf8");
         }
@@ -1712,9 +1717,146 @@ C<_subcommand> using C<Perinci::Access>. (Actually, C<run_help()> or
 C<run_completion()> can be called instead, depending on which action to run.)
 
 
+=head1 LOGGING
+
+Logging is done with L<Log::Any> (for producing) and L<Log::Any::App> (for
+displaying to outputs). Loading Log::Any::App will add to startup overhead time,
+so this module tries to be smart when determining whether or not to do logging
+output (i.e. whether or not to load Log::Any::App). Here are the order of rules
+being used:
+
+=over
+
+=item * If running shell completion (C<COMP_LINE> is defined), output is off
+
+Normally, shell completion does not need to show log output.
+
+=item * If LOG environment is defined, use that
+
+You can make a command-line program start a bit faster if you use LOG=0.
+
+=item * If subcommand's log_any_app setting is defined, use that
+
+This allows you, e.g. to turn off logging by default for subcommands that need
+faster startup time. You can still turn on logging for those subcommands by
+LOG=1.
+
+=item * If action metadata's default_log setting is defined, use that
+
+For example, actions like C<help>, C<list>, and C<version> has C<default_log>
+set to 0, for faster startup time. You can still turn on logging for those
+actions by LOG=1.
+
+=item * Use log_any_app attribute setting
+
+=back
+
+
+=head1 UTF8 OUTPUT
+
+By default, C<< binmode(STDOUT, ":utf8") >> is issued if utf8 output is desired.
+This is determined by, in order:
+
+=over
+
+=item * Use setting from action metadata, if defined.
+
+Some actions like L<help>, L<list>, and L<version> output translated text, so
+they have their C<use_utf8> metadata set to 1.
+
+=item * Use setting from subcommand, if defined.
+
+=item * Use setting from C<use_utf8> attribute.
+
+This attribute comes from L<SHARYANTO::Role::TermAttrs>, its default is
+determined from L<UTF8> environment as well as terminal's capabilities.
+
+=back
+
+
+=head1 COLOR THEMES
+
+By default colors are used, but if terminal is detected as not having color
+support, they are turned off. You can also turn off colors by setting COLOR=0 or
+using PERINCI_CMDLINE_COLOR_THEME=Default::no_color.
+
+
+=head1 COMMAND-LINE OPTION/ARGUMENT PARSING
+
+This section describes how Perinci::CmdLine parses command-line
+options/arguments into function arguments. Command-line option parsing is
+implemented by L<Perinci::Sub::GetArgs::Argv>.
+
+For boolean function arguments, use C<--arg> to set C<arg> to true (1), and
+C<--noarg> to set C<arg> to false (0). A flag argument (C<< [bool => {is=>1}]
+>>) only recognizes C<--arg> and not C<--noarg>. For single letter arguments,
+only C<-X> is recognized, not C<--X> nor C<--noX>.
+
+For string and number function arguments, use C<--arg VALUE> or C<--arg=VALUE>
+(or C<-X VALUE> for single letter arguments) to set argument value. Other scalar
+arguments use the same way, except that some parsing will be done (e.g. for date
+type, --arg 1343920342 or --arg '2012-07-31' can be used to set a date value,
+which will be a DateTime object.) (Note that date parsing will be done by
+L<Data::Sah> and currently not implemented yet.)
+
+For arguments with type array of scalar, a series of C<--arg VALUE> is accepted,
+a la L<Getopt::Long>:
+
+ --tags tag1 --tags tag2 ; # will result in tags => ['tag1', 'tag2']
+
+For other non-scalar arguments, also use C<--arg VALUE> or C<--arg=VALUE>, but
+VALUE will be attempted to be parsed using JSON, and then YAML. This is
+convenient for common cases:
+
+ --aoa  '[[1],[2],[3]]'  # parsed as JSON
+ --hash '{a: 1, b: 2}'   # parsed as YAML
+
+For explicit JSON parsing, all arguments can also be set via --ARG-json. This
+can be used to input undefined value in scalars, or setting array value without
+using repetitive C<--arg VALUE>:
+
+ --str-json 'null'    # set undef value
+ --ary-json '[1,2,3]' # set array value without doing --ary 1 --ary 2 --ary 3
+ --ary-json '[]'      # set empty array value
+
+Likewise for explicit YAML parsing:
+
+ --str-yaml '~'       # set undef value
+ --ary-yaml '[a, b]'  # set array value without doing --ary a --ary b
+ --ary-yaml '[]'      # set empty array value
+
+
+=head1 BASH COMPLETION
+
+To do bash completion, first create your script, e.g. C<myscript>, that uses
+Perinci::CmdLine:
+
+ #!/usr/bin/perl
+ use Perinci::CmdLine;
+ Perinci::CmdLine->new(...)->run;
+
+then execute this in C<bash> (or put it in bash startup files like
+C</etc/bash.bashrc> or C<~/.bashrc> for future sessions):
+
+ % complete -C myscript myscript; # myscript must be in PATH
+
+
+=head1 PROGRESS INDICATOR
+
+For functions that express that they do progress updating (by setting their
+C<progress> feature to true), Perinci::CmdLine will setup an output, currently
+either L<Progress::Any::Output::TermProgressBar> if program runs interactively,
+or L<Progress::Any::Output::LogAny> if program doesn't run interactively.
+
+
 =head1 ATTRIBUTES
 
 =head2 program_name => STR (default from $0)
+
+=head2 use_utf8 => BOOL
+
+From L<SHARYANTO::Role::TermAttrs> (please see its docs for more details). There
+are several other attributes added by the role.
 
 =head2 url => STR
 
@@ -1740,6 +1882,11 @@ names, values should be metadata. Metadata is a hash containing these keys:
 Whether to enable logging by default (Log::Any::App) when C<LOG> environment
 variable is not set. To speed up program startup, logging is by default turned
 off for simple actions like C<help>, C<list>, C<version>.
+
+=item * use_utf8 => BOOL (optional)
+
+Whether to issue C<< binmode(STDOUT, ":utf8") >>. See L</"UTF8 OUTPUT"> for more
+details.
 
 =back
 
@@ -1767,7 +1914,13 @@ subcommands.
 =item * C<log_any_app> (bool, optional)
 
 Whether to load Log::Any::App, default is true. For subcommands that need fast
-startup you can try turning this off for said subcommands.
+startup you can try turning this off for said subcommands. See L</"LOGGING"> for
+more details.
+
+=item * C<use_utf8> (bool, optional)
+
+Whether to issue L<< binmode(STDOUT, ":utf8") >>. See L</"LOGGING"> for more
+details.
 
 =item * C<undo> (bool, optional)
 
@@ -1933,30 +2086,8 @@ instead.
 
 =head2 log_any_app => BOOL (default: 1)
 
-Whether to load L<Log::Any::App> (enable logging output) by default. Whether or
-not logging output is actually done is determined using this order of rules:
-
-=over
-
-=item * If running shell completion (C<COMP_LINE> is defined), logging is off
-
-=item * If LOG environment is defined, use that
-
-=item * If subcommand's log_any_app setting is defined, use that
-
-This allows you, e.g. to turn off logging by default for subcommands that need
-faster startup time. You can still turn on logging for those subcommands by
-LOG=1.
-
-=item * If action's default_log setting is defined, use that
-
-For example, actions like C<help>, C<list>, and C<version> has C<default_log>
-set to 0, for faster startup time. You can still turn on logging for those
-subcommands by LOG=1.
-
-=item * Use log_any_app attribute setting
-
-=back
+Whether to load L<Log::Any::App> (enable logging output) by default. See
+L</"LOGGING"> for more details.
 
 =head2 custom_completer => CODEREF
 
@@ -2031,74 +2162,6 @@ returns undef, the next action candidate method will be tried.
 After that, exit() will be called with the exit code from the action method (or,
 if C<exit> attribute is set to false, routine will return with exit code
 instead).
-
-
-=head1 COMMAND-LINE OPTION/ARGUMENT PARSING
-
-This section describes how Perinci::CmdLine parses command-line
-options/arguments into function arguments. Command-line option parsing is
-implemented by L<Perinci::Sub::GetArgs::Argv>.
-
-For boolean function arguments, use C<--arg> to set C<arg> to true (1), and
-C<--noarg> to set C<arg> to false (0). A flag argument (C<< [bool => {is=>1}]
->>) only recognizes C<--arg> and not C<--noarg>. For single letter arguments,
-only C<-X> is recognized, not C<--X> nor C<--noX>.
-
-For string and number function arguments, use C<--arg VALUE> or C<--arg=VALUE>
-(or C<-X VALUE> for single letter arguments) to set argument value. Other scalar
-arguments use the same way, except that some parsing will be done (e.g. for date
-type, --arg 1343920342 or --arg '2012-07-31' can be used to set a date value,
-which will be a DateTime object.) (Note that date parsing will be done by
-L<Data::Sah> and currently not implemented yet.)
-
-For arguments with type array of scalar, a series of C<--arg VALUE> is accepted,
-a la L<Getopt::Long>:
-
- --tags tag1 --tags tag2 ; # will result in tags => ['tag1', 'tag2']
-
-For other non-scalar arguments, also use C<--arg VALUE> or C<--arg=VALUE>, but
-VALUE will be attempted to be parsed using JSON, and then YAML. This is
-convenient for common cases:
-
- --aoa  '[[1],[2],[3]]'  # parsed as JSON
- --hash '{a: 1, b: 2}'   # parsed as YAML
-
-For explicit JSON parsing, all arguments can also be set via --ARG-json. This
-can be used to input undefined value in scalars, or setting array value without
-using repetitive C<--arg VALUE>:
-
- --str-json 'null'    # set undef value
- --ary-json '[1,2,3]' # set array value without doing --ary 1 --ary 2 --ary 3
- --ary-json '[]'      # set empty array value
-
-Likewise for explicit YAML parsing:
-
- --str-yaml '~'       # set undef value
- --ary-yaml '[a, b]'  # set array value without doing --ary a --ary b
- --ary-yaml '[]'      # set empty array value
-
-
-=head1 BASH COMPLETION
-
-To do bash completion, first create your script, e.g. C<myscript>, that uses
-Perinci::CmdLine:
-
- #!/usr/bin/perl
- use Perinci::CmdLine;
- Perinci::CmdLine->new(...)->run;
-
-then execute this in C<bash> (or put it in bash startup files like
-C</etc/bash.bashrc> or C<~/.bashrc> for future sessions):
-
- % complete -C myscript myscript; # myscript must be in PATH
-
-
-=head1 PROGRESS INDICATOR
-
-For functions that express that they do progress updating (by setting their
-C<progress> feature to true), Perinci::CmdLine will setup an output, currently
-either L<Progress::Any::Output::TermProgressBar> if program runs interactively,
-or L<Progress::Any::Output::LogAny> if program doesn't run interactively.
 
 
 =head1 METADATA PROPERTY ATTRIBUTE
@@ -2209,6 +2272,14 @@ Like in other programs, can be set to select the pager program (when
 C<cmdline.page_result> result metadata is active). Can also be set to C<''> or
 C<0> to explicitly disable paging even though C<cmd.page_result> result metadata
 is active.
+
+=item * COLOR => INT
+
+Please see L<SHARYANTO::Role::TermAttrs>.
+
+=item * UTF8 => BOOL
+
+Please see L<SHARYANTO::Role::TermAttrs>.
 
 =back
 
