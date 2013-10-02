@@ -1,5 +1,19 @@
 Revision history for Perinci-CmdLine
 
+0.92     2013-10-02 (SHARYANTO) (not yet released)
+
+         - Document how utf8 output and logging output is turned on/off.
+
+         - Observe PERINCI_CMDLINE_COLOR_THEME.
+
+         - *Colorize error messages.
+
+         - *Add French and Mandarin translations. More translations welcome.
+
+         - *Instead of the standard compact help, show a more apt message when
+           program with subcommands is invoked without subcommand name.
+
+
 0.91     2013-10-02 (SHARYANTO)
 
          - This release focuses on making help message prettier: colors,
@@ -66,6 +80,8 @@ Revision history for Perinci-CmdLine
            RuntimeRequires to RuntimeRecommends because not all applications use
            it and it currently does not install on Windows (some deps like
            File::Lock, which deps on Data::Structure::Util, does not build).
+
+         - Now builds on Windows, yay.
 
 
 0.87     2013-09-08 (SHARYANTO)
