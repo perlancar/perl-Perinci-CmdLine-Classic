@@ -68,31 +68,29 @@ has _pa => (
         my $self = shift;
 
         require Perinci::Access;
+        require Perinci::Access::Perl;
+        require Perinci::Access::Schemeless;
         my %args = %{$self->pa_args // {}};
+        my %opts;
+        $opts{disk_cache} = 1;
+        # turn off arg validation generation to reduce startup cost
+        $opts{extra_wrapper_args} = 0 if $ENV{COMP_LINE};
         if ($self->undo) {
-            require Perinci::Access::Perl;
-            require Perinci::Access::Schemeless;
-            my %opts = (
-                use_tx => 1,
-                custom_tx_manager => sub {
-                    my $pa = shift;
-                    require Perinci::Tx::Manager;
-                    state $txm = Perinci::Tx::Manager->new(
-                        data_dir => $self->undo_dir,
-                        pa => $pa,
-                    );
-                    $txm;
-                },
-                extra_wrapper_args => {
-                    # turn off arg validation generation to reduce startup cost
-                    validate_args => $ENV{COMP_LINE} ? 0:undef,
-                },
-            );
-            $args{handlers} = {
-                pl => Perinci::Access::Perl->new(%opts),
-                '' => Perinci::Access::Schemeless->new(%opts),
+            $opts{use_tx} = 1;
+            $opts{custom_tx_manager} = sub {
+                my $pa = shift;
+                require Perinci::Tx::Manager;
+                state $txm = Perinci::Tx::Manager->new(
+                    data_dir => $self->undo_dir,
+                    pa => $pa,
+                );
+                $txm;
             };
         }
+        $args{handlers} = {
+            pl => Perinci::Access::Perl->new(%opts),
+            '' => Perinci::Access::Schemeless->new(%opts),
+        };
         $log->tracef("Creating Perinci::Access object with args: %s", \%args);
         Perinci::Access->new(%args);
     }
@@ -1511,8 +1509,11 @@ sub run {
         my $action = shift @{$self->{_actions}};
 
         # determine whether to binmode(STDOUT,":utf8")
-        my $am = $self->action_metadata->{$action};
-        my $utf8 = $am->{use_utf8};
+        my $utf8 = $ENV{UTF8};
+        if (!defined($utf8)) {
+            my $am = $self->action_metadata->{$action};
+            $utf8 //= $am->{use_utf8};
+        }
         if (!defined($utf8) && $self->{_subcommand}) {
             $utf8 //= $self->{_subcommand}{use_utf8};
         }
@@ -1759,6 +1760,10 @@ By default, C<< binmode(STDOUT, ":utf8") >> is issued if utf8 output is desired.
 This is determined by, in order:
 
 =over
+
+=item * Use setting from environment UTF8, if defined.
+
+This allows you to force-disable or force-enable utf8 output.
 
 =item * Use setting from action metadata, if defined.
 
