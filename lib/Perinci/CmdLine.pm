@@ -121,7 +121,7 @@ has common_opts => (
             getopt  => "version|v",
             usage   => "--version (or -v)",
             summary => "Show version",
-            show_in_help => 0,
+            show_in_options => sub { $ENV{VERBOSE} },
             handler => sub {
                 $self->_err("'url' not set, required for --version")
                     unless $self->url;
@@ -134,7 +134,7 @@ has common_opts => (
             getopt  => "help|h|?",
             usage   => "--help (or -h, -?) (--verbose)",
             summary => "Display this help message",
-            show_in_help => 0,
+            show_in_options => sub { $ENV{VERBOSE} },
             handler => sub {
                 unshift @{$self->{_actions}}, 'help';
                 $self->{_check_required_args} = 0;
@@ -164,10 +164,14 @@ has common_opts => (
             $opts{subcommands} = {
                 getopt  => "subcommands",
                 usage   => "--subcommands",
+                show_in_usage => sub {
+                    $ENV{VERBOSE} && !$self->{_subcommand};
+                },
+                show_in_options => sub {
+                    $ENV{VERBOSE} && !$self->{_subcommand};
+                },
                 show_usage_in_help => sub {
                     my $self = shift;
-                    # if user's asking for 'subc --help', don't show this again
-                    return !$self->{_subcommand};
                 },
                 summary => "List available subcommands",
                 show_in_help => 0,
@@ -790,13 +794,13 @@ sub help_section_usage {
 
     my $co = $self->common_opts;
     my @con = grep {
-        show_in_help =>
-        next if !$verbose && !($cov->{show_in_help} // 1); #TMP
+        my $cov = $co->{$_};
+        my $show = $cov->{show_in_usage} // 1;
+        for ($show) { if (ref($_) eq 'CODE') { $_ = $_->($self) } }
+        $show;
     } sort {
         ($co->{$a}{order}//1) <=> ($co->{$b}{order}//1) || $a cmp $b
     } keys %$co;
-
-    $self->{_common_opts} = \@con; # save for help_section_options
 
     my $pn = $self->_color('program_name', $self->program_name);
     my $ct = "";
@@ -809,7 +813,7 @@ sub help_section_usage {
         if (defined $self->default_subcommand) {
             $ct .= ($ct ? "\n" : "") . $pn .
                 " " . $self->loc("--cmd=<other-subcommand> (options)");
-        } else {
+        } elsif (!$self->{_subcommand}) {
             $ct .= ($ct ? "\n" : "") . $pn .
                 " " . $self->loc("<subcommand> (options)");
         }
@@ -840,7 +844,12 @@ sub help_section_options {
 
     # gather common opts
     my $co = $self->common_opts;
-    my @con = sort {
+    my @con = grep {
+        my $cov = $co->{$_};
+        my $show = $cov->{show_in_options} // 1;
+        for ($show) { if (ref($_) eq 'CODE') { $_ = $_->($self) } }
+        $show;
+    } sort {
         ($co->{$a}{order}//1) <=> ($co->{$b}{order}//1) || $a cmp $b
     } keys %$co;
     for my $con (@con) {
