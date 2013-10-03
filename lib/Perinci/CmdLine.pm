@@ -165,6 +165,7 @@ has common_opts => (
                 getopt  => "subcommands",
                 usage   => "--subcommands",
                 summary => "List available subcommands",
+                show_in_compact_help => 0,
                 handler => sub {
                     unshift @{$self->{_actions}}, 'subcommands';
                     $self->{_check_required_args} = 0;
@@ -484,21 +485,21 @@ sub run_subcommands {
 
     my $i = 0;
     for my $cat (sort keys %percat_subc) {
-        print "\n" if $i++;
         if ($has_many_cats) {
-            say $self->loc(
-                "List of available [_1] subcommands",
-                $self->_color('emphasis', ucfirst($cat) || "main")) . ":";
-        } else {
-            say $self->loc("List of available subcommands") . ":";
+            $self->_help_add_heading(
+                $self->loc("[_1] subcommands",
+                           ucfirst($cat) || "main"));
         }
         my $subc = $percat_subc{$cat};
         for my $scn (sort keys %$subc) {
             my $sc = $subc->{$scn};
             my $summary = $self->langprop($sc, "summary");
-            say "  $scn", $summary ? " - $summary" : "";
+            $self->_help_add_row(
+                [$self->_color('program_name', $scn), $summary],
+                {set_widths=>0, indent=>1});
         }
     }
+    $self->_help_draw_curtbl;
 
     0;
 }
@@ -682,7 +683,7 @@ sub _help_add_table {
     my $t = Text::ANSITable->new;
     $t->border_style('Default::spacei_ascii');
     $t->cell_pad(0);
-    $t->cell_width($cw);
+    $t->cell_width($cw) unless $args{set_widths} // 1;
     $t->show_header(0);
     $t->column_wrap(0); # we'll do our own wrapping, before indent
     $t->columns([0..$columns-1]);
@@ -698,9 +699,9 @@ sub _help_add_row {
     my $columns = @$row;
 
     # start a new table if necessary
-    $self->_help_add_table(columns=>$columns)
+    $self->_help_add_table(columns=>$columns, set_widths=>$args->{set_widths})
         if !$self->{_help_curtbl} ||
-                $columns != @{ $self->{_help_curtbl}{columns} };
+            $columns != @{ $self->{_help_curtbl}{columns} };
 
     my $t = $self->{_help_curtbl};
     my $rownum = @{ $t->{rows} };
@@ -989,10 +990,15 @@ sub help_section_options {
     }
 }
 
-sub help_section_hint_verbose {
-    my ($self) = @_;
-    $self->_help_add_row(["\n" . $self->loc(
-        "For more complete help, try '--help --verbose'")."."], {wrap=>1});
+sub help_section_hints {
+    my ($self, %opts) = @_;
+    my @hints;
+    unless ($opts{verbose}) {
+        push @hints, "For more complete help, use '--help --verbose'";
+    }
+
+    $self->_help_add_row(
+        ["\n" . join(" ", map { $self->loc($_)."." } @hints)], {wrap=>1});
 }
 
 sub help_section_description {
@@ -1081,6 +1087,7 @@ sub run_help {
             'description',
             'options',
             'links',
+            'hints',
         );
     } else {
         @hsects = (
@@ -1088,7 +1095,7 @@ sub run_help {
             'usage',
             'examples',
             'options',
-            'hint_verbose',
+            'hints',
         );
     }
 
@@ -1944,6 +1951,11 @@ details.
 
 Can be set to 0 to disable transaction for this subcommand; this is only
 relevant when C<undo> attribute is set to true.
+
+=item * C<show_in_compact_help> (bool, optional, default 1)
+
+If you have lots of subcommands, and want to show only some of them in --help
+message, set this to 0 for subcommands that you do not want to show.
 
 =item * C<pass_cmdline_object> (bool, optional, default 0)
 

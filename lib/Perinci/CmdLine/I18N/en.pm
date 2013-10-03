@@ -17,8 +17,8 @@ __DATA__
 msgid  "There are no subcommands"
 msgstr "There are no subcommands"
 
-msgid  "List of available %1 subcommands"
-msgstr "List of available %1 subcommands"
+msgid  "%1 subcommands"
+msgstr "%1 subcommands"
 
 ### action: version
 
@@ -135,23 +135,26 @@ msgid  "Set log level"
 msgstr "Set log level"
 
 
-msgid  "List of available subcommands"
-msgstr "List of available subcommands"
-
 msgid  "Subcommand"
 msgstr "Subcommand"
 
 msgid  "Subcommands"
 msgstr "Subcommands"
 
-msgid  "For general help, type '%1'"
-msgstr "For general help, type '%1'"
+msgid  "Popular subcommands"
+msgstr "Popular subcommands"
 
-msgid  "For help on a subcommand, type '%1'"
-msgstr "For help on a subcommand, type '%1'"
+msgid  "For general help, use '%1'"
+msgstr "For general help, use '%1'"
 
-msgid  "For more complete help, try '--help --verbose'"
-msgstr "For more complete help, try '--help --verbose'"
+msgid  "For help on a subcommand, use '%1'"
+msgstr "For help on a subcommand, use '%1'"
+
+msgid  "For more complete help, use '--help --verbose'"
+msgstr "For more complete help, use '--help --verbose'"
+
+msgid  "To see all available subcommands, use '--subcommands'"
+msgstr "To see all available subcommands, use '--subcommands'"
 
 # usage/function
 

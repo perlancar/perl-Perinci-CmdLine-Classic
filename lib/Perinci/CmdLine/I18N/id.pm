@@ -17,8 +17,8 @@ __DATA__
 msgid  "There are no subcommands"
 msgstr "Tidak ada subperintah"
 
-msgid  "List of available %1 subcommands"
-msgstr "Daftar subperintah kategori '%1'"
+msgid  "%1 subcommands"
+msgstr "Subperintah kategori '%1'"
 
 ### action: version
 
@@ -135,23 +135,26 @@ msgid  "Set log level"
 msgstr "Set level log"
 
 
-msgid  "List of available subcommands"
-msgstr "Daftar subperintah yang ada"
-
 msgid  "Subcommand"
 msgstr "Subperintah"
 
 msgid  "Subcommands"
 msgstr "Subperintah"
 
-msgid  "For general help, type '%1'"
+msgid  "Popular subcommands"
+msgstr "Subperintah popular"
+
+msgid  "For general help, use '%1'"
 msgstr "Untuk pesan bantuan umum, ketik '%1'"
 
-msgid  "For help on a subcommand, type '%1'"
+msgid  "For help on a subcommand, use '%1'"
 msgstr "Untuk pesan bantuan subperintah tertentu, ketik '%1'"
 
-msgid  "For more complete help, try '--help --verbose'"
+msgid  "For more complete help, use '--help --verbose'"
 msgstr "Untuk pesan bantuan lebih lengkap, gunakan '--help --verbose'"
+
+msgid  "To see all available subcommands, use '--subcommands'"
+msgstr "Untuk melihat semua subperintah yang ada, gunakan '--subcommands'"
 
 # usage/function
 
