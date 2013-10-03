@@ -11,6 +11,10 @@ our %SPEC;
 
 $SPEC{foo} = {
     v => 1.1,
+    args => {
+        a1 => {},
+        a2 => {},
+    },
 };
 sub foo {
     my %args = @_;
@@ -35,8 +39,37 @@ sub foo_zh {
     [200, "OK", "很有趣的！"];
 }
 
+my @more_sc = (
+    sc10 => {url=>'/main/foo'},
+    sc11 => {url=>'/main/foo'},
+    sc12 => {url=>'/main/foo'},
+    sc13 => {url=>'/main/foo'},
+    sc14 => {url=>'/main/foo'},
+    sc15 => {url=>'/main/foo'},
+    sc16 => {url=>'/main/foo'},
+    sc17 => {url=>'/main/foo'},
+    sc18 => {url=>'/main/foo'},
+    sc19 => {url=>'/main/foo'},
+);
+
 Perinci::CmdLine->new(
-    url => '/main/foo',
+    description => <<'_',
+
+Try running this program with:
+
+* (without any argument)
+
+* --help
+
+* --help --verbose
+
+* sc1 --help
+
+* sc1 --help --verbose
+
+* HIDE_S* MORE_SUBCOMMANDS=1
+
+_
     subcommands => {
         sc1 => {
             url => '/main/foo',
@@ -48,8 +81,9 @@ Perinci::CmdLine->new(
             summary => 'Summary for sc2',
             tags => ['category:Foo'],
         },
-        sc3 => {
+        "sc3-with-dash" => {
             url => '/main/foo',
+            show_in_help => 0,
         },
         sc4 => {
             url => '/main/foo_fr',
@@ -66,5 +100,6 @@ Perinci::CmdLine->new(
             # should be unnecessary, will use use_utf8 attribut esetting
             #use_utf8 => 1,
         },
+        ($ENV{MORE_SUBCOMMANDS} ? @more_sc : ()),
     },
 )->run;

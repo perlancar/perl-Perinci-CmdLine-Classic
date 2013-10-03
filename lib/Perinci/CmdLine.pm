@@ -32,6 +32,7 @@ has program_name => (
 );
 has url => (is => 'rw');
 has summary => (is => 'rw');
+has description => (is => 'rw');
 has subcommands => (is => 'rw');
 has default_subcommand => (is => 'rw');
 has exit => (is => 'rw', default=>sub{1});
@@ -511,7 +512,7 @@ sub run_subcommands {
             my $summary = $self->langprop($sc, "summary");
             $self->_help_add_row(
                 [$self->_color('program_name', $scn), $summary],
-                {column_widths=>[-10, -40], indent=>1});
+                {column_widths=>[-17, -40], indent=>1});
         }
     }
     $self->_help_draw_curtbl;
@@ -694,8 +695,6 @@ sub _help_add_table {
     my $columns = $args{columns} // 1;
 
     $self->_help_draw_curtbl;
-    my $tw = $self->term_width;
-    my $cw = int($tw/$columns)-1;
     my $t = Text::ANSITable->new;
     $t->border_style('Default::spacei_ascii');
     $t->cell_pad(0);
@@ -704,6 +703,8 @@ sub _help_add_table {
             $t->set_column_style($_, width => $args{column_widths}[$_]);
         }
     } else {
+        my $tw = $self->term_width;
+        my $cw = int($tw/$columns)-1;
         $t->cell_width($cw);
     }
     $t->show_header(0);
@@ -999,7 +1000,7 @@ sub help_section_options {
         } else {
             # for compactness, display in columns
             my $tw = $self->term_width;
-            my $columns = int($tw/40);
+            my $columns = int($tw/40); $columns = 1 if $columns < 1;
             while (1) {
                 my @row;
                 for (1..$columns) {
@@ -1018,6 +1019,54 @@ sub help_section_options {
 }
 
 sub help_section_subcommands {
+    my ($self, %opts) = @_;
+
+    my $scs = $self->subcommands;
+    return unless $scs && !$self->{_subcommand};
+
+    my @scs = sort keys %$scs;
+    my @shown_scs;
+    for my $scn (@scs) {
+        my $sc = $scs->{$scn};
+        next unless $sc->{show_in_help} // 1;
+        $sc->{name} = $scn;
+        push @shown_scs, $sc;
+    }
+
+    # for help_section_hints
+    my $some_not_shown = @scs > @shown_scs;
+    $self->{_some_subcommands_not_shown_in_help} = 1 if $some_not_shown;
+
+    $self->_help_add_heading(
+        $self->loc($some_not_shown ? "Popular subcommands" : "Subcommands"));
+
+    # in compact mode, we try to not exceed one screen, so show long mode only
+    # if there are a few subcommands.
+    my $long_mode = $opts{verbose} || @shown_scs < 12;
+    if ($long_mode) {
+        for (@shown_scs) {
+            my $summary = $self->langprop($_, "summary");
+            $self->_help_add_row(
+                [$self->_color('program_name', $_->{name}), $summary],
+                {column_widths=>[-17, -40], indent=>1});
+        }
+    } else {
+        # for compactness, display in columns
+        my $tw = $self->term_width;
+        my $columns = int($tw/25); $columns = 1 if $columns < 1;
+            while (1) {
+                my @row;
+                for (1..$columns) {
+                    last unless @shown_scs;
+                    my $sc = shift @shown_scs;
+                    push @row, $sc->{name};
+                }
+                last unless @row;
+                for (@row+1 .. $columns) { push @row, "" }
+                $self->_help_add_row(\@row, {indent=>1});
+            }
+
+    }
 }
 
 sub help_section_hints {
@@ -1025,6 +1074,9 @@ sub help_section_hints {
     my @hints;
     unless ($opts{verbose}) {
         push @hints, "For more complete help, use '--help --verbose'";
+    }
+    if ($self->{_some_subcommands_not_shown_in_help}) {
+        push @hints, "To see all available subcommands, use '--subcommands'";
     }
     return unless @hints;
 
@@ -1035,7 +1087,8 @@ sub help_section_hints {
 sub help_section_description {
     my ($self, %opts) = @_;
 
-    my $desc = $self->langprop($self->{_help_meta}, "description");
+    my $desc = $self->langprop($self->{_help_meta}, "description") //
+        $self->description;
     return unless $desc;
 
     $self->_help_add_heading($self->loc("Description"));
@@ -1099,14 +1152,16 @@ sub run_help {
     # get function metadata first
     my $sc = $self->{_subcommand};
     my $url = $sc ? $sc->{url} : $self->url;
-    my $res = $self->_pa->request(info => $url);
-    $self->_err("Can't info '$url': $res->[0] - $res->[1]")
-        unless $res->[0] == 200;
-    $self->{_help_info} = $res->[2];
-    $res = $self->_pa->request(meta => $url);
-    $self->_err("Can't meta '$url': $res->[0] - $res->[1]")
-        unless $res->[0] == 200;
-    $self->{_help_meta} = $res->[2];
+    if ($url) {
+        my $res = $self->_pa->request(info => $url);
+        $self->_err("Can't info '$url': $res->[0] - $res->[1]")
+            unless $res->[0] == 200;
+        $self->{_help_info} = $res->[2];
+        $res = $self->_pa->request(meta => $url);
+        $self->_err("Can't meta '$url': $res->[0] - $res->[1]")
+            unless $res->[0] == 200;
+        $self->{_help_meta} = $res->[2];
+    }
 
     # determine which help sections should we generate
     my @hsects;
@@ -1114,6 +1169,7 @@ sub run_help {
         @hsects = (
             'summary',
             'usage',
+            'subcommands',
             'examples',
             'description',
             'options',
@@ -1124,6 +1180,7 @@ sub run_help {
         @hsects = (
             'summary',
             'usage',
+            'subcommands',
             'examples',
             'options',
             'hints',
@@ -1962,6 +2019,10 @@ Location of function (accessed via Riap).
 
 Will be retrieved from function metadata at C<url> if unset
 
+=item * C<description> (str, optional)
+
+Shown in verbose help message, if description from function metadata is unset.
+
 =item * C<tags> (array of str, optional)
 
 For grouping or categorizing subcommands, e.g. when displaying list of
@@ -2064,11 +2125,17 @@ Optional, displayed in usage line in help/usage text.
 
 Optional, displayed in description of the option in help/usage text.
 
-=item * show_in_help (bool or code, default: 1)
+=item * show_in_usage (bool or code, default: 1)
 
-A flag, can be set to 0 if we want to skip showing this option in --help, to
-save some space. The default is for C<help> and C<version> to have this flag
-value set to 0, since they are already obvious from the usage message.
+A flag, can be set to 0 if we want to skip showing this option in usage in
+--help, to save some space. The default is to show all, except --subcommand when
+we are executing a subcommand (obviously).
+
+=item * show_in_options (bool or code, default: 1)
+
+A flag, can be set to 0 if we want to skip showing this option in options in
+--help. The default is to 0 for --help and --version in compact help. Or
+--subcommands, if we are executing a subcommand (obviously).
 
 =item * order (int)
 
@@ -2080,12 +2147,12 @@ A partial example from the default set by the framework:
 
  {
      help => {
-         category     => 'Common options',
-         getopt       => 'help|h|?',
-         usage        => '--help (or -h, -?)',
-         handler      => sub { ... },
-         order        => 0,
-         show_in_help => 0,
+         category        => 'Common options',
+         getopt          => 'help|h|?',
+         usage           => '--help (or -h, -?)',
+         handler         => sub { ... },
+         order           => 0,
+         show_in_options => sub { $ENV{VERBOSE} },
      },
      format => {
          category    => 'Common options',
