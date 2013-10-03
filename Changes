@@ -13,8 +13,12 @@ Revision history for Perinci-CmdLine
 
          - Add French translation. More translations welcome.
 
-         - *Instead of the standard compact help, show a more apt message when
-           program with subcommands is invoked without subcommand name.
+         - Show list of (popular) subcommands in compact help.
+
+         [INCOMPATIBLE CHANGES]
+
+         - Change common option: --list (-l) to --subcommand to make it more
+           obvious.
 
 
 0.91     2013-10-02 (SHARYANTO)
