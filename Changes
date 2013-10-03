@@ -1,24 +1,30 @@
 Revision history for Perinci-CmdLine
 
-0.92     2013-10-03 (SHARYANTO) (not yet released)
-
-         - Document how utf8 output and logging output is turned on/off.
-
-         - Observe PERINCI_CMDLINE_COLOR_THEME.
-
-         - Reduce startup overhead by caching wrapping result
-           (Perinci::Access::Perl 0.50 supports disk_cache option).
-
-         - Colorize error messages.
-
-         - Add French translation. More translations welcome.
-
-         - Show list of (popular) subcommands in compact help.
+0.92     2013-10-03 (SHARYANTO)
 
          [INCOMPATIBLE CHANGES]
 
          - Change common option: --list (-l) to --subcommand to make it more
            obvious.
+
+         [ENHANCEMENTS]
+
+         - Reduce startup overhead by caching wrapping result
+           (Perinci::Access::Perl 0.50 supports disk_cache option).
+
+         - More tweaks on --help (as well as --subcommands output).
+
+         - Observe PERINCI_CMDLINE_COLOR_THEME.
+
+         - Colorize error messages, help, and --subcommand output.
+
+         [DOCUMENTATION]
+
+         - Document how utf8 output and logging output is turned on/off.
+
+         - Add French translation. More translations welcome.
+
+         - Show list of (popular) subcommands in help message.
 
 
 0.91     2013-10-02 (SHARYANTO)
