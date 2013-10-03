@@ -38,8 +38,8 @@ msgstr "--help (ou -h, -?) [--verbose]"
 msgid  "--version (or -v)"
 msgstr "--version (ou -v)"
 
-msgid  "--list (or -l)"
-msgstr "--list (ou -l)"
+msgid  "--subcommand"
+msgstr "--subcommand"
 
 # usage when there are no subcommands
 msgid  "(options)"
@@ -110,7 +110,7 @@ msgstr "Afficher la version"
 msgid  "Display this help message"
 msgstr "Afficher ce message d'aide"
 
-# --list
+# --subcommand
 msgid  "List available subcommands"
 msgstr "Énumérer des sous-commandes disponibles"
 

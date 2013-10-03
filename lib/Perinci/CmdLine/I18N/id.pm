@@ -36,8 +36,8 @@ msgstr "--help (atau -h, -?) [--verbose]"
 msgid  "--version (or -v)"
 msgstr "--version (atau -v)"
 
-msgid  "--list (or -l)"
-msgstr "--list (atau -l)"
+msgid  "--subcommand"
+msgstr "--subcommand"
 
 # usage when there are no subcommands
 msgid  "(options)"
@@ -108,7 +108,7 @@ msgstr "Tampilkan versi"
 msgid  "Display this help message"
 msgstr "Tampilkan pesan bantuan ini"
 
-# --list
+# --subcommand
 msgid  "List available subcommands"
 msgstr "Daftar subperintah yang ada"
 
