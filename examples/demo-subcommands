@@ -43,7 +43,7 @@ Perinci::CmdLine->new(
             summary => 'Summary for sc1',
             tags => ['category:Foo'],
         },
-        sc2 => {
+        sc2_a_subcommand_with_a_rather_long_name => {
             url => '/main/foo',
             summary => 'Summary for sc2',
             tags => ['category:Foo'],

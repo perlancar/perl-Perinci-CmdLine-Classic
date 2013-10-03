@@ -496,7 +496,7 @@ sub run_subcommands {
             my $summary = $self->langprop($sc, "summary");
             $self->_help_add_row(
                 [$self->_color('program_name', $scn), $summary],
-                {set_widths=>0, indent=>1});
+                {column_widths=>[-10, -40], indent=>1});
         }
     }
     $self->_help_draw_curtbl;
@@ -683,7 +683,13 @@ sub _help_add_table {
     my $t = Text::ANSITable->new;
     $t->border_style('Default::spacei_ascii');
     $t->cell_pad(0);
-    $t->cell_width($cw) unless $args{set_widths} // 1;
+    if ($args{column_widths}) {
+        for (0..$columns-1) {
+            $t->set_column_style($_, width => $args{column_widths}[$_]);
+        }
+    } else {
+        $t->cell_width($cw);
+    }
     $t->show_header(0);
     $t->column_wrap(0); # we'll do our own wrapping, before indent
     $t->columns([0..$columns-1]);
@@ -699,7 +705,8 @@ sub _help_add_row {
     my $columns = @$row;
 
     # start a new table if necessary
-    $self->_help_add_table(columns=>$columns, set_widths=>$args->{set_widths})
+    $self->_help_add_table(
+        columns=>$columns, column_widths=>$args->{column_widths})
         if !$self->{_help_curtbl} ||
             $columns != @{ $self->{_help_curtbl}{columns} };
 
@@ -996,6 +1003,7 @@ sub help_section_hints {
     unless ($opts{verbose}) {
         push @hints, "For more complete help, use '--help --verbose'";
     }
+    return unless @hints;
 
     $self->_help_add_row(
         ["\n" . join(" ", map { $self->loc($_)."." } @hints)], {wrap=>1});
