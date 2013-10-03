@@ -9,7 +9,7 @@ Revision history for Perinci-CmdLine
          - Reduce startup overhead by caching wrapping result
            (Perinci::Access::Perl 0.50 supports disk_cache option).
 
-         - *Colorize error messages.
+         - Colorize error messages.
 
          - Add French translation. More translations welcome.
 

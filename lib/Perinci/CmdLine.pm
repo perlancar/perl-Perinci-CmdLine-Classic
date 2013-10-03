@@ -122,7 +122,7 @@ has common_opts => (
             summary => "Show version",
             show_in_compact_help => 0,
             handler => sub {
-                die "ERROR: 'url' not set, required for --version\n"
+                $self->_err("'url' not set, required for --version")
                     unless $self->url;
                 unshift @{$self->{_actions}}, 'version';
                 $self->{_check_required_args} = 0;
@@ -278,6 +278,12 @@ has action_metadata => (
     },
 );
 
+sub _err {
+    my $self = shift;
+    my $msg = shift; $msg .= "\n" unless $msg =~ /\n\z/;
+    die $self->_color('error_label', "ERROR: ") . $msg;
+}
+
 sub __json_decode {
     require JSON;
     state $json = do { JSON->new->allow_nonref };
@@ -318,8 +324,8 @@ sub format_result {
     my $format = $self->format_set ?
         $self->format :
             $self->{_meta}{"x.perinci.cmdline.default_format"} // $self->format;
-    die "ERROR: Unknown output format '$format', please choose one of: ".
-        join(", ", sort keys(%Perinci::Result::Format::Formats))."\n"
+    $self->_err("Unknown output format '$format', please choose one of: ".
+        join(", ", sort keys(%Perinci::Result::Format::Formats)))
             unless $Perinci::Result::Format::Formats{$format};
     if ($self->format_options_set) {
         $res->[3]{result_format_options} = $self->format_options;
@@ -377,7 +383,7 @@ sub display_result {
                 $pager = "more" if File::Which::which("more");
             }
             unless (defined $pager) {
-                die "Can't determine PAGER";
+                $self->_err("Can't determine PAGER");
             }
             last unless $pager; # ENV{PAGER} can be set 0/'' to disable paging
             $log->tracef("Paging output using %s", $pager);
@@ -387,8 +393,9 @@ sub display_result {
     $handle //= \*STDOUT;
 
     if ($resmeta->{is_stream}) {
-        die "Can't format stream as " . $self->format .
-            ", please use --format text\n" unless $self->format =~ /^text/;
+        $self->_err("Can't format stream as " . $self->format .
+                        ", please use --format text")
+            unless $self->format =~ /^text/;
         my $r = $res->[2];
         if (ref($r) eq 'GLOB') {
             while (!eof($r)) {
@@ -405,8 +412,8 @@ sub display_result {
                 print $self->format_row(shift(@$r));
             }
         } else {
-            die "Invalid stream in result (not a glob/IO::Handle-like object/".
-                "(tied) array)\n";
+            $self->_err("Invalid stream in result (not a glob/IO::Handle-like ".
+                            "object/(tied) array)\n");
         }
     } else {
         print $handle $self->{_fres} // "";
@@ -436,7 +443,7 @@ sub list_subcommands {
     if ($scs) {
         if (reftype($scs) eq 'CODE') {
             $scs = $scs->($self);
-            die "ERROR: Subcommands code didn't return a hashref\n"
+            $self->_err("Subcommands code didn't return a hashref")
                 unless ref($scs) eq 'HASH';
         }
         $res = $scs;
@@ -1016,7 +1023,7 @@ sub help_section_examples {
             require Perinci::Sub::ConvertArgs::Argv;
             my $res = Perinci::Sub::ConvertArgs::Argv::convert_args_to_argv(
                 args => $eg->{args}, meta => $meta);
-            die "BUG: Can't convert args to argv: $res->[0] - $res->[1]"
+            $self->_err("Can't convert args to argv: $res->[0] - $res->[1]")
                 unless $res->[0] == 200;
             $argv = $res->[2];
         }
@@ -1055,11 +1062,11 @@ sub run_help {
     my $sc = $self->{_subcommand};
     my $url = $sc ? $sc->{url} : $self->url;
     my $res = $self->_pa->request(info => $url);
-    die "ERROR: Can't info '$url': $res->[0] - $res->[1]\n"
+    $self->_err("Can't info '$url': $res->[0] - $res->[1]")
         unless $res->[0] == 200;
     $self->{_help_info} = $res->[2];
     $res = $self->_pa->request(meta => $url);
-    die "ERROR: Can't meta '$url': $res->[0] - $res->[1]\n"
+    $self->_err("Can't meta '$url': $res->[0] - $res->[1]")
         unless $res->[0] == 200;
     $self->{_help_meta} = $res->[2];
 
@@ -1265,7 +1272,7 @@ sub _gen_go_specs_from_common_opts {
         ($co->{$a}{order}//1) <=> ($co->{$b}{order}//1) || $a cmp $b
     } keys %$co) {
         my $cov = $co->{$con};
-        die "Invalid common option '$con': empty getopt"
+        $self->_err("Invalid common option '$con': empty getopt")
             unless $cov->{getopt};
         push @go_opts, $cov->{getopt} => $cov->{handler};
     }
@@ -1344,12 +1351,14 @@ sub parse_subcommand_opts {
             my ($a, $aa, $as) = ($a{arg}, $a{args}, $a{spec});
             my $src = $as->{cmdline_src};
             if ($src) {
-                die "ERROR: Invalid 'cmdline_src' value for argument '$a': ".
-                    "$src\n" unless $src =~ /\A(stdin|stdin_or_files)\z/;
-                die "ERROR: Sorry, argument '$a' is set cmdline_src=$src, ".
-                    "but type is not 'str', only str is supported for now\n"
-                        unless $as->{schema}[0] eq 'str';
-                die "ERROR: Only one argument can be specified cmdline_src"
+                $self->_err(
+                    "Invalid 'cmdline_src' value for argument '$a': $src")
+                    unless $src =~ /\A(stdin|stdin_or_files)\z/;
+                $self->_err(
+                    "Sorry, argument '$a' is set cmdline_src=$src, ".
+                        "but type is not 'str', only str is supported for now")
+                    unless $as->{schema}[0] eq 'str';
+                $self->_err("Only one argument can be specified cmdline_src")
                     if $src_seen++;
                 if ($src eq 'stdin') {
                     $log->trace("Getting argument '$a' value from stdin ...");
@@ -1382,7 +1391,7 @@ sub parse_subcommand_opts {
         $self->_load_log_any_app if $do_log;
     }
 
-    die "ERROR: Failed parsing arguments: $res->[0] - $res->[1]\n"
+    $self->_err("Failed parsing arguments: $res->[0] - $res->[1]")
         unless $res->[0] == 200;
     for (keys %{ $res->[2] }) {
         $self->{_args}{$_} = $res->[2]{$_};
@@ -1415,9 +1424,10 @@ sub _set_subcommand {
             if ($ENV{COMP_LINE}) {
                 goto L1;
             } else {
-                die "ERROR: Unknown subcommand '$scn', use '".
-                    $self->program_name.
-                        " -l' to list available subcommands\n";
+                $self->_err(
+                    "Unknown subcommand '$scn', use '".
+                        $self->program_name.
+                            " -l' to list available subcommands");
             }
         }
         $self->{_subcommand} = $sc;
