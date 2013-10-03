@@ -289,16 +289,22 @@ has action_metadata => (
     },
 );
 
+sub __json_decode {
+    require JSON;
+    state $json = do { JSON->new->allow_nonref };
+    $json->decode(shift);
+}
+
 sub _err {
     my $self = shift;
     my $msg = shift; $msg .= "\n" unless $msg =~ /\n\z/;
     die $self->_color('error_label', "ERROR: ") . $msg;
 }
 
-sub __json_decode {
-    require JSON;
-    state $json = do { JSON->new->allow_nonref };
-    $json->decode(shift);
+sub _program_and_subcommand_name {
+    my $self = shift;
+    $self->program_name .
+        ($self->{_subcommand} ? " $self->{_subcommand}{name}" : "");
 }
 
 sub BUILD {
@@ -529,7 +535,8 @@ sub run_version {
     }
 
     say $self->loc(
-        "[_1] version [_2]", $self->_color('program_name', $self->program_name),
+        "[_1] version [_2]",
+        $self->_color('program_name', $self->_program_and_subcommand_name),
         $self->_color('emphasis', $ver));
     {
         no strict 'refs';
@@ -754,10 +761,7 @@ sub help_section_summary {
     my $summary = $self->langprop($self->{_help_meta}, "summary");
     return unless $summary;
 
-    my $sc = $self->{_subcommand};
-    my $name = $self->program_name .
-        ($sc && length($sc->{name}) ? " $sc->{name}" : "");
-
+    my $name = $self->_program_and_subcommand_name;
     my $ct = join(
         "",
         $self->_color('program_name', $name),
@@ -802,18 +806,18 @@ sub help_section_usage {
         ($co->{$a}{order}//1) <=> ($co->{$b}{order}//1) || $a cmp $b
     } keys %$co;
 
-    my $pn = $self->_color('program_name', $self->program_name);
+    my $pn = $self->_color('program_name', $self->_program_and_subcommand_name);
     my $ct = "";
     for my $con (@con) {
         my $cov = $co->{$con};
         next unless $cov->{usage};
         $ct .= ($ct ? "\n" : "") . $pn . " " . $self->locopt($cov->{usage});
     }
-    if ($self->subcommands) {
+    if ($self->subcommands && !$self->{_subcommand}) {
         if (defined $self->default_subcommand) {
             $ct .= ($ct ? "\n" : "") . $pn .
                 " " . $self->loc("--cmd=<other-subcommand> (options)");
-        } elsif (!$self->{_subcommand}) {
+        } else {
             $ct .= ($ct ? "\n" : "") . $pn .
                 " " . $self->loc("<subcommand> (options)");
         }
@@ -1047,7 +1051,7 @@ sub help_section_examples {
     return unless $egs && @$egs;
 
     $self->_help_add_heading($self->loc("Examples"));
-    my $pn = $self->_color('program_name', $self->program_name);
+    my $pn = $self->_color('program_name', $self->_program_and_subcommand_name);
     require String::ShellQuote;
     for my $eg (@$egs) {
         my $argv;
@@ -1462,7 +1466,7 @@ sub _set_subcommand {
                 $self->_err(
                     "Unknown subcommand '$scn', use '".
                         $self->program_name.
-                            " -l' to list available subcommands");
+                            " --subcommands' to list available subcommands");
             }
         }
         $self->{_subcommand} = $sc;
