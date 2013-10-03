@@ -487,9 +487,9 @@ sub run_subcommands {
     my %percat_subc; # (cat1 => {subcmd1=>..., ...}, ...)
     while (my ($scn, $sc) = each %$subcommands) {
         my $cat = "";
-        if ($sc->{tags}) {
-            for (@{$sc->{tags}}) {
-                next unless /^category:(.+)/;
+        for my $tag (@{$sc->{tags} : []}) {
+                my $tn = ref($tag) ? $tag->{name} : $tag;
+                next unless $tn =~ /^category:(.+)/;
                 $cat = $1;
                 last;
             }
@@ -922,8 +922,9 @@ sub help_section_options {
             }
 
             my $cat;
-            for (@{ $a->{tags} // []}) {
-                next unless /^category:(.+)/;
+            for my $tag (@{ $a->{tags} // []}) {
+                my $tn = ref($tag) ? $tag->{name} : $tag;
+                next unless $tn =~ /^category:(.+)/;
                 $cat = $1;
                 last;
             }
