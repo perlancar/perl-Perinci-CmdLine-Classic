@@ -763,13 +763,9 @@ sub _usage_args {
     my $res = "";
     for (@a) {
         $res .= " ";
-        my $label = uc($_);
-        $label .= " ..." if $aa->{$_}{greedy};
-        if ($aa->{$_}{req}) {
-            $res .= $label;
-        } else {
-            $res .= "[$label]";
-        }
+        my $label = lc($_);
+        $res .= $aa->{$_}{req} ? "<$label>" : "[$label]";
+        $res .= " ..." if $aa->{$_}{greedy};
         last if $aa->{$_}{greedy};
     }
     $res;
@@ -795,10 +791,10 @@ sub help_section_usage {
     if ($self->subcommands) {
         if (defined $self->default_subcommand) {
             $ct .= ($ct ? "\n" : "") . $pn .
-                " " . $self->loc("--cmd=OTHER_SUBCOMMAND (options)");
+                " " . $self->loc("--cmd=<other-subcommand> (options)");
         } else {
             $ct .= ($ct ? "\n" : "") . $pn .
-                " " . $self->loc("SUBCOMMAND (options)");
+                " " . $self->loc("<subcommand> (options)");
         }
     } else {
             $ct .= ($ct ? "\n" : "") . $pn .

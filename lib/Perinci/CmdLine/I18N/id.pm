@@ -44,12 +44,12 @@ msgid  "(options)"
 msgstr "[opsi]"
 
 # help when there are subcommands and no default subcommand
-msgid  "SUBCOMMAND (options)"
-msgstr "SUBPERINTAH [opsi]"
+msgid  "<subcommand> (options)"
+msgstr "<subperintah> [opsi]"
 
 # help when there are subcommands and there is a default subcommand
-msgid  "--cmd=OTHER_SUBCOMMAND (options)"
-msgstr "--cmd=SUBPERINTAH_LAIN [opsi]"
+msgid  "--cmd=<other-subcommand> (options)"
+msgstr "--cmd=<subperintah-lain> [opsi]"
 
 msgid  "Options"
 msgstr "Opsi"

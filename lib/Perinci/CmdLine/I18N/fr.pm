@@ -46,12 +46,12 @@ msgid  "(options)"
 msgstr "[options]"
 
 # help when there are subcommands and no default subcommand
-msgid  "SUBCOMMAND (options)"
-msgstr "SOUS-COMMANDE [options]"
+msgid  "<subcommand> (options)"
+msgstr "<sous-commande> [options]"
 
 # help when there are subcommands and there is a default subcommand
-msgid  "--cmd=OTHER_SUBCOMMAND (options)"
-msgstr "--cmd=AUTRE_SOUS_COMMANDE [options]"
+msgid  "--cmd=<other-subcommand> (options)"
+msgstr "--cmd=<autre-sous-commande> [options]"
 
 msgid  "Options"
 msgstr "Options"
