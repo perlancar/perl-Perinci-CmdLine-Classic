@@ -121,7 +121,7 @@ has common_opts => (
             getopt  => "version|v",
             usage   => "--version (or -v)",
             summary => "Show version",
-            show_in_compact_help => 0,
+            show_in_help => 0,
             handler => sub {
                 $self->_err("'url' not set, required for --version")
                     unless $self->url;
@@ -134,7 +134,7 @@ has common_opts => (
             getopt  => "help|h|?",
             usage   => "--help (or -h, -?) (--verbose)",
             summary => "Display this help message",
-            show_in_compact_help => 0,
+            show_in_help => 0,
             handler => sub {
                 unshift @{$self->{_actions}}, 'help';
                 $self->{_check_required_args} = 0;
@@ -164,8 +164,13 @@ has common_opts => (
             $opts{subcommands} = {
                 getopt  => "subcommands",
                 usage   => "--subcommands",
+                show_usage_in_help => sub {
+                    my $self = shift;
+                    # if user's asking for 'subc --help', don't show this again
+                    return !$self->{_subcommand};
+                },
                 summary => "List available subcommands",
-                show_in_compact_help => 0,
+                show_in_help => 0,
                 handler => sub {
                     unshift @{$self->{_actions}}, 'subcommands';
                     $self->{_check_required_args} = 0;
@@ -784,11 +789,14 @@ sub help_section_usage {
     my ($self, %opts) = @_;
 
     my $co = $self->common_opts;
-    my @con = sort {
+    my @con = grep {
+        show_in_help =>
+        next if !$verbose && !($cov->{show_in_help} // 1); #TMP
+    } sort {
         ($co->{$a}{order}//1) <=> ($co->{$b}{order}//1) || $a cmp $b
     } keys %$co;
 
-    $self->{_common_opts} = \@con; # save for doc_gen_options
+    $self->{_common_opts} = \@con; # save for help_section_options
 
     my $pn = $self->_color('program_name', $self->program_name);
     my $ct = "";
@@ -837,7 +845,6 @@ sub help_section_options {
     } keys %$co;
     for my $con (@con) {
         my $cov = $co->{$con};
-        next if !$verbose && !($cov->{show_in_compact_help} // 1);
         my $cat = $cov->{category} ? $self->locopt($cov->{category}) :
             ($sc ? $t_copts : $t_opts);
         my $go = $cov->{getopt};
@@ -995,6 +1002,9 @@ sub help_section_options {
             }
         }
     }
+}
+
+sub help_section_subcommands {
 }
 
 sub help_section_hints {
@@ -1960,7 +1970,7 @@ details.
 Can be set to 0 to disable transaction for this subcommand; this is only
 relevant when C<undo> attribute is set to true.
 
-=item * C<show_in_compact_help> (bool, optional, default 1)
+=item * C<show_in_help> (bool, optional, default 1)
 
 If you have lots of subcommands, and want to show only some of them in --help
 message, set this to 0 for subcommands that you do not want to show.
@@ -2041,7 +2051,7 @@ Optional, displayed in usage line in help/usage text.
 
 Optional, displayed in description of the option in help/usage text.
 
-=item * show_in_compact_help (bool, default: 1)
+=item * show_in_help (bool or code, default: 1)
 
 A flag, can be set to 0 if we want to skip showing this option in --help, to
 save some space. The default is for C<help> and C<version> to have this flag
@@ -2057,12 +2067,12 @@ A partial example from the default set by the framework:
 
  {
      help => {
-         category    => 'Common options',
-         getopt      => 'help|h|?',
-         usage       => '--help (or -h, -?)',
-         handler     => sub { ... },
-         order       => 0,
-         show_in_compact_help => 0,
+         category     => 'Common options',
+         getopt       => 'help|h|?',
+         usage        => '--help (or -h, -?)',
+         handler      => sub { ... },
+         order        => 0,
+         show_in_help => 0,
      },
      format => {
          category    => 'Common options',
