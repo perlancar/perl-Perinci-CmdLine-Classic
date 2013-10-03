@@ -104,9 +104,10 @@ has common_opts => (
 
         my %opts;
 
-        # 'action=subcommand' can be used to override --help (or --list,
-        # --version) if one of function arguments happens to be 'help', 'list',
-        # or 'version'. currently this is undocumented.
+        # 'action=<subcommand>' can be used to override --help (or
+        # --subcommands, --version) if one of function arguments happens to be
+        # 'help', 'subcommands', or 'version'. currently this is deliberately(?)
+        # underdocumented.
         $opts{action} = {
             getopt  => "action=s",
             handler => sub {
@@ -160,12 +161,12 @@ has common_opts => (
         };
 
         if ($self->subcommands) {
-            $opts{list} = {
-                getopt  => "list|l",
-                usage   => "--list (or -l)",
+            $opts{subcommands} = {
+                getopt  => "subcommands",
+                usage   => "--subcommands",
                 summary => "List available subcommands",
                 handler => sub {
-                    unshift @{$self->{_actions}}, 'list';
+                    unshift @{$self->{_actions}}, 'subcommands';
                     $self->{_check_required_args} = 0;
                 },
             };
@@ -260,7 +261,7 @@ has action_metadata => (
             },
             history => {
             },
-            list => {
+            subcommands => {
                 default_log => 0,
                 use_utf8 => 1,
             },
@@ -453,7 +454,7 @@ sub list_subcommands {
     $cached = $res;
 }
 
-sub run_list {
+sub run_subcommands {
     my ($self) = @_;
 
     if (!$self->subcommands) {
