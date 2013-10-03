@@ -367,14 +367,17 @@ for (qw(--help -h -?)) {
          );
 }
 
-test_run(name      => "common option (--version) before subcommand name",
-         args      => {url=>'/Foo/', subcommands=>{
-             ok=>{url=>'/Foo/ok'},
-             want_odd=>{url=>'/Foo/want_odd'}}},
-         argv      => [qw/--version want_odd --num 4/],
-         exit_code => 0,
-         output_re => qr/version 0\.123/m,
-     );
+{
+    local $ENV{COLOR} = 0;
+    test_run(name      => "common option (--version) before subcommand name",
+             args      => {url=>'/Foo/', subcommands=>{
+                 ok=>{url=>'/Foo/ok'},
+                 want_odd=>{url=>'/Foo/want_odd'}}},
+             argv      => [qw/--version want_odd --num 4/],
+             exit_code => 0,
+             output_re => qr/version 0\.123/m,
+         );
+}
 test_run(name      => "common option (--help) after subcommand name",
          args      => {subcommands=>{
              ok=>{url=>'/Foo/ok'},
