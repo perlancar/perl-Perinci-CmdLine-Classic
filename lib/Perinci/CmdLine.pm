@@ -487,12 +487,11 @@ sub run_subcommands {
     my %percat_subc; # (cat1 => {subcmd1=>..., ...}, ...)
     while (my ($scn, $sc) = each %$subcommands) {
         my $cat = "";
-        for my $tag (@{$sc->{tags} : []}) {
-                my $tn = ref($tag) ? $tag->{name} : $tag;
-                next unless $tn =~ /^category:(.+)/;
-                $cat = $1;
-                last;
-            }
+        for my $tag (@{$sc->{tags} // []}) {
+            my $tn = ref($tag) ? $tag->{name} : $tag;
+            next unless $tn =~ /^category:(.+)/;
+            $cat = $1;
+            last;
         }
         $percat_subc{$cat}       //= {};
         $percat_subc{$cat}{$scn}   = $sc;
