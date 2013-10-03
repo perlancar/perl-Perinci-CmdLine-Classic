@@ -485,8 +485,9 @@ sub run_list {
     for my $cat (sort keys %percat_subc) {
         print "\n" if $i++;
         if ($has_many_cats) {
-            say $self->loc("List of available [_1] subcommands",
-                           ucfirst($cat) || "main") . ":";
+            say $self->loc(
+                "List of available [_1] subcommands",
+                $self->_color('emphasis', ucfirst($cat) || "main")) . ":";
         } else {
             say $self->loc("List of available subcommands") . ":";
         }
@@ -516,11 +517,14 @@ sub run_version {
         $ver = '?';
     }
 
-    say $self->loc("[_1] version [_2]", $self->program_name, $ver);
+    say $self->loc(
+        "[_1] version [_2]", $self->_color('program_name', $self->program_name),
+        $self->_color('emphasis', $ver));
     {
         no strict 'refs';
-        say "  ", $self->loc("[_1] version [_2]", "Perinci::CmdLine",
-                             $Perinci::CmdLine::VERSION || "dev");
+        say "  ", $self->loc(
+            "[_1] version [_2]", $self->_color('emphasis', "Perinci::CmdLine"),
+            $self->_color('emphasis', $Perinci::CmdLine::VERSION || "dev"));
     }
 
     0;
