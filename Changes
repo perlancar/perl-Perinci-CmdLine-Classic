@@ -1,5 +1,11 @@
 Revision history for Perinci-CmdLine
 
+0.93     2013-10-04 (SHARYANTO)
+
+         - No functional changes. Force version of SHARYANTO::Role::ColorTheme
+           so color_theme_class_prefix can be overriden by subclasses.
+
+
 0.92     2013-10-03 (SHARYANTO)
 
          [INCOMPATIBLE CHANGES]
