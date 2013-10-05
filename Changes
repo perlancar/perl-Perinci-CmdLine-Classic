@@ -10,7 +10,7 @@ Revision history for Perinci-CmdLine
 
          [INCOMPATIBLE CHANGES]
 
-         - Change common option: --list (-l) to --subcommand to make it more
+         - Change common option: --list (-l) to --subcommands to make it more
            obvious.
 
          [ENHANCEMENTS]
