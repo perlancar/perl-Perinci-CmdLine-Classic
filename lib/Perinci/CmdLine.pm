@@ -73,10 +73,8 @@ has _pa => (
         require Perinci::Access::Schemeless;
         my %args = %{$self->pa_args // {}};
         my %opts;
-        $opts{disk_cache} = 1;
         # turn off arg validation generation to reduce startup cost
         $opts{extra_wrapper_args} = 0 if $ENV{COMP_LINE};
-        $opts{use_utf8} = $self->use_utf8; # periap 0.51
         if ($self->undo) {
             $opts{use_tx} = 1;
             $opts{custom_tx_manager} = sub {
