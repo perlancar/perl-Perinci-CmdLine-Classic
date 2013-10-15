@@ -303,7 +303,7 @@ sub _err {
 sub _program_and_subcommand_name {
     my $self = shift;
     $self->program_name .
-        ($self->{_subcommand} ? " $self->{_subcommand}{name}" : "");
+        (length($self->{_subcommand}{name}) ? " $self->{_subcommand}{name}":"");
 }
 
 sub BUILD {
