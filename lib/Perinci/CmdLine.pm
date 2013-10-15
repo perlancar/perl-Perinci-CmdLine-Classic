@@ -1103,26 +1103,31 @@ sub help_section_examples {
 
     $self->_help_add_heading($self->loc("Examples"));
     my $pn = $self->_color('program_name', $self->_program_and_subcommand_name);
-    require String::ShellQuote;
     for my $eg (@$egs) {
         my $argv;
-        if ($eg->{argv}) {
-            $argv = $eg->{argv};
+        my $ct;
+        if (defined($eg->{src}) && $eg->{src_plang} =~ /^(sh|bash)$/) {
+            $ct = $eg->{src};
         } else {
-            require Perinci::Sub::ConvertArgs::Argv;
-            my $res = Perinci::Sub::ConvertArgs::Argv::convert_args_to_argv(
-                args => $eg->{args}, meta => $meta);
-            $self->_err("Can't convert args to argv: $res->[0] - $res->[1]")
-                unless $res->[0] == 200;
-            $argv = $res->[2];
-        }
-        my $ct = $pn;
-        for my $arg (@$argv) {
-            $arg = String::ShellQuote::shell_quote($arg);
-            if ($arg =~ /^-/) {
-                $ct .= " ".$self->_color('option_name', $arg);
+            require String::ShellQuote;
+            if ($eg->{argv}) {
+                $argv = $eg->{argv};
             } else {
-                $ct .= " $arg";
+                require Perinci::Sub::ConvertArgs::Argv;
+                my $res = Perinci::Sub::ConvertArgs::Argv::convert_args_to_argv(
+                    args => $eg->{args}, meta => $meta);
+                $self->_err("Can't convert args to argv: $res->[0] - $res->[1]")
+                    unless $res->[0] == 200;
+                $argv = $res->[2];
+            }
+            $ct = $pn;
+            for my $arg (@$argv) {
+                $arg = String::ShellQuote::shell_quote($arg);
+                if ($arg =~ /^-/) {
+                    $ct .= " ".$self->_color('option_name', $arg);
+                } else {
+                    $ct .= " $arg";
+                }
             }
         }
         $self->_help_add_row([$ct], {indent=>1});
