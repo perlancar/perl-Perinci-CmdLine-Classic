@@ -164,7 +164,7 @@ has common_opts => (
                 getopt  => "subcommands",
                 usage   => "--subcommands",
                 show_in_usage => sub {
-                    $ENV{VERBOSE} && !$self->{_subcommand};
+                    !$self->{_subcommand};
                 },
                 show_in_options => sub {
                     $ENV{VERBOSE} && !$self->{_subcommand};
