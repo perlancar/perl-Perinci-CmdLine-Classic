@@ -1079,7 +1079,7 @@ sub help_section_hints {
     return unless @hints;
 
     $self->_help_add_row(
-        ["\n" . join(" ", map { $self->loc($_)."." } @hints)], {wrap=>1});
+        [join(" ", map { $self->loc($_)."." } @hints)], {wrap=>1});
 }
 
 sub help_section_description {
