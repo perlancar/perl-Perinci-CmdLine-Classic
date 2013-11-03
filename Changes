@@ -1,5 +1,18 @@
 Revision history for Perinci-CmdLine
 
+0.94     2013-10-04 (SHARYANTO)
+
+         [ENHANCEMENTS]
+
+         - Display src examples (Rinci 1.1.39).
+
+         [ETC]
+
+         - Adjust to Perinci::Access::Perl 0.53+ (remove disk caching options).
+
+         - Adjust to Perinci::Sub::Complete (replaces Perinci::BashComplete).
+
+
 0.93     2013-10-04 (SHARYANTO)
 
          - No functional changes. Force version of SHARYANTO::Role::ColorTheme
