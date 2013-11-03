@@ -91,7 +91,7 @@ has _pa => (
             pl => Perinci::Access::Perl->new(%opts),
             '' => Perinci::Access::Schemeless->new(%opts),
         };
-        $log->tracef("Creating Perinci::Access object with args: %s", \%args);
+        #$log->tracef("Creating Perinci::Access object with args: %s", \%args);
         Perinci::Access->new(%args);
     }
 );
@@ -547,8 +547,14 @@ sub run_version {
     0;
 }
 
+sub _add_slashes {
+    my ($a) = @_;
+    $a =~ s!([^A-Za-z0-9,+._/:-])!\\$1!g;
+    $a;
+}
+
 sub run_completion {
-    # Perinci::BashComplete already required by run()
+    # Perinci::Sub::Complete already required by run()
 
     my ($self) = @_;
 
@@ -630,12 +636,26 @@ sub run_completion {
             }
         }
 
-        $res = Perinci::BashComplete::bash_complete_riap_func_arg(
-            url=>$sc->{url}, words=>$words, cword=>$cword,
+        my $rres = $self->_pa->request(meta => $sc->{url});
+        if ($rres->[0] != 200) {
+            $log->debug("Can't get meta for completion: $res->[0] - $res->[1]");
+            $res = [];
+            goto DISPLAY_RES;
+        }
+        my $meta = $rres->[2];
+
+        my $arg_completer = $self->custom_arg_completer;
+        $arg_completer //= sub {
+            my $rres = $self->_pa->request(complete_arg_val => $sc->{url});
+            return undef unless $rres->[0] == 20;
+            $rres->[2];
+        };
+
+        $res = Perinci::Sub::Complete::shell_complete_arg(
+            meta=>$meta, words=>$words, cword=>$cword,
             common_opts => $common_opts,
             custom_completer=>$self->custom_completer,
-            custom_arg_completer => $self->custom_arg_completer,
-            pa => $self->_pa,
+            custom_arg_completer => $arg_completer,
         );
 
     } else {
@@ -644,13 +664,14 @@ sub run_completion {
         push @ary, @top_opts;
         my $scs = $self->list_subcommands;
         push @ary, keys %$scs;
-        $res = Perinci::BashComplete::complete_array(
+        $res = Perinci::Sub::Complete::complete_array(
             word=>$word, array=>\@ary,
         );
     }
 
+  DISPLAY_RES:
     # display completion result for bash
-    print map {Perinci::BashComplete::_add_slashes($_), "\n"} @$res;
+    print map {_add_slashes($_), "\n"} grep {defined} @$res;
     0;
 }
 
@@ -1584,8 +1605,8 @@ sub run {
     #
 
     if ($ENV{COMP_LINE}) {
-        require Perinci::BashComplete;
-        my $res = Perinci::BashComplete::_parse_request();
+        require Perinci::Sub::Complete;
+        my $res = Perinci::Sub::Complete::parse_shell_cmdline();
         @ARGV = @{ $res->{words} };
         $self->{_comp_parse_res} = $res; # store for run_completion()
     }
@@ -2223,13 +2244,13 @@ L</"LOGGING"> for more details.
 
 =head2 custom_completer => CODEREF
 
-Will be passed to L<Perinci::BashComplete>'s C<bash_complete_riap_func_arg>. See
-its documentation for more details.
+Will be passed to L<Perinci::Sub::Complete>'s C<shell_complete_arg()>. See its
+documentation for more details.
 
 =head2 custom_arg_completer => CODEREF | {ARGNAME=>CODEREF, ...}
 
-Will be passed to L<Perinci::BashComplete>. See its documentation for more
-details.
+Will be passed to L<Perinci::Sub::Complete>'s C<shell_complete_arg()>. See its
+documentation for more details.
 
 =head2 pass_cmdline_object => BOOL (optional, default 0)
 
