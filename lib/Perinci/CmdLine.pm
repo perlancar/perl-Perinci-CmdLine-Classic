@@ -2499,11 +2499,58 @@ When run from command line:
  % cat file.txt | cmd
  arg is 'This is content of file.txt'
 
-=head2 But I don't want it slurped into a single scalar, I want streaming!
+If your function argument is an array, array of lines will be provided to your
+function. A mechanism to be will be provided in the future (currently not yet
+specified in L<Rinci::function> specification).
 
-See L<App::dux> for an example on how to accomplish that. Basically in App::dux,
-you feed an array tied with L<Tie::Diamond> as a function argument. Thus you can
-get lines from file/STDIN iteratively with each().
+=head2 But I don't want the whole file content slurped into string/array, I want streaming!
+
+If your function argument is of type C<stream> or C<filehandle>, an I/O handle
+will be provided to your function instead. But this part is not implemented yet.
+
+Currently, see L<App::dux> for an example on how to accomplish this on function
+argument of type C<array>. Basically in App::dux, you feed an array tied with
+L<Tie::Diamond> as a function argument. Thus you can get lines from file/STDIN
+iteratively with each().
+
+=head2 My function has some cmdline_aliases or cmdline_src defined but I want to change it!
+
+For example, your C<f1> function metadata might look like this:
+
+ package Package::F1;
+ our %SPEC;
+ $SPEC{f1} = {
+     v => 1.1,
+     args => {
+         foo => {
+             cmdline_aliases => { f=> {} },
+         },
+         bar => { ... },
+         fee => { ... },
+     },
+ };
+ sub f1 { ... }
+
+You want to create a command-line script interface for this function, but you
+want C<-f> to set C<fee> instead of C<foo>. This is best done by you creating a
+wrapper function to do this, e.g.:
+
+ package main;
+ use Perinci::CmdLine;
+ use Package::F1;
+ use Data::Clone;
+ our %SPEC;
+ $SPEC{f1_wrapper} = clone $Package::F1::SPEC{f1};
+ delete $SPEC{f1_wrapper}{args}{foo}{cmdline_aliases};
+ $SPEC{f1_wrapper}{args}{fee}{cmdline_aliases} = {f=>{}};
+ sub f1_wrapper { goto &Package::F1::f1 }
+
+And interface your command-line script to this C<f1_wrapper>:
+
+ Perinci::CmdLine->new(url => '/main/f1_wrapper')->run;
+
+This also demonstrates the convenience of having the metadata as a data
+structure: you can manipulate it however you want.
 
 =head2 My application is OO?
 
