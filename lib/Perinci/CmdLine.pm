@@ -963,9 +963,9 @@ sub help_section_options {
                          $self->loc("or as argument #[_1]",
                                     ($a->{pos}+1).($a->{greedy} ? "+":"")).")":""),
                     ($src eq 'stdin' ?
-                         " (" . $self->loc("or from stdin") . ")" : ""),
+                         " (" . $self->loc("from stdin") . ")" : ""),
                     ($src eq 'stdin_or_files' ?
-                         " (" . $self->loc("or from stdin/files") . ")" : ""),
+                         " (" . $self->loc("from stdin/files") . ")" : ""),
                     $def
                 ),
                 req => $a->{req},
@@ -1469,29 +1469,10 @@ sub parse_subcommand_opts {
         per_arg_yaml        => 1,
         on_missing_required_args => sub {
             my %a = @_;
-            my ($a, $aa, $as) = ($a{arg}, $a{args}, $a{spec});
+            my ($an, $aa, $as) = ($a{arg}, $a{args}, $a{spec});
             my $src = $as->{cmdline_src};
-            if ($src) {
-                $self->_err(
-                    "Invalid 'cmdline_src' value for argument '$a': $src")
-                    unless $src =~ /\A(stdin|stdin_or_files)\z/;
-                $self->_err(
-                    "Sorry, argument '$a' is set cmdline_src=$src, ".
-                        "but type is not 'str', only str is supported for now")
-                    unless $as->{schema}[0] eq 'str';
-                $self->_err("Only one argument can be specified cmdline_src")
-                    if $src_seen++;
-                if ($src eq 'stdin') {
-                    $log->trace("Getting argument '$a' value from stdin ...");
-                    local $/;
-                    $aa->{$a} = <STDIN>;
-                } elsif ($src eq 'stdin_or_files') {
-                    $log->trace("Getting argument '$a' value from ".
-                                    "stdin_or_files ...");
-                    local $/;
-                    $aa->{$a} = <>;
-                }
-            }
+            # fill with undef first, will be filled from other source
+            $aa->{$an} = undef if $src;
         },
     );
     if ($self->{_force_subcommand}) {
@@ -1519,6 +1500,57 @@ sub parse_subcommand_opts {
     }
     $log->tracef("result of GetArgs for subcommand: remaining argv=%s, args=%s".
                      ", actions=%s", \@ARGV, $self->{_args}, $self->{_actions});
+
+    # handle cmdline_src
+    if (!$ENV{COMP_LINE} && ($self->{_actions}[0] // "") eq 'subcommand') {
+        my $args_p = $meta->{args} // {};
+        my $stdin_seen;
+        for my $an (sort keys %$args_p) {
+            my $as = $args_p->{$an};
+            my $src = $as->{cmdline_src};
+            if ($src) {
+                $self->_err(
+                    "Invalid 'cmdline_src' value for argument '$an': $src")
+                    unless $src =~ /\A(stdin|file|stdin_or_files)\z/;
+                $self->_err(
+                    "Sorry, argument '$an' is set cmdline_src=$src, but type ".
+                        "is not 'str' or 'array', only those are supported now")
+                    unless $as->{schema}[0] =~ /\A(str|array)\z/;
+                if ($src =~ /stdin/) {
+                    $self->_err("Only one argument can be specified ".
+                                    "cmdline_src stdin/stdin_or_files")
+                        if $stdin_seen++;
+                }
+                my $is_ary = $as->{schema}[0] eq 'array';
+                if ($src eq 'stdin' || $src eq 'file' &&
+                        ($self->{_args}{$an}//"") eq '-') {
+                    $self->_err("Argument $an must be set to '-' which means ".
+                                    "from stdin")
+                        if defined($self->{_args}{$an}) &&
+                            $self->{_args}{$an} ne '-';
+                    $log->trace("Getting argument '$an' value from stdin ...");
+                    $self->{_args}{$an} = $is_ary ? [<STDIN>] :
+                        do { local $/; <STDIN> };
+                } elsif ($src eq 'stdin_or_files') {
+                    $log->trace("Getting argument '$an' value from ".
+                                    "stdin_or_files ...");
+                    $self->{_args}{$an} = $is_ary ? [<>] : do { local $/; <> };
+                } elsif ($src eq 'file') {
+                    next unless exists $self->{_args}{$an};
+                    $self->_err("Please specify filename for argument '$an'")
+                        unless defined $self->{_args}{$an};
+                    $log->trace("Getting argument '$an' value from ".
+                                    "file ...");
+                    open my($fh), "<", $self->{_args}{$an};
+                    $self->_err("Can't open file '$self->{_args}{$an}': $!")
+                        if $!;
+                    $self->{_args}{$an} = $is_ary ? [<$fh>] :
+                        do { local $/; <$fh> };
+                }
+            }
+        }
+    }
+    $log->tracef("args after cmdline_src is processed: %s", $self->{_args});
 
     $log->tracef("<- _parse_subcommand_opts()");
 }

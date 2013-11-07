@@ -163,13 +163,21 @@ msgstr "Pour voir toutes les sous-commandes disponibles, utilisez '--subcommands
 msgid  "or as argument #%1"
 msgstr "ou comme argument #%1"
 
-msgid  "or from stdin"
-msgstr "ou à partir de stdin"
+msgid  "from stdin"
+msgstr "à partir de stdin"
 
-msgid  "or from stdin/files"
+msgid  "from file"
+msgstr "à partir de fichier"
+
+msgid  "from stdin/files"
 msgstr "ou à partir de stdin/des fichiers"
 
 # etc
 
 msgid  "value in"
 msgstr "valeur est l'une des"
+
+# error messages
+
+msgid  "Argument %1 must be set to '-' which means from stdin"
+msgstr "Argument %1 doit être mis à '-', ce qui signifie à partir de stdin"

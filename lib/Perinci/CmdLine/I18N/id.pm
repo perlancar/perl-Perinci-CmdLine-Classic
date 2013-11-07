@@ -161,13 +161,21 @@ msgstr "Untuk melihat semua subperintah yang ada, gunakan '--subcommands'"
 msgid  "or as argument #%1"
 msgstr "atau sebagai argumen #%1"
 
-msgid  "or from stdin"
-msgstr "atau dari masukan standar"
+msgid  "from stdin"
+msgstr "dari masukan standar"
 
-msgid  "or from stdin/files"
-msgstr "atau dari berkas/masukan standar"
+msgid  "from file"
+msgstr "dari berkas"
+
+msgid  "from stdin/files"
+msgstr "dari berkas/masukan standar"
 
 # etc
 
 msgid  "value in"
 msgstr "nilai salah satu dari"
+
+# error messages
+
+msgid  "Argument %1 must be set to '-' which means from stdin"
+msgstr "Argumen %1 harus diset '-' yang berarti dari masukan standar"
