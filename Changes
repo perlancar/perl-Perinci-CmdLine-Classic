@@ -1,5 +1,15 @@
 Revision history for Perinci-CmdLine
 
+0.95     2013-11-07 (SHARYANTO) (not yet released)
+
+         [ENHANCEMENTS]
+
+         - Fix behavior of 'cmdline_src': now supports 'file' (Rinci 1.1.41),
+           'stdin_or_files' now correctly reads from files specified in cmdline
+           argument, now supports giving lines to function argument of type
+           'array'.
+
+
 0.94     2013-10-04 (SHARYANTO)
 
          [ENHANCEMENTS]
