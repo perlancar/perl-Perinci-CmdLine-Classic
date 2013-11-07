@@ -2511,6 +2511,12 @@ This framework is currently non-OO and function-centric. There are already
 several OO-based command-line frameworks on CPAN.
 
 
+=head1 TODOS
+
+C<cmdline_src> argument specification has not been fully implemented: Providing
+I/O handle for argument of type C<stream>/C<filehandle>.
+
+
 =head1 SEE ALSO
 
 L<Perinci>, L<Rinci>, L<Riap>.
