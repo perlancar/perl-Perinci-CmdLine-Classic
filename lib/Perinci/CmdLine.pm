@@ -2530,10 +2530,18 @@ For example, your C<f1> function metadata might look like this:
      },
  };
  sub f1 { ... }
+ 1;
 
-You want to create a command-line script interface for this function, but you
-want C<-f> to set C<fee> instead of C<foo>. This is best done by you creating a
-wrapper function to do this, e.g.:
+And your command-line script C<f1>:
+
+ #!perl
+ use Perinci::CmdLine;
+ Perinci::CmdLine->new(url => '/Package/F1/f1')->run;
+
+Now you want to create a command-line script interface for this function, but
+with C<-f> as an alias for C<--fee> instead of C<--foo>. This is best done by
+you creating a wrapper function to do this, e.g. your command-line script C<f1>
+becomes:
 
  package main;
  use Perinci::CmdLine;
@@ -2544,9 +2552,6 @@ wrapper function to do this, e.g.:
  delete $SPEC{f1_wrapper}{args}{foo}{cmdline_aliases};
  $SPEC{f1_wrapper}{args}{fee}{cmdline_aliases} = {f=>{}};
  sub f1_wrapper { goto &Package::F1::f1 }
-
-And interface your command-line script to this C<f1_wrapper>:
-
  Perinci::CmdLine->new(url => '/main/f1_wrapper')->run;
 
 This also demonstrates the convenience of having the metadata as a data
