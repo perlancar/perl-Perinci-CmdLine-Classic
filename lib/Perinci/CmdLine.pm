@@ -2572,19 +2572,19 @@ And your command-line script C<f1>:
 
 Now you want to create a command-line script interface for this function, but
 with C<-f> as an alias for C<--fee> instead of C<--foo>. This is best done by
-you creating a wrapper function to do this, e.g. your command-line script C<f1>
-becomes:
+modifying the metadata and creating a wrapper function to do this, e.g. your
+command-line script C<f1> becomes:
 
  package main;
  use Perinci::CmdLine;
  use Package::F1;
  use Data::Clone;
  our %SPEC;
- $SPEC{f1_wrapper} = clone $Package::F1::SPEC{f1};
- delete $SPEC{f1_wrapper}{args}{foo}{cmdline_aliases};
- $SPEC{f1_wrapper}{args}{fee}{cmdline_aliases} = {f=>{}};
- sub f1_wrapper { goto &Package::F1::f1 }
- Perinci::CmdLine->new(url => '/main/f1_wrapper')->run;
+ $SPEC{f1} = clone $Package::F1::SPEC{f1};
+ delete $SPEC{f1}{args}{foo}{cmdline_aliases};
+ $SPEC{f1}{args}{fee}{cmdline_aliases} = {f=>{}};
+ *f1 = \&Package::F1::f1;
+ Perinci::CmdLine->new(url => '/main/f1')->run;
 
 This also demonstrates the convenience of having the metadata as a data
 structure: you can manipulate it however you want.
