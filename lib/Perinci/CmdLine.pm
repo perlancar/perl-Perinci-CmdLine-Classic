@@ -1470,9 +1470,10 @@ sub parse_subcommand_opts {
         on_missing_required_args => sub {
             my %a = @_;
             my ($an, $aa, $as) = ($a{arg}, $a{args}, $a{spec});
+            say "missing arg $an";
             my $src = $as->{cmdline_src};
             # fill with undef first, will be filled from other source
-            $aa->{$an} = undef if $src;
+            $aa->{$an} = undef if $src && $as->{req};
         },
     );
     if ($self->{_force_subcommand}) {
@@ -1541,9 +1542,11 @@ sub parse_subcommand_opts {
                         unless defined $self->{_args}{$an};
                     $log->trace("Getting argument '$an' value from ".
                                     "file ...");
-                    open my($fh), "<", $self->{_args}{$an};
-                    $self->_err("Can't open file '$self->{_args}{$an}': $!")
-                        if $!;
+                    my $fh;
+                    unless (open $fh, "<", $self->{_args}{$an}) {
+                        $self->_err("Can't open file '$self->{_args}{$an}' ".
+                                        "for argument '$an': $!")
+                    }
                     $self->{_args}{$an} = $is_ary ? [<$fh>] :
                         do { local $/; <$fh> };
                 }
