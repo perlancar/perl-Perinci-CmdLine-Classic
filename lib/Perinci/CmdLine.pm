@@ -2474,6 +2474,11 @@ Please see L<SHARYANTO::Role::TermAttrs>.
 
 =head1 FAQ
 
+=head2 How do I debug my program?
+
+You can set environment DEBUG=1 or TRACE=1. See L<Log::Any::App> for more
+details.
+
 =head2 How does Perinci::CmdLine compare with other CLI-app frameworks?
 
 The main difference is that Perinci::CmdLine accesses your code through L<Riap>
@@ -2493,7 +2498,7 @@ for remote code as well as local Perl code.
 
 See L<Perinci::Result::Format>.
 
-=head2 My function has argument named 'format', but it is blocked by common option --format!
+=head2 My function has argument named 'format', but it is blocked by common option '--format'!
 
 To add/remove/rename common options, see the documentation on C<common_opts>
 attribute. In this case, you want:
@@ -2591,6 +2596,59 @@ command-line script C<f1> becomes:
 
 This also demonstrates the convenience of having the metadata as a data
 structure: you can manipulate it however you want.
+
+=head2 How to do custom completion for my argument?
+
+By default, L<Perinci::Sub::Complete>'s C<complete_arg_val()> can employ some
+heuristics to complete argument values, e.g. from the C<in> clause or C<max> and
+C<min>:
+
+ $SPEC{set_ticket_status} = {
+     v => 1.1,
+     args => {
+         ticket_id => { ... },
+         status => {
+             schema => ['str*', in => [qw/new open stalled resolved rejected/],
+         },
+     },
+ }
+
+But if you want to supply custom completion, the L<Rinci::function>
+specification allows specifying a C<completion> property for your argument, for
+example:
+
+ use Perinci::Sub::Complete qw(complete_array);
+ $SPEC{del_user} = {
+     v => 1.1,
+     args => {
+         username => {
+             schema => 'str*',
+             req => 1,
+             pos => 0,
+             completion => sub {
+                 my %args = @_;
+
+                 # get list of users from database or whatever
+                 my @users = ...;
+                 complete_array(array=>\@users, word=>$args{word});
+             },
+         },
+         ...
+     },
+ };
+
+You can use completion your command-line program:
+
+ % del-user --username <tab>
+ % del-user <tab> ; # since the 'username' argument has pos=0
+
+=head2 My custom completion does not work, how do I debug it?
+
+Completion works by the shell invoking our (the same) program with C<COMP_LINE>
+and C<COMP_POINT> environment variables. You can do something like this to see
+debugging information:
+
+ % COMP_LINE='myprog --arg x' COMP_POINT=13 PERL5OPT=-MLog::Any::App TRACE=1 myprog --arg x
 
 =head2 My application is OO?
 
