@@ -14,10 +14,10 @@ use Scalar::Util qw(reftype blessed);
 
 # VERSION
 
-with 'SHARYANTO::Role::ColorTheme';
-#with 'SHARYANTO::Role::TermAttrs'; already loaded by ColorTheme
-with 'SHARYANTO::Role::I18N';
-with 'SHARYANTO::Role::I18NRinci';
+with 'SHARYANTO::Role::ColorTheme' unless $ENV{COMP_LINE};
+#with 'SHARYANTO::Role::TermAttrs' unless $ENV{COMP_LINE}; already loaded by ColorTheme
+with 'SHARYANTO::Role::I18N' unless $ENV{COMP_LINE};
+with 'SHARYANTO::Role::I18NRinci' unless $ENV{COMP_LINE};
 
 has program_name => (
     is => 'rw',
@@ -310,19 +310,20 @@ sub _program_and_subcommand_name {
 sub BUILD {
     my ($self, $args) = @_;
 
-    # pick default color theme and set it
-    my $ct = $self->{color_theme} // $ENV{PERINCI_CMDLINE_COLOR_THEME};
-    if (!$ct) {
-        if ($self->use_color) {
-            my $bg = $self->detect_terminal->{default_bgcolor} // '';
-            $ct = 'Default::default' .
-                ($bg eq 'ffffff' ? '_whitebg' : '');
-        } else {
-            $ct = 'Default::no_color';
+    unless ($ENV{COMP_LINE}) {
+        # pick default color theme and set it
+        my $ct = $self->{color_theme} // $ENV{PERINCI_CMDLINE_COLOR_THEME};
+        if (!$ct) {
+            if ($self->use_color) {
+                my $bg = $self->detect_terminal->{default_bgcolor} // '';
+                $ct = 'Default::default' .
+                    ($bg eq 'ffffff' ? '_whitebg' : '');
+            } else {
+                $ct = 'Default::no_color';
+            }
         }
+        $self->color_theme($ct);
     }
-    $self->color_theme($ct);
-
 }
 
 sub format_result {
@@ -1675,18 +1676,20 @@ sub run {
     while (@{$self->{_actions}}) {
         my $action = shift @{$self->{_actions}};
 
-        # determine whether to binmode(STDOUT,":utf8")
-        my $utf8 = $ENV{UTF8};
-        if (!defined($utf8)) {
-            my $am = $self->action_metadata->{$action};
-            $utf8 //= $am->{use_utf8};
-        }
-        if (!defined($utf8) && $self->{_subcommand}) {
-            $utf8 //= $self->{_subcommand}{use_utf8};
-        }
-        $utf8 //= $self->use_utf8;
-        if ($utf8) {
-            binmode(STDOUT, ":utf8");
+        unless ($ENV{COMP_LINE}) {
+            # determine whether to binmode(STDOUT,":utf8")
+            my $utf8 = $ENV{UTF8};
+            if (!defined($utf8)) {
+                my $am = $self->action_metadata->{$action};
+                $utf8 //= $am->{use_utf8};
+            }
+            if (!defined($utf8) && $self->{_subcommand}) {
+                $utf8 //= $self->{_subcommand}{use_utf8};
+            }
+            $utf8 //= $self->use_utf8;
+            if ($utf8) {
+                binmode(STDOUT, ":utf8");
+            }
         }
 
         my $meth = "run_$action";
