@@ -1129,8 +1129,13 @@ sub help_section_examples {
     for my $eg (@$egs) {
         my $argv;
         my $ct;
-        if (defined($eg->{src}) && $eg->{src_plang} =~ /^(sh|bash)$/) {
-            $ct = $eg->{src};
+        if (defined($eg->{src})) {
+            # we only show shell command examples
+            if ($eg->{src_plang} =~ /^(sh|bash)$/) {
+                $ct = $eg->{src};
+            } else {
+                next;
+            }
         } else {
             require String::ShellQuote;
             if ($eg->{argv}) {
