@@ -1,5 +1,12 @@
 Revision history for Perinci-CmdLine
 
+0.96     2013-11-26 (SHARYANTO)
+
+         - Slightly reduce completion overhead.
+
+         - Bugfix: Skip non-shell src examples.
+
+
 0.95     2013-11-08 (SHARYANTO)
 
          [ENHANCEMENTS]
