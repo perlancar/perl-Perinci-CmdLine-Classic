@@ -8,7 +8,7 @@ use Log::Any '$log';
 use Data::Dump::OneLine qw(dump1);
 use Moo;
 use experimental 'smartmatch'; # must be after Moo
-use Locale::TextDomain 'Perinci-CmdLine';
+use Locale::TextDomain::UTF8 'Perinci-CmdLine';
 use Perinci::Object;
 use Perinci::ToUtil;
 use Scalar::Util qw(reftype blessed);
@@ -1663,10 +1663,6 @@ sub run {
         my $locale = $ENV{LANGUAGE} || $ENV{LANG};
         POSIX::setlocale(POSIX::LC_ALL(), $locale)
               or warn "Can't setlocale to $locale";
-        require Locale::Messages;
-        $ENV{OUTPUT_CHARSET} = 'UTF-8';
-        Locale::Messages::bind_textdomain_filter(
-            'Perinci-CmdLine' => \&Encode::decode_utf8);
     }
 
     $self->{_actions} = []; # first action will be tried first, then 2nd, ...
