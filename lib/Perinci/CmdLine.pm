@@ -195,15 +195,36 @@ has common_opts => (
         if ($self->log_any_app) {
             # since the cmdline opts is consumed, Log::Any::App doesn't see
             # this. we currently work around this via setting env.
-            for my $o (qw/quiet verbose debug trace/) {
-                $opts{$o} = {
-                    getopt  => $o,
-                    summary => N__("Set log level to $o"),
-                    handler => sub {
-                        $ENV{uc $o} = 1;
-                    },
-                };
-            }
+
+            $opts{$o} = {
+                getopt  => "quiet",
+                summary => N__("Set log level to quiet"),
+                handler => sub {
+                    $ENV{QUIET} = 1;
+                },
+            };
+            $opts{$o} = {
+                getopt  => "verbose",
+                summary => N__("Set log level to verbose"),
+                handler => sub {
+                    $ENV{VERBOSE} = 1;
+                },
+            };
+            $opts{$o} = {
+                getopt  => "debug",
+                summary => N__("Set log level to debug"),
+                handler => sub {
+                    $ENV{DEBUG} = 1;
+                },
+            };
+            $opts{$o} = {
+                getopt  => "trace",
+                summary => N__("Set log level to trace"),
+                handler => sub {
+                    $ENV{TRACE} = 1;
+                },
+            };
+
             $opts{log_level} = {
                 getopt  => "log-level=s",
                 summary => N__("Set log level"),
