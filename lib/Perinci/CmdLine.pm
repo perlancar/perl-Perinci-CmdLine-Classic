@@ -1,13 +1,14 @@
 package Perinci::CmdLine;
 
 use 5.010001;
-use strict;
-use warnings;
+#use strict; # enabled by Moo
+#use warnings; # enabled by Moo
 use Log::Any '$log';
 
 use Data::Dump::OneLine qw(dump1);
 use Moo;
 use experimental 'smartmatch'; # must be after Moo
+use Locale::TextDomain 'Perinci-CmdLine';
 use Perinci::Object;
 use Perinci::ToUtil;
 use Scalar::Util qw(reftype blessed);
@@ -16,8 +17,6 @@ use Scalar::Util qw(reftype blessed);
 
 with 'SHARYANTO::Role::ColorTheme' unless $ENV{COMP_LINE};
 #with 'SHARYANTO::Role::TermAttrs' unless $ENV{COMP_LINE}; already loaded by ColorTheme
-with 'SHARYANTO::Role::I18N' unless $ENV{COMP_LINE};
-with 'SHARYANTO::Role::I18NRinci' unless $ENV{COMP_LINE};
 
 has program_name => (
     is => 'rw',
@@ -118,8 +117,8 @@ has common_opts => (
 
         $opts{version} = {
             getopt  => "version|v",
-            usage   => "--version (or -v)",
-            summary => "Show version",
+            usage   => N__("--version (or -v)"),
+            summary => N__("Show version"),
             show_in_options => sub { $ENV{VERBOSE} },
             handler => sub {
                 $self->_err("'url' not set, required for --version")
@@ -131,8 +130,8 @@ has common_opts => (
 
         $opts{help} = {
             getopt  => "help|h|?",
-            usage   => "--help (or -h, -?) (--verbose)",
-            summary => "Display this help message",
+            usage   => N__("--help (or -h, -?) (--verbose)"),
+            summary => N__("Display this help message"),
             show_in_options => sub { $ENV{VERBOSE} },
             handler => sub {
                 unshift @{$self->{_actions}}, 'help';
@@ -143,7 +142,7 @@ has common_opts => (
 
         $opts{format} = {
             getopt  => "format=s",
-            summary => "Choose output format, e.g. json, text",
+            summary => N__("Choose output format, e.g. json, text"),
             handler => sub {
                 $self->format_set(1);
                 $self->format($_[1]);
@@ -152,7 +151,7 @@ has common_opts => (
 
         $opts{format_options} = {
             getopt  => "format-options=s",
-            summary => "Pass options to formatter",
+            summary => N__("Pass options to formatter"),
             handler => sub {
                 $self->format_options_set(1);
                 $self->format_options(__json_decode($_[1]));
@@ -162,7 +161,7 @@ has common_opts => (
         if ($self->subcommands) {
             $opts{subcommands} = {
                 getopt  => "subcommands",
-                usage   => "--subcommands",
+                usage   => N__("--subcommands"),
                 show_in_usage => sub {
                     !$self->{_subcommand};
                 },
@@ -172,7 +171,7 @@ has common_opts => (
                 show_usage_in_help => sub {
                     my $self = shift;
                 },
-                summary => "List available subcommands",
+                summary => N__("List available subcommands"),
                 show_in_help => 0,
                 handler => sub {
                     unshift @{$self->{_actions}}, 'subcommands';
@@ -199,7 +198,7 @@ has common_opts => (
             for my $o (qw/quiet verbose debug trace/) {
                 $opts{$o} = {
                     getopt  => $o,
-                    summary => "Set log level to $o",
+                    summary => N__("Set log level to $o"),
                     handler => sub {
                         $ENV{uc $o} = 1;
                     },
@@ -207,7 +206,7 @@ has common_opts => (
             }
             $opts{log_level} = {
                 getopt  => "log-level=s",
-                summary => "Set log level",
+                summary => N__("Set log level"),
                 handler => sub {
                     $ENV{LOG_LEVEL} = $_[1];
                 },
@@ -218,7 +217,7 @@ has common_opts => (
             $opts{history} = {
                 category => 'Undo options',
                 getopt  => 'history',
-                summary => 'List actions history',
+                summary => N__('List actions history'),
                 handler => sub {
                     unshift @{$self->{_actions}}, 'history';
                     $self->{_check_required_args} = 0;
@@ -227,7 +226,7 @@ has common_opts => (
             $opts{clear_history} = {
                 category => 'Undo options',
                 getopt  => "clear-history",
-                summary => 'Clear actions history',
+                summary => N__('Clear actions history'),
                 handler => sub {
                     unshift @{$self->{_actions}}, 'clear_history';
                     $self->{_check_required_args} = 0;
@@ -236,7 +235,7 @@ has common_opts => (
             $opts{undo} = {
                 category => 'Undo options',
                 getopt  => 'undo',
-                summary => 'Undo previous action',
+                summary => N__('Undo previous action'),
                 handler => sub {
                     unshift @{$self->{_actions}}, 'undo';
                     #$self->{_tx_id} = $_[1];
@@ -246,7 +245,7 @@ has common_opts => (
             $opts{redo} = {
                 category => 'Undo options',
                 getopt  => 'redo',
-                summary => 'Redo previous undone action',
+                summary => N__('Redo previous undone action'),
                 handler => sub {
                     unshift @{$self->{_actions}}, 'redo';
                     #$self->{_tx_id} = $_[1];
@@ -475,7 +474,7 @@ sub run_subcommands {
     my ($self) = @_;
 
     if (!$self->subcommands) {
-        say $self->loc("There are no subcommands") . ".";
+        say __("There are no subcommands") . ".";
         return 0;
     }
 
@@ -502,13 +501,13 @@ sub run_subcommands {
     for my $cat (sort keys %percat_subc) {
         if ($has_many_cats) {
             $self->_help_add_heading(
-                $self->loc("[_1] subcommands",
-                           ucfirst($cat) || "main"));
+                __x("{category} subcommands",
+                    category => ucfirst($cat) || __("main")));
         }
         my $subc = $percat_subc{$cat};
         for my $scn (sort keys %$subc) {
             my $sc = $subc->{$scn};
-            my $summary = $self->langprop($sc, "summary");
+            my $summary = rimeta($sc)->langprop("summary");
             $self->_help_add_row(
                 [$self->_color('program_name', $scn), $summary],
                 {column_widths=>[-17, -40], indent=>1});
@@ -534,15 +533,18 @@ sub run_version {
         $ver = '?';
     }
 
-    say $self->loc(
-        "[_1] version [_2]",
-        $self->_color('program_name', $self->_program_and_subcommand_name),
-        $self->_color('emphasis', $ver));
+    say __x(
+        "{program} version {version}",
+        program => $self->_color('program_name',
+                                 $self->_program_and_subcommand_name),
+        version => $self->_color('emphasis', $ver));
     {
         no strict 'refs';
-        say "  ", $self->loc(
-            "[_1] version [_2]", $self->_color('emphasis', "Perinci::CmdLine"),
-            $self->_color('emphasis', $Perinci::CmdLine::VERSION || "dev"));
+        say "  ", __x(
+            "{program} version {version}",
+            program => $self->_color('emphasis', "Perinci::CmdLine"),
+            version => $self->_color('emphasis',
+                                     $Perinci::CmdLine::VERSION || "dev"));
     }
 
     0;
@@ -779,7 +781,7 @@ sub _color {
 sub help_section_summary {
     my ($self, %opts) = @_;
 
-    my $summary = $self->langprop($self->{_help_meta}, "summary");
+    my $summary = rimeta($self->{_help_meta})->langprop("summary");
     return unless $summary;
 
     my $name = $self->_program_and_subcommand_name;
@@ -832,21 +834,21 @@ sub help_section_usage {
     for my $con (@con) {
         my $cov = $co->{$con};
         next unless $cov->{usage};
-        $ct .= ($ct ? "\n" : "") . $pn . " " . $self->locopt($cov->{usage});
+        $ct .= ($ct ? "\n" : "") . $pn . " " . __($cov->{usage});
     }
     if ($self->subcommands && !$self->{_subcommand}) {
         if (defined $self->default_subcommand) {
             $ct .= ($ct ? "\n" : "") . $pn .
-                " " . $self->loc("--cmd=<other-subcommand> (options)");
+                " " . __("--cmd=<other-subcommand> [options]");
         } else {
             $ct .= ($ct ? "\n" : "") . $pn .
-                " " . $self->loc("<subcommand> (options)");
+                " " . __("<subcommand> [options]");
         }
     } else {
             $ct .= ($ct ? "\n" : "") . $pn .
-                " " . $self->loc("(options)"). $self->_usage_args;
+                " " . __("[options]"). $self->_usage_args;
     }
-    $self->_help_add_heading($self->loc("Usage"));
+    $self->_help_add_heading(__("Usage"));
     $self->_help_add_row([$ct], {indent=>1});
 }
 
@@ -864,8 +866,8 @@ sub help_section_options {
     # array containing options)
     my %catopts;
 
-    my $t_opts = $self->loc("Options");
-    my $t_copts = $self->loc("Common options");
+    my $t_opts = __("Options");
+    my $t_copts = __("Common options");
 
     # gather common opts
     my $co = $self->common_opts;
@@ -879,12 +881,12 @@ sub help_section_options {
     } keys %$co;
     for my $con (@con) {
         my $cov = $co->{$con};
-        my $cat = $cov->{category} ? $self->locopt($cov->{category}) :
+        my $cat = $cov->{category} ? __($cov->{category}) :
             ($sc ? $t_copts : $t_opts);
         my $go = $cov->{getopt};
         push @{ $catopts{$cat} }, {
             getopt=>SHARYANTO::Getopt::Long::Util::gospec2human($cov->{getopt}),
-            summary=> $cov->{summary} ? $self->locopt($cov->{summary}) : "",
+            summary=> $cov->{summary} ? __($cov->{summary}) : "",
         };
     }
 
@@ -898,15 +900,15 @@ sub help_section_options {
             my $s = $a->{schema} || [any=>{}];
             my $got = Perinci::ToUtil::sah2human_short($s);
             my $ane = $an; $ane =~ s/_/-/g; $ane =~ s/\W/-/g;
-            my $summary = $self->langprop($a, "summary");
+            my $summary = rimeta($a)->langprop("summary");
 
             my $suf = "";
             if ($s->[0] eq 'bool') {
                 $got = undef;
                 if ($s->[1]{default}) {
                     $ane = "no$ane";
-                    my $negsummary = $self->langprop(
-                        $a, "x.perinci.cmdline.negative_summary");
+                    my $negsummary = rimeta($a)->langprop(
+                        "x.perinci.cmdline.negative_summary");
                     $summary = $negsummary if $negsummary;
                 } elsif (defined $s->[1]{default}) {
                     #$ane = $ane;
@@ -949,7 +951,7 @@ sub help_section_options {
                 last;
             }
             if ($cat) {
-                $cat = $self->loc("[_1] options", ucfirst($cat));
+                $cat = __x("{category} options", category=>ucfirst($cat));
             } else {
                 $cat = $t_opts;
             }
@@ -959,19 +961,19 @@ sub help_section_options {
                 getopt_type => $got,
                 getopt_note =>join(
                     "",
-                    ($a->{req} ? " (" . $self->loc("required") . ")" : ""),
+                    ($a->{req} ? " (" . __("required") . ")" : ""),
                     (defined($a->{pos}) ? " (" .
-                         $self->loc("or as argument #[_1]",
-                                    ($a->{pos}+1).($a->{greedy} ? "+":"")).")":""),
+                         __x("or as argument #{index}",
+                            index => ($a->{pos}+1).($a->{greedy} ? "+":"")).")":""),
                     ($src eq 'stdin' ?
-                         " (" . $self->loc("from stdin") . ")" : ""),
+                         " (" . __("from stdin") . ")" : ""),
                     ($src eq 'stdin_or_files' ?
-                         " (" . $self->loc("from stdin/files") . ")" : ""),
+                         " (" . __("from stdin/files") . ")" : ""),
                     $def
                 ),
                 req => $a->{req},
                 summary => $summary,
-                description => $self->langprop($a, "description"),
+                description => rimeta($a)->langprop("description"),
                 in => $in,
             };
 
@@ -984,8 +986,8 @@ sub help_section_options {
                     getopt_type => $got,
                     getopt_note => undef,
                     #req => $a->{req},
-                    summary => $self->langprop($alspec, "summary"),
-                    description => $self->langprop($alspec, "description"),
+                    summary => rimeta($alspec)->langprop("summary"),
+                    description => rimeta($alspec)->langprop("description"),
                     #in => $in,
                 };
             }
@@ -1010,7 +1012,7 @@ sub help_section_options {
                 $self->_help_add_row([$ct], {indent=>1});
                 if ($o->{in} || $o->{summary} || $o->{description}) {
                     my $ct = "";
-                    $ct .= ($ct ? "\n\n":"").ucfirst($self->loc("value in")).
+                    $ct .= ($ct ? "\n\n":"").ucfirst(__("value in")).
                         ": $o->{in}" if $o->{in};
                     $ct .= ($ct ? "\n\n":"")."$o->{summary}." if $o->{summary};
                     $ct .= ($ct ? "\n\n":"").$o->{description}
@@ -1059,14 +1061,14 @@ sub help_section_subcommands {
     $self->{_some_subcommands_not_shown_in_help} = 1 if $some_not_shown;
 
     $self->_help_add_heading(
-        $self->loc($some_not_shown ? "Popular subcommands" : "Subcommands"));
+        $some_not_shown ? __("Popular subcommands") : __("Subcommands"));
 
     # in compact mode, we try to not exceed one screen, so show long mode only
     # if there are a few subcommands.
     my $long_mode = $opts{verbose} || @shown_scs < 12;
     if ($long_mode) {
         for (@shown_scs) {
-            my $summary = $self->langprop($_, "summary");
+            my $summary = rimeta($_)->langprop("summary");
             $self->_help_add_row(
                 [$self->_color('program_name', $_->{name}), $summary],
                 {column_widths=>[-17, -40], indent=>1});
@@ -1094,25 +1096,26 @@ sub help_section_hints {
     my ($self, %opts) = @_;
     my @hints;
     unless ($opts{verbose}) {
-        push @hints, "For more complete help, use '--help --verbose'";
+        push @hints, N__("For more complete help, use '--help --verbose'");
     }
     if ($self->{_some_subcommands_not_shown_in_help}) {
-        push @hints, "To see all available subcommands, use '--subcommands'";
+        push @hints,
+            N__("To see all available subcommands, use '--subcommands'");
     }
     return unless @hints;
 
     $self->_help_add_row(
-        [join(" ", map { $self->loc($_)."." } @hints)], {wrap=>1});
+        [join(" ", map { __($_)."." } @hints)], {wrap=>1});
 }
 
 sub help_section_description {
     my ($self, %opts) = @_;
 
-    my $desc = $self->langprop($self->{_help_meta}, "description") //
+    my $desc = rimeta($self->{_help_meta})->langprop("description") //
         $self->description;
     return unless $desc;
 
-    $self->_help_add_heading($self->loc("Description"));
+    $self->_help_add_heading(__("Description"));
     $self->_help_add_row([$desc], {wrap=>1, indent=>1});
 }
 
@@ -1124,7 +1127,7 @@ sub help_section_examples {
     my $egs = $meta->{examples};
     return unless $egs && @$egs;
 
-    $self->_help_add_heading($self->loc("Examples"));
+    $self->_help_add_heading(__("Examples"));
     my $pn = $self->_color('program_name', $self->_program_and_subcommand_name);
     for my $eg (@$egs) {
         my $argv;
@@ -1161,9 +1164,9 @@ sub help_section_examples {
         $self->_help_add_row([$ct], {indent=>1});
         if ($verbose) {
             $ct = "";
-            my $summary = $self->langprop($eg, 'summary');
+            my $summary = rimeta($eg)->langprop('summary');
             if ($summary) { $ct .= "$summary." }
-            my $desc = $self->langprop($eg, 'description');
+            my $desc = rimeta($eg)->langprop('description');
             if ($desc) { $ct .= "\n\n$desc" }
             $self->_help_add_row([$ct], {indent=>2}) if $ct;
         }
@@ -1650,6 +1653,20 @@ sub run {
         my $res = Perinci::Sub::Complete::parse_shell_cmdline();
         @ARGV = @{ $res->{words} };
         $self->{_comp_parse_res} = $res; # store for run_completion()
+    }
+
+    #
+    # set locale
+    #
+    {
+        require POSIX;
+        my $locale = $ENV{LANGUAGE} || $ENV{LANG};
+        POSIX::setlocale(POSIX::LC_ALL(), $locale)
+              or warn "Can't setlocale to $locale";
+        require Locale::Messages;
+        $ENV{OUTPUT_CHARSET} = 'UTF-8';
+        Locale::Messages::bind_textdomain_filter(
+            'Perinci-CmdLine' => \&Encode::decode_utf8);
     }
 
     $self->{_actions} = []; # first action will be tried first, then 2nd, ...

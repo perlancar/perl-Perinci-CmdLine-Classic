@@ -1,0 +1,117 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR Steven Haryanto
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Perinci-CmdLine 0.96\n"
+"Report-Msgid-Bugs-To: stevenharyanto@gmail.com\n"
+"POT-Creation-Date: 2013-12-13 14:54+0700\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:478 lib/Perinci/CmdLine.pm:478
+msgid "There are no subcommands"
+msgstr ""
+
+#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:505 lib/Perinci/CmdLine.pm:505
+#, perl-brace-format
+msgid "{category} subcommands"
+msgstr ""
+
+#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:506 lib/Perinci/CmdLine.pm:506
+msgid "main"
+msgstr ""
+
+#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:538
+#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:545 lib/Perinci/CmdLine.pm:538
+#: lib/Perinci/CmdLine.pm:545
+#, perl-brace-format
+msgid "{program} version {version}"
+msgstr ""
+
+#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:843 lib/Perinci/CmdLine.pm:843
+msgid "--cmd=<other-subcommand> [options]"
+msgstr ""
+
+#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:846 lib/Perinci/CmdLine.pm:846
+msgid "<subcommand> [options]"
+msgstr ""
+
+#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:850 lib/Perinci/CmdLine.pm:850
+msgid "[options]"
+msgstr ""
+
+#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:852 lib/Perinci/CmdLine.pm:852
+msgid "Usage"
+msgstr ""
+
+#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:870 lib/Perinci/CmdLine.pm:870
+msgid "Options"
+msgstr ""
+
+#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:871 lib/Perinci/CmdLine.pm:871
+msgid "Common options"
+msgstr ""
+
+#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:955 lib/Perinci/CmdLine.pm:955
+#, perl-brace-format
+msgid "{category} options"
+msgstr ""
+
+#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:965 lib/Perinci/CmdLine.pm:965
+msgid "required"
+msgstr ""
+
+#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:967 lib/Perinci/CmdLine.pm:967
+#, perl-brace-format
+msgid "or as argument #{index}"
+msgstr ""
+
+#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:970 lib/Perinci/CmdLine.pm:970
+msgid "from stdin"
+msgstr ""
+
+#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:972 lib/Perinci/CmdLine.pm:972
+msgid "from stdin/files"
+msgstr ""
+
+#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:1016
+#: lib/Perinci/CmdLine.pm:1016
+msgid "value in"
+msgstr ""
+
+#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:1065
+#: lib/Perinci/CmdLine.pm:1065
+msgid "Popular subcommands"
+msgstr ""
+
+#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:1065
+#: lib/Perinci/CmdLine.pm:1065
+msgid "Subcommands"
+msgstr ""
+
+#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:1118
+#: lib/Perinci/CmdLine.pm:1119
+msgid "Description"
+msgstr ""
+
+#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:1130
+#: lib/Perinci/CmdLine.pm:1131
+msgid "Examples"
+msgstr ""
+
+#: lib/Perinci/CmdLine.pm:1100
+msgid "For more complete help, use '--help --verbose'"
+msgstr ""
+
+#: lib/Perinci/CmdLine.pm:1104
+msgid "To see all available subcommands, use '--subcommands'"
+msgstr ""
