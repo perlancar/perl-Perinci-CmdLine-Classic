@@ -196,28 +196,28 @@ has common_opts => (
             # since the cmdline opts is consumed, Log::Any::App doesn't see
             # this. we currently work around this via setting env.
 
-            $opts{$o} = {
+            $opts{quiet} = {
                 getopt  => "quiet",
                 summary => N__("Set log level to quiet"),
                 handler => sub {
                     $ENV{QUIET} = 1;
                 },
             };
-            $opts{$o} = {
+            $opts{verbose} = {
                 getopt  => "verbose",
                 summary => N__("Set log level to verbose"),
                 handler => sub {
                     $ENV{VERBOSE} = 1;
                 },
             };
-            $opts{$o} = {
+            $opts{debug} = {
                 getopt  => "debug",
                 summary => N__("Set log level to debug"),
                 handler => sub {
                     $ENV{DEBUG} = 1;
                 },
             };
-            $opts{$o} = {
+            $opts{trace} = {
                 getopt  => "trace",
                 summary => N__("Set log level to trace"),
                 handler => sub {
