@@ -1,5 +1,11 @@
 Revision history for Perinci-CmdLine
 
+0.99     2013-12-13 (SHARYANTO)
+
+         - No functional changes. Mark more strings as translateable using
+           Locale::TextDomain.
+
+
 0.98     2013-12-13 (SHARYANTO)
 
          - No functional changes. Use Locale::TextDomain::UTF8.
