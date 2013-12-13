@@ -130,7 +130,7 @@ has common_opts => (
 
         $opts{help} = {
             getopt  => "help|h|?",
-            usage   => N__("--help (or -h, -?) (--verbose)"),
+            usage   => N__("--help (or -h, -?) [--verbose]"),
             summary => N__("Display this help message"),
             show_in_options => sub { $ENV{VERBOSE} },
             handler => sub {

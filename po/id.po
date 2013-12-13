@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Perinci-CmdLine 0.96\n"
 "Report-Msgid-Bugs-To: stevenharyanto@gmail.com\n"
-"POT-Creation-Date: 2013-12-13 14:54+0700\n"
+"POT-Creation-Date: 2013-12-13 17:46+0700\n"
 "PO-Revision-Date: 2013-12-13 13:20+0700\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -16,101 +16,164 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:478 lib/Perinci/CmdLine.pm:478
+#: lib/Perinci/CmdLine.pm:120
+msgid "--version (or -v)"
+msgstr "--version (atau -v)"
+
+#: lib/Perinci/CmdLine.pm:121
+msgid "Show version"
+msgstr "Tampilkan versi"
+
+#: lib/Perinci/CmdLine.pm:133
+msgid "--help (or -h, -?) [--verbose]"
+msgstr "--help (atau -h, -?) [--verbose]"
+
+#: lib/Perinci/CmdLine.pm:134
+msgid "Display this help message"
+msgstr "Tampilkan pesan bantuan ini"
+
+#: lib/Perinci/CmdLine.pm:145
+msgid "Choose output format, e.g. json, text"
+msgstr "Pilih format keluaran, mis: json, text"
+
+#: lib/Perinci/CmdLine.pm:154
+msgid "Pass options to formatter"
+msgstr "Berikan opsi ke pemformat"
+
+#: lib/Perinci/CmdLine.pm:164
+#, fuzzy
+msgid "--subcommands"
+msgstr "--subcommands"
+
+#: lib/Perinci/CmdLine.pm:174
+#, fuzzy
+msgid "List available subcommands"
+msgstr "Lihat subperintah yang tersedia"
+
+#: lib/Perinci/CmdLine.pm:201
+msgid "Set log level to quiet"
+msgstr "Set level log ke quiet"
+
+#: lib/Perinci/CmdLine.pm:208
+msgid "Set log level to verbose"
+msgstr "Set level log ke verbose"
+
+#: lib/Perinci/CmdLine.pm:215
+msgid "Set log level to debug"
+msgstr "Set level log ke debug"
+
+#: lib/Perinci/CmdLine.pm:222
+msgid "Set log level to trace"
+msgstr "Set level log ke trace"
+
+#: lib/Perinci/CmdLine.pm:230
+msgid "Set log level"
+msgstr "Set level log"
+
+#: lib/Perinci/CmdLine.pm:241
+msgid "List actions history"
+msgstr "Lihat sejarah tindakan"
+
+#: lib/Perinci/CmdLine.pm:250
+msgid "Clear actions history"
+msgstr "Bersihkan sejarah tindakan"
+
+#: lib/Perinci/CmdLine.pm:259
+msgid "Undo previous action"
+msgstr "Undo tindakan sebelumnya"
+
+#: lib/Perinci/CmdLine.pm:269
+msgid "Redo previous undone action"
+msgstr "Redo (ulangi) tindakan yang di-undo sebelumnya"
+
+#: lib/Perinci/CmdLine.pm:498
 msgid "There are no subcommands"
 msgstr "Tidak ada subperintah"
 
-#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:505 lib/Perinci/CmdLine.pm:505
+#: lib/Perinci/CmdLine.pm:525
 #, perl-brace-format
 msgid "{category} subcommands"
 msgstr "Subperintah kategori '{category}'"
 
-#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:506 lib/Perinci/CmdLine.pm:506
+#: lib/Perinci/CmdLine.pm:526
 msgid "main"
 msgstr "utama"
 
-#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:538
-#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:545 lib/Perinci/CmdLine.pm:538
-#: lib/Perinci/CmdLine.pm:545
+#: lib/Perinci/CmdLine.pm:558 lib/Perinci/CmdLine.pm:565
 #, perl-brace-format
 msgid "{program} version {version}"
 msgstr "{program} versi {version}"
 
-#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:843 lib/Perinci/CmdLine.pm:843
+#: lib/Perinci/CmdLine.pm:863
 msgid "--cmd=<other-subcommand> [options]"
 msgstr "--cmd=<subperintah-lain> [opsi]"
 
-#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:846 lib/Perinci/CmdLine.pm:846
+#: lib/Perinci/CmdLine.pm:866
 msgid "<subcommand> [options]"
 msgstr "<subperintah> [opsi]"
 
-#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:850 lib/Perinci/CmdLine.pm:850
+#: lib/Perinci/CmdLine.pm:870
 msgid "[options]"
 msgstr "[opsi]"
 
-#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:852 lib/Perinci/CmdLine.pm:852
+#: lib/Perinci/CmdLine.pm:872
 msgid "Usage"
 msgstr "Cara pakai"
 
-#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:870 lib/Perinci/CmdLine.pm:870
+#: lib/Perinci/CmdLine.pm:890
 msgid "Options"
 msgstr "Opsi"
 
-#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:871 lib/Perinci/CmdLine.pm:871
+#: lib/Perinci/CmdLine.pm:891
 msgid "Common options"
 msgstr "Opsi umum"
 
-#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:955 lib/Perinci/CmdLine.pm:955
+#: lib/Perinci/CmdLine.pm:975
 #, perl-brace-format
 msgid "{category} options"
 msgstr "Opsi kategori '{category}'"
 
-#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:965 lib/Perinci/CmdLine.pm:965
+#: lib/Perinci/CmdLine.pm:985
 msgid "required"
 msgstr "wajib"
 
-#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:967 lib/Perinci/CmdLine.pm:967
+#: lib/Perinci/CmdLine.pm:987
 #, perl-brace-format
 msgid "or as argument #{index}"
 msgstr "atau sbg argumen #{index}"
 
-#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:970 lib/Perinci/CmdLine.pm:970
+#: lib/Perinci/CmdLine.pm:990
 msgid "from stdin"
 msgstr "dari masukan standar"
 
-#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:972 lib/Perinci/CmdLine.pm:972
+#: lib/Perinci/CmdLine.pm:992
 msgid "from stdin/files"
 msgstr "dari masukan standar/berkas"
 
-#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:1016
-#: lib/Perinci/CmdLine.pm:1016
+#: lib/Perinci/CmdLine.pm:1036
 msgid "value in"
 msgstr "nilai salah satu dari"
 
-#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:1065
-#: lib/Perinci/CmdLine.pm:1065
+#: lib/Perinci/CmdLine.pm:1085
 msgid "Popular subcommands"
 msgstr "Subperintah popular"
 
-#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:1065
-#: lib/Perinci/CmdLine.pm:1065
+#: lib/Perinci/CmdLine.pm:1085
 msgid "Subcommands"
 msgstr "Subperintah"
 
-#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:1118
-#: lib/Perinci/CmdLine.pm:1119
-msgid "Description"
-msgstr "Deskripsi"
-
-#: Perinci-CmdLine-0.96/lib/Perinci/CmdLine.pm:1130
-#: lib/Perinci/CmdLine.pm:1131
-msgid "Examples"
-msgstr "Contoh"
-
-#: lib/Perinci/CmdLine.pm:1100
+#: lib/Perinci/CmdLine.pm:1120
 msgid "For more complete help, use '--help --verbose'"
 msgstr "Untuk bantuan lebih lengkap, gunakan '--help --verbose'"
 
-#: lib/Perinci/CmdLine.pm:1104
+#: lib/Perinci/CmdLine.pm:1124
 msgid "To see all available subcommands, use '--subcommands'"
 msgstr "Untuk melihat semua subperintah, gunakan '--subcommands'"
+
+#: lib/Perinci/CmdLine.pm:1139
+msgid "Description"
+msgstr "Deskripsi"
+
+#: lib/Perinci/CmdLine.pm:1151
+msgid "Examples"
+msgstr "Contoh"
