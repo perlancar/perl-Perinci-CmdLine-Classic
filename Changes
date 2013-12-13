@@ -2,12 +2,13 @@ Revision history for Perinci-CmdLine
 
 0.98     2013-12-13 (SHARYANTO)
 
-         - Use Locale::TextDomain::UTF8.
+         - No functional changes. Use Locale::TextDomain::UTF8.
 
 
 0.97     2013-12-13 (SHARYANTO)
 
-         - Switch from Locale::Maketext to Locale::TextDomain.
+         - No functional changes. Switch from Locale::Maketext to
+           Locale::TextDomain.
 
 
 0.96     2013-11-26 (SHARYANTO)
