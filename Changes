@@ -1,5 +1,14 @@
 Revision history for Perinci-CmdLine
 
+1.00     2013-12-18 (SHARYANTO)
+
+         - No, there's nothing special about the version number.
+
+         - Skip setlocale() at the start of program, as Locale::TextDomain
+           (Locale::Messages) already reads from LANG/LANGUAGE. Programs
+           requiring setlocale() can do it themselves.
+
+
 0.99     2013-12-13 (SHARYANTO)
 
          - No functional changes. Mark more strings as translateable using
