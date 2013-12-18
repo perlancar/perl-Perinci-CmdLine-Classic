@@ -1676,16 +1676,6 @@ sub run {
         $self->{_comp_parse_res} = $res; # store for run_completion()
     }
 
-    #
-    # set locale
-    #
-    {
-        require POSIX;
-        my $locale = $ENV{LANGUAGE} || $ENV{LANG};
-        POSIX::setlocale(POSIX::LC_ALL(), $locale)
-              or warn "Can't setlocale to $locale";
-    }
-
     $self->{_actions} = []; # first action will be tried first, then 2nd, ...
 
     #
