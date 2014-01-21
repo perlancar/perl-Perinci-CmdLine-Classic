@@ -1,5 +1,15 @@
 Revision history for Perinci-CmdLine
 
+1.01     2014-01-21 (SHARYANTO)
+
+         [BUG FIXES]
+
+         - A couple of fixes in parsing cmdline options for argument with
+           cmdline_src 'stdin_or_files': avoid printing 'missing arg X' when
+           getting argument value from STDIN, and parse '--arg F1' properly (it
+           used to get from STDIN instead of F1).
+
+
 1.00     2013-12-18 (SHARYANTO)
 
          - No, there's nothing special about the version number.

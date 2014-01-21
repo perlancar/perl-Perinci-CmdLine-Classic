@@ -1502,11 +1502,13 @@ sub parse_subcommand_opts {
             my ($an, $aa, $as) = ($a{arg}, $a{args}, $a{spec});
             my $src = $as->{cmdline_src};
             if ($src && $as->{req}) {
-                # don't cmoplain, we will fill argument from other source
+                # don't complain, we will fill argument from other source
+                return 1;
             } else {
                 # we have no other sources, so we complain about missing arg
                 say "missing arg $an";
             }
+            0;
         },
     );
     if ($self->{_force_subcommand}) {
@@ -1540,6 +1542,7 @@ sub parse_subcommand_opts {
         my $args_p = $meta->{args} // {};
         my $stdin_seen;
         for my $an (sort keys %$args_p) {
+            #$log->tracef("TMP: handle cmdline_src for arg=%s", $an);
             my $as = $args_p->{$an};
             my $src = $as->{cmdline_src};
             if ($src) {
@@ -1575,7 +1578,14 @@ sub parse_subcommand_opts {
                                      "stdin_or_files, \@ARGV=%s ...", \@ARGV);
                     $self->{_args}{$an} = $is_ary ? [<>] : do { local $/; <> };
                 } elsif ($src eq 'file') {
-                    next unless exists $self->{_args}{$an};
+                    unless (exists $self->{_args}{$an}) {
+                        if ($as->{req}) {
+                            $self->_err(
+                                "Please specify filename for argument '$an'");
+                        } else {
+                            next;
+                        }
+                    }
                     $self->_err("Please specify filename for argument '$an'")
                         unless defined $self->{_args}{$an};
                     $log->trace("Getting argument '$an' value from ".

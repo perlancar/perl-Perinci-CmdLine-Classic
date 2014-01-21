@@ -323,7 +323,7 @@ test_run(name      => 'single sub',
 
 test_run(name      => 'missing arg = error',
          args      => {url=>'/Foo/ok'},
-         argv      => [qw/--arg3 3/],
+         argv      => [qw//],
          dies      => 1,
      );
 test_run(name      => 'unknown arg = error',
