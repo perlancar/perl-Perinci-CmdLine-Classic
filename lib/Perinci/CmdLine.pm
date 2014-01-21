@@ -1501,9 +1501,8 @@ sub parse_subcommand_opts {
             my %a = @_;
             my ($an, $aa, $as) = ($a{arg}, $a{args}, $a{spec});
             my $src = $as->{cmdline_src};
-            # fill with undef first, will be filled from other source
             if ($src && $as->{req}) {
-                $aa->{$an} = undef;
+                # don't cmoplain, we will fill argument from other source
             } else {
                 # we have no other sources, so we complain about missing arg
                 say "missing arg $an";
