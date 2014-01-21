@@ -1500,10 +1500,14 @@ sub parse_subcommand_opts {
         on_missing_required_args => sub {
             my %a = @_;
             my ($an, $aa, $as) = ($a{arg}, $a{args}, $a{spec});
-            say "missing arg $an";
             my $src = $as->{cmdline_src};
             # fill with undef first, will be filled from other source
-            $aa->{$an} = undef if $src && $as->{req};
+            if ($src && $as->{req}) {
+                $aa->{$an} = undef;
+            } else {
+                # we have no other sources, so we complain about missing arg
+                say "missing arg $an";
+            }
         },
     );
     if ($self->{_force_subcommand}) {
