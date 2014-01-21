@@ -1567,8 +1567,13 @@ sub parse_subcommand_opts {
                     $self->{_args}{$an} = $is_ary ? [<STDIN>] :
                         do { local $/; <STDIN> };
                 } elsif ($src eq 'stdin_or_files') {
-                    $log->trace("Getting argument '$an' value from ".
-                                    "stdin_or_files ...");
+                    # push back argument value to @ARGV so <> can work to slurp
+                    # all the specified files
+                    local @ARGV = @ARGV;
+                    unshift @ARGV, $self->{_args}{$an}
+                        if defined $self->{_args}{$an};
+                    $log->tracef("Getting argument '$an' value from ".
+                                     "stdin_or_files, \@ARGV=%s ...", \@ARGV);
                     $self->{_args}{$an} = $is_ary ? [<>] : do { local $/; <> };
                 } elsif ($src eq 'file') {
                     next unless exists $self->{_args}{$an};
