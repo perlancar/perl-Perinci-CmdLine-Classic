@@ -1279,6 +1279,10 @@ sub _setup_progress_output {
                     undef $out->{lastlen};
                 }
 
+                # force output update so progress bar is displayed again
+                # immediately
+                $Progress::Any::output_data{"$out"}{force_update} = 1;
+
                 say $msg;
             },
         ) if defined &{"Log::Log4perl::Appender::Screen::log"};
@@ -1302,6 +1306,10 @@ sub _setup_progress_output {
                                 "\b" x $out->{lastlen};
                     undef $out->{lastlen};
                 }
+
+                # force output update so progress bar is displayed again
+                # immediately
+                $Progress::Any::output_data{"$out"}{force_update} = 1;
 
                 # XXX duplicated code above, perhaps move this to
                 # TermProgressBarColor's clean_bar() or something
