@@ -1,5 +1,13 @@
 Revision history for Perinci-CmdLine
 
+1.02     2014-02-26 (SHARYANTO)
+
+         - No functional changes.
+
+         - Adjust to Progress::Any 0.13 and
+           Progress::Any::Output::TermProgressBarColor 0.08.
+
+
 1.01     2014-01-21 (SHARYANTO)
 
          [BUG FIXES]
