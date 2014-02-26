@@ -1252,6 +1252,7 @@ sub run_help {
 }
 
 my ($ph1, $ph2); # patch handles
+my $setup_progress;
 sub _setup_progress_output {
     my $self = shift;
 
@@ -1259,6 +1260,7 @@ sub _setup_progress_output {
         require Progress::Any::Output;
         Progress::Any::Output->set("TermProgressBarColor");
         my $out = $Progress::Any::outputs{''}[0];
+        $setup_progress = 1;
         # we need to patch the logger adapters so it won't interfere with
         # progress meter's output
         require Monkey::Patch::Action;
@@ -1320,6 +1322,17 @@ sub _setup_progress_output {
     }
 }
 
+sub _unsetup_progress_output {
+    my $self = shift;
+
+    return unless $setup_progress;
+    my $out = $Progress::Any::outputs{''}[0];
+    $out->cleanup if $out->can("cleanup");
+    undef $ph1;
+    undef $ph2;
+    $setup_progress = 0;
+}
+
 sub run_subcommand {
     require File::Which;
 
@@ -1348,12 +1361,8 @@ sub run_subcommand {
     }
 
     # setup output progress indicator
-    state $setup_progress;
     if ($self->{_meta}{features}{progress}) {
-        unless ($setup_progress) {
-            $self->_setup_progress_output;
-            $setup_progress++;
-        }
+        $self->_setup_progress_output;
     }
 
     # call function
@@ -1759,8 +1768,10 @@ sub run {
     $log->tracef("<- CmdLine's run(), exit code=%s", $exit_code);
     if ($self->exit) {
         $log->debugf("Program ending with exit code %d", $exit_code);
+        $self->_unsetup_progress_output;
         exit $exit_code;
     } else {
+        $self->_unsetup_progress_output;
         return $exit_code;
     }
 }
