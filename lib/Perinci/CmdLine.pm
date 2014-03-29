@@ -1521,7 +1521,7 @@ sub parse_subcommand_opts {
                 return 1;
             } else {
                 # we have no other sources, so we complain about missing arg
-                say "missing arg $an";
+                say "missing arg $an" if $self->{_check_required_args} // 1;
             }
             0;
         },
