@@ -1504,8 +1504,6 @@ sub parse_subcommand_opts {
     do { $self->{_dry_run} = 1; $ENV{VERBOSE} = 1 } if $ENV{DRY_RUN};
 
     # parse argv
-    $Perinci::Sub::GetArgs::Argv::_pa_skip_check_required_args = 1
-        if $self->{_pa_skip_check_required_args};
     my $src_seen;
     my %ga_args = (
         argv                => \@ARGV,
