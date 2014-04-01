@@ -15,6 +15,8 @@ use Scalar::Util qw(reftype blessed);
 
 # VERSION
 
+our $REQ_VERSION = 0; # version requested by user
+
 with 'SHARYANTO::Role::ColorTheme' unless $ENV{COMP_LINE};
 #with 'SHARYANTO::Role::TermAttrs' unless $ENV{COMP_LINE}; already loaded by ColorTheme
 
@@ -148,6 +150,33 @@ has common_opts => (
                 $self->format($_[1]);
             },
         };
+
+        if ($REQ_VERSION >= 1.04) {
+            $opts{json} = {
+                getopt  => "json",
+                summary => N__("Equivalent to --format=json-pretty"),
+                handler => sub {
+                    $self->format_set(1);
+                    $self->format('json-pretty');
+                },
+            };
+            $opts{yaml} = {
+                getopt  => "yaml",
+                summary => N__("Equivalent to --format=yaml"),
+                handler => sub {
+                    $self->format_set(1);
+                    $self->format('yaml');
+                },
+            };
+            $opts{perl} = {
+                getopt  => "perl",
+                summary => N__("Equivalent to --format=perl"),
+                handler => sub {
+                    $self->format_set(1);
+                    $self->format('perl');
+                },
+            };
+        }
 
         $opts{format_options} = {
             getopt  => "format-options=s",
@@ -307,6 +336,11 @@ has action_metadata => (
         },
     },
 );
+
+sub VERSION {
+    my ($pkg, $req) = @_;
+    $REQ_VERSION = $req;
+}
 
 sub __json_decode {
     require JSON;
@@ -1777,7 +1811,7 @@ sub run {
 1;
 # ABSTRACT: Rinci/Riap-based command-line application framework
 
-=for Pod::Coverage ^(BUILD|run_.+|help_section_.+|format_result|format_row|display_result|get_subcommand|list_subcommands|parse_common_opts|parse_subcommand_opts|format_set|format_options|format_options_set)$
+=for Pod::Coverage ^(VERSION|BUILD|run_.+|help_section_.+|format_result|format_row|display_result|get_subcommand|list_subcommands|parse_common_opts|parse_subcommand_opts|format_set|format_options|format_options_set)$
 
 =head1 SYNOPSIS
 
