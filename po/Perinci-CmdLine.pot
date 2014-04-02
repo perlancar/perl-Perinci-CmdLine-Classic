@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Perinci-CmdLine 0.98\n"
+"Project-Id-Version: Perinci-CmdLine 1.04\n"
 "Report-Msgid-Bugs-To: stevenharyanto@gmail.com\n"
-"POT-Creation-Date: 2013-12-13 17:46+0700\n"
+"POT-Creation-Date: 2014-04-01 20:36+0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,162 +17,188 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: lib/Perinci/CmdLine.pm:120
+#: lib/Perinci/CmdLine.pm:122 Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:122
 msgid "--version (or -v)"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:121
+#: lib/Perinci/CmdLine.pm:123 Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:123
 msgid "Show version"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:133
-msgid "--help (or -h, -?) (--verbose)"
+#: lib/Perinci/CmdLine.pm:135 Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:135
+msgid "--help (or -h, -?) [--verbose]"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:134
+#: lib/Perinci/CmdLine.pm:136 Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:136
 msgid "Display this help message"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:145
+#: lib/Perinci/CmdLine.pm:147 Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:147
 msgid "Choose output format, e.g. json, text"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:154
+#: lib/Perinci/CmdLine.pm:157 Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:157
+msgid "Equivalent to --format=json-pretty"
+msgstr ""
+
+#: lib/Perinci/CmdLine.pm:165 Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:165
+msgid "Equivalent to --format=yaml"
+msgstr ""
+
+#: lib/Perinci/CmdLine.pm:173 Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:173
+msgid "Equivalent to --format=perl"
+msgstr ""
+
+#: lib/Perinci/CmdLine.pm:183 Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:183
 msgid "Pass options to formatter"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:164
+#: lib/Perinci/CmdLine.pm:193 Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:193
 msgid "--subcommands"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:174
+#: lib/Perinci/CmdLine.pm:203 Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:203
 msgid "List available subcommands"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:201
+#: lib/Perinci/CmdLine.pm:230 Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:230
 msgid "Set log level to quiet"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:208
+#: lib/Perinci/CmdLine.pm:237 Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:237
 msgid "Set log level to verbose"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:215
+#: lib/Perinci/CmdLine.pm:244 Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:244
 msgid "Set log level to debug"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:222
+#: lib/Perinci/CmdLine.pm:251 Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:251
 msgid "Set log level to trace"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:230
+#: lib/Perinci/CmdLine.pm:259 Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:259
 msgid "Set log level"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:241
+#: lib/Perinci/CmdLine.pm:270 Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:270
 msgid "List actions history"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:250
+#: lib/Perinci/CmdLine.pm:279 Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:279
 msgid "Clear actions history"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:259
+#: lib/Perinci/CmdLine.pm:288 Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:288
 msgid "Undo previous action"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:269
+#: lib/Perinci/CmdLine.pm:298 Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:298
 msgid "Redo previous undone action"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:498
+#: lib/Perinci/CmdLine.pm:532 Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:532
 msgid "There are no subcommands"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:525
+#: lib/Perinci/CmdLine.pm:559 Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:559
 #, perl-brace-format
 msgid "{category} subcommands"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:526
+#: lib/Perinci/CmdLine.pm:560 Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:560
 msgid "main"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:558 lib/Perinci/CmdLine.pm:565
+#: lib/Perinci/CmdLine.pm:592 lib/Perinci/CmdLine.pm:599
+#: Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:592
+#: Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:599
 #, perl-brace-format
 msgid "{program} version {version}"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:863
+#: lib/Perinci/CmdLine.pm:897 Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:897
 msgid "--cmd=<other-subcommand> [options]"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:866
+#: lib/Perinci/CmdLine.pm:900 Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:900
 msgid "<subcommand> [options]"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:870
+#: lib/Perinci/CmdLine.pm:904 Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:904
 msgid "[options]"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:872
+#: lib/Perinci/CmdLine.pm:906 Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:906
 msgid "Usage"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:890
+#: lib/Perinci/CmdLine.pm:924 Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:924
 msgid "Options"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:891
+#: lib/Perinci/CmdLine.pm:925 Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:925
 msgid "Common options"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:975
+#: lib/Perinci/CmdLine.pm:1009
+#: Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:1009
 #, perl-brace-format
 msgid "{category} options"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:985
+#: lib/Perinci/CmdLine.pm:1019
+#: Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:1019
 msgid "required"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:987
+#: lib/Perinci/CmdLine.pm:1021
+#: Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:1021
 #, perl-brace-format
 msgid "or as argument #{index}"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:990
+#: lib/Perinci/CmdLine.pm:1024
+#: Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:1024
 msgid "from stdin"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:992
+#: lib/Perinci/CmdLine.pm:1026
+#: Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:1026
 msgid "from stdin/files"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:1036
+#: lib/Perinci/CmdLine.pm:1070
+#: Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:1070
 msgid "value in"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:1085
+#: lib/Perinci/CmdLine.pm:1119
+#: Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:1119
 msgid "Popular subcommands"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:1085
+#: lib/Perinci/CmdLine.pm:1119
+#: Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:1119
 msgid "Subcommands"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:1120
+#: lib/Perinci/CmdLine.pm:1154
+#: Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:1154
 msgid "For more complete help, use '--help --verbose'"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:1124
+#: lib/Perinci/CmdLine.pm:1158
+#: Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:1158
 msgid "To see all available subcommands, use '--subcommands'"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:1139
+#: lib/Perinci/CmdLine.pm:1173
+#: Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:1173
 msgid "Description"
 msgstr ""
 
-#: lib/Perinci/CmdLine.pm:1151
+#: lib/Perinci/CmdLine.pm:1185
+#: Perinci-CmdLine-1.04/lib/Perinci/CmdLine.pm:1185
 msgid "Examples"
 msgstr ""

@@ -1,5 +1,11 @@
 Revision history for Perinci-CmdLine
 
+1.04     2014-04-01 (SHARYANTO)
+
+         - Add common options: --json, --yaml, --perl. But only when user says
+           'use Perinci::CmdLine 1.04'.
+
+
 1.03     2014-03-29 (SHARYANTO)
 
          - Bugfix: Don't print 'missing foo arg' when on --help, --history, etc.
