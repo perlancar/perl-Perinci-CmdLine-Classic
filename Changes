@@ -1,5 +1,14 @@
 Revision history for Perinci-CmdLine
 
+1.05     2014-04-02 (SHARYANTO)
+
+         - Consult Perinci::Sub::Property::* on unknown properties when
+           generating help. This allows displaying help for result/table or
+           result/object Rinci function metadata property. See corresponding
+           Perinci::Sub::Property::result::{table,object} module for more
+           details.
+
+
 1.04     2014-04-01 (SHARYANTO)
 
          - Add common options: --json, --yaml, --perl. But only when user says
