@@ -1194,6 +1194,64 @@ sub help_section_examples {
     }
 }
 
+sub help_section_result {
+    my ($self, %opts) = @_;
+
+    my $meta   = $self->{_help_meta};
+    my $rmeta  = $meta->{result};
+    my $rmetao = rimeta($rmeta);
+    my $text;
+
+    my $summary = $rmetao->langprop('summary') // '';
+    my $desc    = $rmetao->langprop('description') // '';
+    $text = $summary . ($summary ? "\n\n" : "") . $desc;
+
+    # collect handler
+    my %handler_args;
+    my %handler_metas;
+    for my $k0 (keys %$rmeta) {
+        my $v = $rmeta->{$k0};
+
+        my $k = $k0; $k =~ s/\..+//;
+        next if $k =~ /\A_/;
+
+        # check builtin result spec key
+        next if $k =~ /\A(
+                           summary|description|tags|default_lang|
+                           schema|
+                           x
+                       )\z/x;
+
+        # try a property module first
+        require "Perinci/Sub/Property/result/$k.pm";
+        my $meth = "help_hookmeta_result__$k";
+        unless ($self->can($meth)) {
+            die "No help handler for property result/$k0 ($meth)";
+        }
+        my $hm = $self->$meth;
+        my $ha = {
+            prio=>$hm->{prio}, value=>$v->{$k0}, property=>$k0,
+            meth=>"help_hook_result__$k",
+        };
+        $handler_args{$k} = $ha;
+        $handler_metas{$k} = $hm;
+    }
+
+    # call all the handlers in order
+    for my $k (sort {$handler_args{$a}{prio} <=> $handler_args{$b}{prio}}
+                   keys %handler_args) {
+        my $ha = $handler_args{$k};
+        my $meth = $ha->{meth};
+        my $t = $self->$meth(meta => $meta, %$ha);
+        $text .= $t if $t;
+    }
+
+    return unless length $text;
+
+    $self->_help_add_heading(__("Result"));
+    $self->_help_add_row([$text], {wrap=>1, indent=>1});
+}
+
 sub help_section_links {
     # not yet
 }
@@ -1228,6 +1286,7 @@ sub run_help {
             'examples',
             'description',
             'options',
+            'result',
             'links',
             'hints',
         );
@@ -1238,6 +1297,7 @@ sub run_help {
             'subcommands',
             'examples',
             'options',
+            'result',
             'hints',
         );
     }
