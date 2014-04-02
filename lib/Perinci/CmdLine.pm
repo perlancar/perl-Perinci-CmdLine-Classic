@@ -1297,7 +1297,6 @@ sub run_help {
             'subcommands',
             'examples',
             'options',
-            'result',
             'hints',
         );
     }
