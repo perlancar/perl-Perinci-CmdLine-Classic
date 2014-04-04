@@ -104,15 +104,16 @@ has common_opts => (
 
         my %opts;
 
-        # 'action=<subcommand>' can be used to override --help (or
-        # --subcommands, --version) if one of function arguments happens to be
-        # 'help', 'subcommands', or 'version'. currently this is deliberately(?)
+        # 'action=call' can be used to override --help (or --subcommands,
+        # --version) if one of function arguments happens to be 'help',
+        # 'subcommands', or 'version'. currently this is deliberately(?)
         # underdocumented.
         $opts{action} = {
             getopt  => "action=s",
             handler => sub {
-                if ($_[1] eq 'subcommand') {
-                    $self->{_force_subcommand} = 1;
+                unshift @{$self->{_actions}}, $_[1];
+                if ($_[1] eq 'call') {
+                    $self->{_force_call} = 1;
                 }
             },
         };
@@ -325,7 +326,7 @@ has action_metadata => (
             },
             redo => {
             },
-            subcommand => {
+            call => {
             },
             undo => {
             },
@@ -557,7 +558,7 @@ sub run_subcommands {
         if ($has_many_cats) {
             $self->_help_add_heading(
                 __x("{category} subcommands",
-                    category => ucfirst($cat) || __("main")));
+                    category => ucfirst($cat || __("main"))));
         }
         my $subc = $percat_subc{$cat};
         for my $scn (sort keys %$subc) {
@@ -1426,7 +1427,7 @@ sub _unsetup_progress_output {
     $setup_progress = 0;
 }
 
-sub run_subcommand {
+sub run_call {
     require File::Which;
 
     my ($self) = @_;
@@ -1559,7 +1560,7 @@ sub parse_common_opts {
                      "actions=%s", \@ARGV, $self->{_actions});
     Getopt::Long::Configure($old_go_opts);
 
-    if ($self->{_force_subcommand}) {
+    if ($self->{_force_call}) {
         @ARGV = @orig_ARGV;
     }
 
@@ -1614,12 +1615,13 @@ sub parse_subcommand_opts {
                 return 1;
             } else {
                 # we have no other sources, so we complain about missing arg
-                say "missing arg $an" if $self->{_check_required_args} // 1;
+                say "Missing required argument: $an"
+                    if $self->{_check_required_args} // 1;
             }
             0;
         },
     );
-    if ($self->{_force_subcommand}) {
+    if ($self->{_force_call}) {
         $ga_args{extra_getopts_before} = $self->{_go_specs_common};
     } else {
         $ga_args{extra_getopts_after}  = $self->{_go_specs_common};
@@ -1646,7 +1648,7 @@ sub parse_subcommand_opts {
                      ", actions=%s", \@ARGV, $self->{_args}, $self->{_actions});
 
     # handle cmdline_src
-    if (!$ENV{COMP_LINE} && ($self->{_actions}[0] // "") eq 'subcommand') {
+    if (!$ENV{COMP_LINE} && ($self->{_actions}[0] // "") eq 'call') {
         my $args_p = $meta->{args} // {};
         my $stdin_seen;
         for my $an (sort keys %$args_p) {
@@ -1744,18 +1746,18 @@ sub _set_subcommand {
         }
         $self->{_subcommand} = $sc;
         $self->{_subcommand}{name} = $scn;
-        if ($self->{_force_subcommand}) {
-            unshift @{$self->{_actions}}, 'subcommand';
+        if ($self->{_force_call}) {
+            unshift @{$self->{_actions}}, 'call';
         } else {
-            push @{$self->{_actions}}, 'subcommand';
+            push @{$self->{_actions}}, 'call';
         }
     } else {
         $self->{_subcommand} = {url=>$self->url, summary=>$self->summary};
         $self->{_subcommand}{name} = '';
-        if ($self->{_force_subcommand}) {
-            unshift @{$self->{_actions}}, 'subcommand';
+        if ($self->{_force_call}) {
+            unshift @{$self->{_actions}}, 'call';
         } else {
-            push @{$self->{_actions}}, 'subcommand';
+            push @{$self->{_actions}}, 'call';
         }
     }
   L1:
@@ -1830,6 +1832,7 @@ sub run {
     my $exit_code;
     while (@{$self->{_actions}}) {
         my $action = shift @{$self->{_actions}};
+        #$log->tracef("Trying action $action");
 
         unless ($ENV{COMP_LINE}) {
             # determine whether to binmode(STDOUT,":utf8")
@@ -1848,6 +1851,9 @@ sub run {
         }
 
         my $meth = "run_$action";
+        unless ($self->can($meth)) {
+            $self->_err("Unknown action '$action'");
+        }
         $log->tracef("-> %s()", $meth);
         $exit_code = $self->$meth;
         $log->tracef("<- %s(), return=%s", $meth, $exit_code);
@@ -1999,20 +2005,20 @@ B<Actions>. The C<_actions> attribute is an array which contains the list of
 potential actions to choose, in order. It will then be filled out according to
 the command-line options specified. For example, if C<--help> is specified,
 C<help> action is shifted to the beginning of C<_actions>. Likewise for
-C<--subcommands>, etc. Finally, the C<subcommand> action (which means an action
-to call our function) is added to this list. After we are finished filling out
-the C<_actions> array, the first action is chosen by running a method called C<<
+C<--subcommands>, etc. Finally, the C<call> action (which means an action to
+call our function) is added to this list. After we are finished filling out the
+C<_actions> array, the first action is chosen by running a method called C<<
 run_<ACTION> >>. For example if the chosen action is C<help>, C<run_help()> is
 called. These C<run_*> methods must execute the action, display the output, and
 return an exit code. Program will end with this exit code. A C<run_*> method can
 choose to decline handling the action by returning undef, in which case the next
 action will be tried, and so on until a defined exit code is returned.
 
-B<The subcommand action and determining which subcommand (function) to call>.
-The C<subcommand> action (implemented by C<run_subcommand()>) is the one that
-actually does the real job, calling the function and displaying its result. The
-C<_subcommand> attribute stores information on the subcommand to run, including
-its Riap URL. If there are subcommands, e.g.:
+B<The 'call' action and determining which subcommand (function) to call>. The
+C<call> action (implemented by C<run_call()>) is the one that actually does the
+real job, calling the function and displaying its result. The C<_subcommand>
+attribute stores information on the subcommand to run, including its Riap URL.
+If there are subcommands, e.g.:
 
  my $cmd = Perinci::CmdLine->new(
      subcommands => {
@@ -2030,10 +2036,10 @@ then which subcommand to run is determined by the command-line argument, e.g.:
  % myapp sub1 ...
 
 then C<_subcommand> attribute will contain C<< {url=>'/MyApp/func1'} >>. When no
-subcommand is specified on the command line, C<run_subcommand()> will decline
-handling the action and returning undef, and the next action e.g. C<help> will
-be executed. But if C<default_subcommand> attribute is set, C<run_subcommand()>
-will run the default subcommand instead.
+subcommand is specified on the command line, C<run_call()> will decline handling
+the action and returning undef, and the next action e.g. C<help> will be
+executed. But if C<default_subcommand> attribute is set, C<run_call()> will run
+the default subcommand instead.
 
 When there are no subcommands, e.g.:
 
@@ -2041,7 +2047,7 @@ When there are no subcommands, e.g.:
 
 C<_subcommand> will simply contain C<< {url=>'/MyApp/func'} >>.
 
-C<run_subcommand()> will call the function specified in the C<url> in the
+C<run_call()> will call the function specified in the C<url> in the
 C<_subcommand> using C<Perinci::Access>. (Actually, C<run_help()> or
 C<run_completion()> can be called instead, depending on which action to run.)
 
@@ -2505,9 +2511,9 @@ Create an instance.
 =head2 run() -> INT
 
 The main routine. Its job is to parse command-line options in @ARGV and
-determine which action method (e.g. run_subcommand(), run_help(), etc) to run.
-Action method should return an integer containing exit code. If action method
-returns undef, the next action candidate method will be tried.
+determine which action method (e.g. run_call(), run_help(), etc) to run. Action
+method should return an integer containing exit code. If action method returns
+undef, the next action candidate method will be tried.
 
 After that, exit() will be called with the exit code from the action method (or,
 if C<exit> attribute is set to false, routine will return with exit code

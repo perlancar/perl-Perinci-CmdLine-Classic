@@ -63,15 +63,15 @@ sub want_odd {
 
 $SPEC{f1} = {
     v => 1.1,
-    summary => 'This function has arguments with names like "help", "list"',
+    summary => 'This function has arguments with names like "help", "subcommands"',
     args => {
         help => {schema=>'bool'},
-        list => {schema=>'bool'},
+        subcommands => {schema=>'bool'},
     },
 };
 sub f1 {
     my %args = @_;
-    [200, "OK", $args{help} ? "tolong" : $args{list} ? "daftar" : "?"];
+    [200, "OK", $args{help} ? "tolong" : $args{subcommands} ? "daftar" : "?"];
 }
 
 $SPEC{f2} = {
@@ -430,9 +430,9 @@ test_run(name      => "common option (--help) overrides function argument",
          output_re => qr/Usage/m,
      );
 test_run(name      => "common option (--help) does not override ".
-             "function argument when using --action=subcommand",
+             "function argument when using --action=call",
          args      => {subcommands=>{f1=>{url=>'/Foo/f1'}}},
-         argv      => [qw/f1 --help --action=subcommand/],
+         argv      => [qw/f1 --help --action=call/],
          exit_code => 0,
          output_re => qr/^tolong/m,
      );
