@@ -1805,7 +1805,7 @@ sub run {
     $self->{_actions} = []; # first action will be tried first, then 2nd, ...
 
     #
-    # parse common opts first so we can catch --help, --list, etc.
+    # parse common opts first so we can catch --help, --subcommands, etc.
     #
 
     $self->parse_common_opts;
@@ -1973,7 +1973,7 @@ list (--history) and clearing the list (--clear-history).
 
 =item * Version (--version, -v)
 
-=item * List available subcommands (--list, -l)
+=item * List available subcommands (--subcommands)
 
 =item * Configurable output format (--format, --format-options)
 
@@ -1999,9 +1999,9 @@ B<Actions>. The C<_actions> attribute is an array which contains the list of
 potential actions to choose, in order. It will then be filled out according to
 the command-line options specified. For example, if C<--help> is specified,
 C<help> action is shifted to the beginning of C<_actions>. Likewise for
-C<--list>, etc. Finally, the C<subcommand> action (which means an action to call
-our function) is added to this list. After we are finished filling out the
-C<_actions> array, the first action is chosen by running a method called C<<
+C<--subcommands>, etc. Finally, the C<subcommand> action (which means an action
+to call our function) is added to this list. After we are finished filling out
+the C<_actions> array, the first action is chosen by running a method called C<<
 run_<ACTION> >>. For example if the chosen action is C<help>, C<run_help()> is
 called. These C<run_*> methods must execute the action, display the output, and
 return an exit code. Program will end with this exit code. A C<run_*> method can
@@ -2306,10 +2306,10 @@ flag=>'one'} >> and for the second: C<< {foo=>2, flag=>'two'} >>.
 
 Subcommands can also be a coderef, for dynamic list of subcommands. The coderef
 will be called as a method with hash arguments. It can be called in two cases.
-First, if called without argument C<name> (usually when doing --list) it must
-return a hashref of subcommand specifications. If called with argument C<name>
-it must return subcommand specification for subcommand with the requested name
-only.
+First, if called without argument C<name> (usually when doing --subcommands) it
+must return a hashref of subcommand specifications. If called with argument
+C<name> it must return subcommand specification for subcommand with the
+requested name only.
 
 =head2 default_subcommand => NAME
 
