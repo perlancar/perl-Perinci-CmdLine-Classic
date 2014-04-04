@@ -1,5 +1,14 @@
 Revision history for Perinci-CmdLine
 
+1.06     2014-04-04 (SHARYANTO)
+
+         [INCOMPATIBLE CHANGES]
+
+         - [refactor/internal] Rename action 'subcommand' to 'call' because it's
+           less confusing and more appropriate. Since --action is
+           underdocumented, this should break very few users.
+
+
 1.05     2014-04-02 (SHARYANTO)
 
          - Consult Perinci::Sub::Property::* on unknown properties when
