@@ -987,8 +987,13 @@ sub help_section_options {
                 my $alspec = $a->{cmdline_aliases}{$al0};
                 next if $alspec->{code};
                 my $al = $al0; $al =~ s/_/-/g;
-                $al = length($al) > 1 ? "--$al" : "-$al";
-                $ane .= ", $al$suf";
+                if (length($al) == 1) {
+                    $al = "-$al";
+                    $ane .= ", $al";
+                } else {
+                    $al = "--$al";
+                    $ane .= ", $al$suf";
+                }
             }
 
             my $def = defined($s->[1]{default}) && $s->[0] ne 'bool' ?
