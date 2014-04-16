@@ -14,6 +14,7 @@ use Perinci::ToUtil;
 use Scalar::Util qw(reftype blessed);
 
 # VERSION
+# DATE
 
 our $REQ_VERSION = 0; # version requested by user
 
