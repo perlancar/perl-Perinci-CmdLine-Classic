@@ -1443,7 +1443,15 @@ sub run_call {
 
     my $tx_id;
 
-    my $using_tx = !$self->{_dry_run} && $self->undo && ($sc->{undo} // 1);
+    my $dry_run = $self->{_dry_run};
+    my $using_tx = !$dry_run && $self->undo && ($sc->{undo} // 1);
+
+    # currently we don't attempt to insert tx_id or dry_run when using argv,
+    # we'll just give up
+    if ($dry_run || $using_tx) {
+        my $res = $self->{_getargs_result};
+        $self->_err("Failed parsing arguments (2): $res->[0] - $res->[1]");
+    }
 
     if ($using_tx) {
         require UUID::Random;
@@ -1465,9 +1473,16 @@ sub run_call {
     }
 
     # call function
-    $self->{_res} = $self->_pa->request(
-        call => $self->{_subcommand}{url},
-        {args=>\%fargs, tx_id=>$tx_id, dry_run=>$self->{_dry_run}});
+    if ($self->{_send_argv}) {
+        $self->{_res} = $self->_pa->request(
+            call => $self->{_subcommand}{url},
+            {argv=>$self->{_orig_argv}}, # XXX tx_id, dry_run (see above)
+        );
+    } else {
+        $self->{_res} = $self->_pa->request(
+            call => $self->{_subcommand}{url},
+            {args=>\%fargs, tx_id=>$tx_id, dry_run=>$dry_run});
+    }
     $log->tracef("call res=%s", $self->{_res});
 
     # commit transaction (if using tx)
@@ -1642,6 +1657,16 @@ sub parse_subcommand_opts {
             if @{ $self->{_actions} };
         $do_log //= $self->log_any_app;
         $self->_load_log_any_app if $do_log;
+    }
+
+    # we'll try giving argv to server side, but this currently means we skip
+    # processing cmdline_src.
+    if ($res->[0] == 502) {
+        $log->debugf("Failed parsing arguments (status 502), will try to send ".
+                         "argv to server");
+        $self->{_getargs_result} = $res;
+        $self->{_send_argv} = 1;
+        return;
     }
 
     $self->_err("Failed parsing arguments: $res->[0] - $res->[1]")
