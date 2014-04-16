@@ -1,5 +1,10 @@
 Revision history for Perinci-CmdLine
 
+1.08     2014-04-16 (SHARYANTO)
+
+         - Show release date in --version.
+
+
 1.07     2014-04-16 (SHARYANTO)
 
          - Send argv to server when parsing argv on the client side returns 502
