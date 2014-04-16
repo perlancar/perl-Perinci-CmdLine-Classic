@@ -1448,7 +1448,7 @@ sub run_call {
 
     # currently we don't attempt to insert tx_id or dry_run when using argv,
     # we'll just give up
-    if ($dry_run || $using_tx) {
+    if ($self->{_send_argv} && ($dry_run || $using_tx)) {
         my $res = $self->{_getargs_result};
         $self->_err("Failed parsing arguments (2): $res->[0] - $res->[1]");
     }
