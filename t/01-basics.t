@@ -15,6 +15,7 @@ use Perinci::CmdLine;
 
 package Foo;
 our $VERSION = "0.123";
+our $DATE = "1999-01-01";
 our %SPEC;
 
 $SPEC{':package'} = {v=>1.1};
@@ -451,7 +452,7 @@ test_run(name      => "common option (--help) bypass required argument check",
 #                 want_odd=>{url=>'/Foo/want_odd'}}},
 #             argv      => [$_],
 #             exit_code => 0,
-#             output_re => qr/version 0\.123/,
+#             output_re => qr/version 0\.123 \(1999-01-01\)/,
 #         );
 #}
 

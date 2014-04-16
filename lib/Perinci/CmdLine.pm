@@ -580,27 +580,31 @@ sub run_version {
     my $url = $self->{_subcommand} && $self->{_subcommand}{url} ?
         $self->{_subcommand}{url} : $self->url;
     my $res = $self->_pa->request(meta => $url);
-    my $ver;
+    my ($ver, $date);
     if ($res->[0] == 200) {
         $ver = $res->[2]{entity_v} // "?";
+        $date = $res->[2]{entity_date};
     } else {
         $log->warnf("Can't request 'meta' action on %s: %d - %s",
                     $url, $res->[0], $res->[1]);
         $ver = '?';
+        $date = undef;
     }
 
     say __x(
         "{program} version {version}",
         program => $self->_color('program_name',
                                  $self->_program_and_subcommand_name),
-        version => $self->_color('emphasis', $ver));
+        version => $self->_color('emphasis', $ver)) .
+            ($date ? " ($date)" : "");
     {
         no strict 'refs';
         say "  ", __x(
             "{program} version {version}",
             program => $self->_color('emphasis', "Perinci::CmdLine"),
             version => $self->_color('emphasis',
-                                     $Perinci::CmdLine::VERSION || "dev"));
+                                     $Perinci::CmdLine::VERSION || "dev"))
+            . ($Perinci::CmdLine::DATE ? " ($Perinci::CmdLine::DATE)" : "");
     }
 
     0;
