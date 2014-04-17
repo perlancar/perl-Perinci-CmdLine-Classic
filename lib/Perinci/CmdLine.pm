@@ -914,7 +914,7 @@ sub help_section_usage {
 }
 
 sub help_section_options {
-    require SHARYANTO::Getopt::Long::Util;
+    require Getopt::Long::Util;
 
     my ($self, %opts) = @_;
     my $verbose = $opts{verbose};
@@ -946,7 +946,7 @@ sub help_section_options {
             ($sc ? $t_copts : $t_opts);
         my $go = $cov->{getopt};
         push @{ $catopts{$cat} }, {
-            getopt=>SHARYANTO::Getopt::Long::Util::gospec2human($cov->{getopt}),
+            getopt=>Getopt::Long::Util::humanize_getopt_long_opt_spec($cov->{getopt}),
             summary=> $cov->{summary} ? __($cov->{summary}) : "",
         };
     }
