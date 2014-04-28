@@ -75,8 +75,6 @@ has _pa => (
         require Perinci::Access::Schemeless;
         my %args = %{$self->pa_args // {}};
         my %opts;
-        # turn off arg validation generation to reduce startup cost
-        $opts{extra_wrapper_args} = 0 if $ENV{COMP_LINE};
         if ($self->undo) {
             $opts{use_tx} = 1;
             $opts{custom_tx_manager} = sub {
