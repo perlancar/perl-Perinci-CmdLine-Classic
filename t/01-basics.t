@@ -48,9 +48,10 @@ sub ok {
 }
 
 $SPEC{want_odd} = {
+    v => 1.1,
     summary => 'Return error if given an even number',
     args => {
-        num => ['int*' => {arg_pos=>0}],
+        num => { schema => 'int*', pos=>0 },
     },
 };
 sub want_odd {

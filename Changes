@@ -1,5 +1,13 @@
 Revision history for Perinci-CmdLine
 
+1.09     2014-04-30 (SHARYANTO)
+
+         - No functional changes.
+
+         - Adjust to Perinci::Access::Perl 0.66 (no longer has
+           'extra_wrapper_args').
+
+
 1.08     2014-04-16 (SHARYANTO)
 
          - Show release date in --version.
