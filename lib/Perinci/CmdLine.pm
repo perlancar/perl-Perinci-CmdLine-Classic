@@ -1319,6 +1319,13 @@ sub run_help {
         $self->{_help_meta} = $res->[2];
     }
 
+    # ux: since --verbose will potentially show lots of paragraph text, let's
+    # default to 80 and not wider width, unless user specifically requests
+    # column width via COLUMNS.
+    if ($verbose && !defined($ENV{COLUMNS}) && $self->term_width > 80) {
+        $self->term_width(80);
+    }
+
     # determine which help sections should we generate
     my @hsects;
     if ($verbose) {
