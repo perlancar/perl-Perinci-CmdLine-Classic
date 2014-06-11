@@ -1489,6 +1489,7 @@ sub run_call {
             {argv=>$self->{_orig_argv}}, # XXX tx_id, dry_run (see above)
         );
     } else {
+        #$log->tracef("Calling function via _pa with arguments: %s", \%fargs);
         $self->{_res} = $self->_pa->request(
             call => $self->{_subcommand}{url},
             {args=>\%fargs, tx_id=>$tx_id, dry_run=>$dry_run});
