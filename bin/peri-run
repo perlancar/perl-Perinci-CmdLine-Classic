@@ -19,7 +19,7 @@ GetOptions(
     'library|I=s' => $opts{library},
     'help|h|?' => \$opts{help},
     'subcommand|s=s' => $opts{subcommands},
-    'pass-cmdline-object|o' => $opts{pass_cmdline_object},
+    'pass-cmdline-object|o' => \$opts{pass_cmdline_object},
 );
 
 my $me = $0; $me =~ s!.+/!!;
