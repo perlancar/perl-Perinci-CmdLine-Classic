@@ -33,10 +33,10 @@ Usage:
   $me --help
   $me [common options] <command def> [subcommand] [action]
 
-*Common options* include: '--library' ('-I') to add directory to Perl search dir
-(a la Perl's '-I'), can be specified multiple times. There is also
-`--pass-cmdline-object` if you want to pass Perinci::CmdLine object to the
-function.
+*Common options* include: `--library` (`-I`) to add directory to Perl search dir
+(a la Perl's `-I`), can be specified multiple times. There is also
+`--pass-cmdline-object` (`-o`) if you want to pass Perinci::CmdLine object to
+the function.
 
 *Command def* is either a single command definition or multiple subcommands
 definition. To define a single command, you can specify a Riap function URL
@@ -50,7 +50,7 @@ and 'altname':
   $me -s /Foo/Bar/func1 -s "/Foo/Bar/func2 altname"
 
 *Subcommand* picks a subcommand name, required only when you specify multiple
-subcommands. And not required for actions like '--list' and '--version'.
+subcommands.
 
 *action* is either '--help' to get help message on the command or subcommand,
 '--list' to list subcommands, '--version' to get version, or zero or more
@@ -164,6 +164,17 @@ $cmd->run;
 =head1 SYNOPSIS
 
 Type C<peri-run --help> for more help.
+
+
+=head1 OPTIONS
+
+=head2 --library, -I
+
+=head2 --help
+
+=head2 --subcommand, -s
+
+=head2 --pass-cmdline-object, -o
 
 
 =head1 SEE ALSO
