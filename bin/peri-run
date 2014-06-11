@@ -12,12 +12,14 @@ use Perinci::CmdLine;
 my %opts = (
     library => [],
     subcommands => [],
+    pass_cmdline_object => 0,
 );
 Getopt::Long::Configure('pass_through', 'no_permute');
 GetOptions(
     'library|I=s' => $opts{library},
     'help|h|?' => \$opts{help},
     'subcommand|s=s' => $opts{subcommands},
+    'pass-cmdline-object|o' => $opts{pass_cmdline_object},
 );
 
 my $me = $0; $me =~ s!.+/!!;
@@ -32,7 +34,9 @@ Usage:
   $me [common options] <command def> [subcommand] [action]
 
 *Common options* include: '--library' ('-I') to add directory to Perl search dir
-(a la Perl's '-I'), can be specified multiple times.
+(a la Perl's '-I'), can be specified multiple times. There is also
+`--pass-cmdline-object` if you want to pass Perinci::CmdLine object to the
+function.
 
 *Command def* is either a single command definition or multiple subcommands
 definition. To define a single command, you can specify a Riap function URL
@@ -79,7 +83,9 @@ USAGE
 
 for my $dir (@{ $opts{library} }) { require lib; lib->import($dir) }
 
-my $cmd = Perinci::CmdLine->new;
+my $cmd = Perinci::CmdLine->new(
+    pass_cmdline_object => $opts{pass_cmdline_object},
+);
 
 if (@ARGV && !@$oscs) {
 
