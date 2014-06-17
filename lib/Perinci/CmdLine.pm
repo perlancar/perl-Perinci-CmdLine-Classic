@@ -2826,7 +2826,7 @@ But if you want to supply custom completion, the L<Rinci::function>
 specification allows specifying a C<completion> property for your argument, for
 example:
 
- use Perinci::Sub::Complete qw(complete_array);
+ use SHARYANTO::Complete::Util qw(complete_array);
  $SPEC{del_user} = {
      v => 1.1,
      args => {
