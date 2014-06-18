@@ -706,21 +706,14 @@ sub run_completion {
         }
         my $meta = $rres->[2];
 
-        my $arg_completer = $self->custom_arg_completer;
-        $arg_completer //= sub {
-            my %args = @_;
-            my $rres = $self->_pa->request(
-                complete_arg_val => $sc->{url},
-                {arg => $args{arg}, word=>$args{word}, ci=>$args{ci}});
-            return undef unless $rres->[0] == 200;
-            $rres->[2];
-        };
-
         $res = Perinci::Sub::Complete::shell_complete_arg(
             meta=>$meta, words=>$words, cword=>$cword,
             common_opts => $common_opts,
-            custom_completer=>$self->custom_completer,
-            custom_arg_completer => $arg_completer,
+            riap_server_url => $sc->{url},
+            riap_uri        => undef,
+            riap_client     => $self->_pa,
+            custom_completer     => $self->custom_completer,
+            custom_arg_completer => $self->custom_arg_completer,
         );
 
     } else {
