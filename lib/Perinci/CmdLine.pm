@@ -708,8 +708,11 @@ sub run_completion {
 
         my $arg_completer = $self->custom_arg_completer;
         $arg_completer //= sub {
-            my $rres = $self->_pa->request(complete_arg_val => $sc->{url});
-            return undef unless $rres->[0] == 20;
+            my %args = @_;
+            my $rres = $self->_pa->request(
+                complete_arg_val => $sc->{url},
+                {arg => $args{arg}, word=>$args{word}, ci=>$args{ci}});
+            return undef unless $rres->[0] == 200;
             $rres->[2];
         };
 
