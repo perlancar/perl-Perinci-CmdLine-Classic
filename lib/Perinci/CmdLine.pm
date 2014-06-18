@@ -700,7 +700,7 @@ sub run_completion {
 
         my $rres = $self->_pa->request(meta => $sc->{url});
         if ($rres->[0] != 200) {
-            $log->debug("Can't get meta for completion: $res->[0] - $res->[1]");
+            $log->debugf("Can't get meta for completion: %s", $rres);
             $res = [];
             goto DISPLAY_RES;
         }
