@@ -1,5 +1,19 @@
 Revision history for Perinci-CmdLine
 
+1.11     2014-06-20 (SHARYANTO)
+
+         [ENHANCEMENTS]
+
+         - Adjust to Perinci::Sub::Complete 0.40 (no longer need to do
+           'complete_arg_val' Riap request on our own).
+
+         - Add --pass-cmdline-object to peri-run.
+
+         [BUG FIXES]
+
+         - A couple of bug fixes.
+
+
 1.10     2014-05-17 (SHARYANTO)
 
          - [ux] Default to 80 (and not wider) column width when displaying
