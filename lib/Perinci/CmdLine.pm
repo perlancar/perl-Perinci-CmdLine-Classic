@@ -1857,8 +1857,7 @@ sub run {
 
     #
     # parse subcommand options, this is to give change to function arguments
-    # like --help to be parsed into $self->{_args}. note that currently
-    # completion skip this step to avoid during potentially-costly Riap call.
+    # like --help to be parsed into $self->{_args}
     #
 
     $self->parse_subcommand_opts unless $ENV{COMP_LINE};
