@@ -2873,7 +2873,7 @@ a simple function like:
  $SPEC{hello} = { v=>1.1 };
  sub hello { say "hello"; [200] }
 
-can take between 0.2-0.5s (on a 2012-model laptop).
+can take between 0.2-0.5s (on a 2012/2013-model laptop and PC).
 
 =item * cmdline_src
 
