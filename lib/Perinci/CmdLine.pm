@@ -2863,8 +2863,24 @@ several OO-based command-line frameworks on CPAN.
 
 =head1 TODOS
 
+=over
+
+=item * startup overhead
+
+One of the most important and annoying thing to fix is startup overhead. Running
+a simple function like:
+
+ $SPEC{hello} = { v=>1.1 };
+ sub hello { say "hello"; [200] }
+
+can take between 0.2-0.5s (on a 2012-model laptop).
+
+=item * cmdline_src
+
 C<cmdline_src> argument specification has not been fully implemented: Providing
 I/O handle for argument of type C<stream>/C<filehandle>.
+
+=back
 
 
 =head1 SEE ALSO
