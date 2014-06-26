@@ -609,14 +609,9 @@ sub run_version {
     0;
 }
 
-sub _add_slashes {
-    my ($a) = @_;
-    $a =~ s!([^A-Za-z0-9,+._/:$-])!\\$1!g;
-    $a;
-}
-
 sub run_completion {
-    # Perinci::Sub::Complete already required by run()
+    require Complete::Util;
+    require Perinci::Sub::Complete;
 
     my ($self) = @_;
 
@@ -728,8 +723,7 @@ sub run_completion {
     }
 
   DISPLAY_RES:
-    # display completion result for bash
-    print map {_add_slashes($_), "\n"} grep {defined} @$res;
+    print Complete::Util::format_completion(completion=>$res);
     0;
 }
 
