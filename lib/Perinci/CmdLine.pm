@@ -723,7 +723,7 @@ sub run_completion {
     }
 
   DISPLAY_RES:
-    print Complete::Util::format_completion(completion=>$res);
+    print Complete::Util::format_shell_completion(completion=>$res);
     0;
 }
 
@@ -1575,7 +1575,11 @@ sub parse_common_opts {
     my @go_opts = $self->_gen_go_specs_from_common_opts;
     $self->{_go_specs_common} = \@go_opts;
     my $old_go_opts = Getopt::Long::Configure(
-        "pass_through", "no_ignore_case", "no_getopt_compat");
+        "pass_through", "no_ignore_case", "no_getopt_compat", "no_auto_abbrev");
+    # we disable auto abbreviation to reduce surprise, e.g. -a can be
+    # abbreviated from common option --action. this is still not the proper
+    # solution. the proper solution is to only do option parsing once, but is it
+    # feasible?
     Getopt::Long::GetOptions(@go_opts);
     $log->tracef("result of GetOptions for common options: remaining argv=%s, ".
                      "actions=%s", \@ARGV, $self->{_actions});
