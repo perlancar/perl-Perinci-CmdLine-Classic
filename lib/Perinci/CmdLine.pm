@@ -2794,7 +2794,23 @@ command-line script C<f1> becomes:
  Perinci::CmdLine->new(url => '/main/f1')->run;
 
 This also demonstrates the convenience of having the metadata as a data
-structure: you can manipulate it however you want.
+structure: you can manipulate it however you want. There is also a convenient
+function available in L<Perinci::Sub::Util> when you want to create a modified
+subroutine based on another:
+
+ package main;
+ use Perinci::CmdLine;
+ use Perinci::Sub::Util qw(gen_modified_sub);
+
+ gen_modified_sub(
+     output_name => 'f1',
+     base_name   => 'Package::F1::f1',
+     modify_args => {
+         foo => sub { my $as = shift; delete $as->{cmdline_aliases}   },
+         fee => sub { my $as = shift; $as->{cmdline_aliases} = {f=>{} },
+     },
+ );
+ Perinci::CmdLine->new(url => '/main/f1')->run;
 
 =head2 How to do custom completion for my argument?
 
