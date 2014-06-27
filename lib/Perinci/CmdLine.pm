@@ -717,13 +717,16 @@ sub run_completion {
         push @ary, @top_opts;
         my $scs = $self->list_subcommands;
         push @ary, keys %$scs;
-        $res = Perinci::Sub::Complete::complete_array(
-            word=>$word, array=>\@ary,
-        );
+        $res = {
+            completion => Complete::Util::complete_array(
+                word=>$word, array=>\@ary,
+            ),
+            type=>'option',
+        };
     }
 
   DISPLAY_RES:
-    print Complete::Util::format_shell_completion(completion=>$res);
+    print Complete::Util::format_shell_completion($res);
     0;
 }
 
