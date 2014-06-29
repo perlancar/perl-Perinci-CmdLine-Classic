@@ -1,5 +1,11 @@
 Revision history for Perinci-CmdLine
 
+1.13     2014-06-29 (SHARYANTO)
+
+         - Increase prereq version: Perinci::Sub::Complete 0.50, to allow
+           completion routines to return hashref as well as arrayref.
+
+
 1.12     2014-06-29 (SHARYANTO)
 
          - No functional changes.
