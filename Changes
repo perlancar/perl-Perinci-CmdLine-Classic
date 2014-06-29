@@ -1,5 +1,12 @@
 Revision history for Perinci-CmdLine
 
+1.12     2014-06-29 (SHARYANTO)
+
+         - No functional changes.
+
+         - Adjust to new completion modules.
+
+
 1.11     2014-06-20 (SHARYANTO)
 
          [ENHANCEMENTS]
