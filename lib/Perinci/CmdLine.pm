@@ -701,7 +701,7 @@ sub run_completion {
         }
         my $meta = $rres->[2];
 
-        $res = Perinci::Sub::Complete::shell_complete_arg(
+        $res = Perinci::Sub::Complete::complete_cli_arg(
             meta=>$meta, words=>$words, cword=>$cword,
             common_opts => $common_opts,
             riap_server_url => $sc->{url},
@@ -2485,12 +2485,12 @@ L</"LOGGING"> for more details.
 
 =head2 custom_completer => CODEREF
 
-Will be passed to L<Perinci::Sub::Complete>'s C<shell_complete_arg()>. See its
+Will be passed to L<Perinci::Sub::Complete>'s C<complete_cli_arg()>. See its
 documentation for more details.
 
 =head2 custom_arg_completer => CODEREF | {ARGNAME=>CODEREF, ...}
 
-Will be passed to L<Perinci::Sub::Complete>'s C<shell_complete_arg()>. See its
+Will be passed to L<Perinci::Sub::Complete>'s C<complete_cli_arg()>. See its
 documentation for more details.
 
 =head2 pass_cmdline_object => BOOL (optional, default 0)
