@@ -1,5 +1,12 @@
 Revision history for Perinci-CmdLine
 
+1.15     2014-07-02 (SHARYANTO)
+
+         - No functional changes.
+
+         - Adjust to Perinci::Sub::Complete 0.53.
+
+
 1.14     2014-07-02 (SHARYANTO)
 
          - No functional changes.
