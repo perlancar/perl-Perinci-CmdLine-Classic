@@ -726,7 +726,15 @@ sub run_completion {
     }
 
   DISPLAY_RES:
-    print Complete::Bash::format_completion($res);
+    my $compres = Complete::Bash::format_completion($res);
+    if ($ENV{PERINCI_CMDLINE_SERVER}) {
+        # a flag that causes completion result to be stored in the object
+        # instead of printed. this is because we want to return result in a
+        # function
+        $self->{_compres} = $compres;
+    } else {
+        print $compres;
+    }
     0;
 }
 
@@ -1816,18 +1824,51 @@ sub _load_log_any_app {
     Log::Any::App::init();
 
     # we log this after we initialize Log::Any::App, since Log::Any::App might
-    # not be loaded at all. yes, this means that this log message is printer
+    # not be loaded at all. yes, this means that this log message is printed
     # rather late and might not be the first message to be logged (see log
     # messages in run()) if user already loads Log::Any::App by herself.
-    $self->{_original_argv} =
-        $log->debugf("Program %s started with arguments: %s",
-                     $0, $self->{_orig_argv});
+    $log->debugf("Program %s started with arguments: %s",
+                 $0, $self->{_orig_argv});
+}
+
+# since there's now module like Perinci::CmdLine::Server which might reuse the
+# same instance for multiple run()'s/requests, use this to clean state between
+# requests.
+sub _init_request {
+    my ($self) = @_;
+    $self->{_actions} = []; # first action will be tried first, then 2nd, ...
+    undef $self->{_selected_subcommand};
+    undef $self->{_force_call};
+    undef $self->{_check_required_args};
+    undef $self->{_subcommand};
+    undef $self->{_args};
+    undef $self->{_send_argv};
+    undef $self->{_orig_argv};
+    undef $self->{_getargs_result};
+    undef $self->{_comp_parse_res};
+    undef $self->{_go_specs_common};
+    undef $self->{_scn_in_argv};
+    undef $self->{_dry_run};
+    undef $self->{_help_curtbl};
+    undef $self->{_help_info};
+    undef $self->{_help_meta};
+    undef $self->{_some_subcommands_not_shown_in_help};
+    undef $self->{_tx_id};
+    undef $self->{_meta};
+    undef $self->{_res};
+    undef $self->{_fres};
+    undef $self->{_compres};
+
+    # not reset
+    #$self->{_log_any_app_loaded};
 }
 
 sub run {
     my ($self) = @_;
 
     $log->trace("-> CmdLine's run()");
+
+    $self->_init_request;
 
     #
     # workaround: detect (1) if we're being invoked for bash completion, get
@@ -1841,8 +1882,6 @@ sub run {
         @ARGV = @$words;
         $self->{_comp_parse_res} = [$words, $cword]; # store for run_completion()
     }
-
-    $self->{_actions} = []; # first action will be tried first, then 2nd, ...
 
     #
     # parse common opts first so we can catch --help, --subcommands, etc.
