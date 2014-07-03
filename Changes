@@ -1,5 +1,18 @@
 Revision history for Perinci-CmdLine
 
+1.16     2014-07-03 (SHARYANTO)
+
+         [REMOVED FEATURES]
+
+         - Split Perinci::CmdLine::Easy to its own dist.
+
+         [ENHANCEMENTS]
+
+         - Tidy up run() so it can safely be called multiple times.
+
+         - Support for Perinci::CmdLine::Server.
+
+
 1.15     2014-07-02 (SHARYANTO)
 
          - No functional changes.
