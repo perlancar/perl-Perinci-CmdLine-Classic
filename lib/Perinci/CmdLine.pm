@@ -103,20 +103,6 @@ has common_opts => (
 
         my %opts;
 
-        # 'action=call' can be used to override --help (or --subcommands,
-        # --version) if one of function arguments happens to be 'help',
-        # 'subcommands', or 'version'. currently this is deliberately(?)
-        # underdocumented.
-        $opts{action} = {
-            getopt  => "action=s",
-            handler => sub {
-                unshift @{$self->{_actions}}, $_[1];
-                if ($_[1] eq 'call') {
-                    $self->{_force_call} = 1;
-                }
-            },
-        };
-
         $opts{version} = {
             getopt  => "version|v",
             usage   => N__("--version (or -v)"),
@@ -1838,7 +1824,6 @@ sub _init_request {
     my ($self) = @_;
     $self->{_actions} = []; # first action will be tried first, then 2nd, ...
     undef $self->{_selected_subcommand};
-    undef $self->{_force_call};
     undef $self->{_check_required_args};
     undef $self->{_subcommand};
     undef $self->{_args};
