@@ -18,30 +18,15 @@ use Scalar::Util qw(reftype blessed);
 
 our $REQ_VERSION = 0; # version requested by user
 
+extends 'Perinci::CmdLine::Base';
+
 with 'SHARYANTO::Role::ColorTheme' unless $ENV{COMP_LINE};
 #with 'SHARYANTO::Role::TermAttrs' unless $ENV{COMP_LINE}; already loaded by ColorTheme
 
-has program_name => (
-    is => 'rw',
-    lazy => 1,
-    default => sub {
-        my $pn = $ENV{PERINCI_CMDLINE_PROGRAM_NAME};
-        if (!defined($pn)) {
-            $pn = $0; $pn =~ s!.+/!!;
-        }
-        $pn;
-    }
-);
-has url => (is => 'rw');
-has summary => (is => 'rw');
-has description => (is => 'rw');
-has subcommands => (is => 'rw');
-has default_subcommand => (is => 'rw');
-has exit => (is => 'rw', default=>sub{1});
+has exit => (is=>'rw', default=>1);
 has log_any_app => (is => 'rw', default=>sub{1});
 has custom_completer => (is => 'rw');
 has custom_arg_completer => (is => 'rw');
-has pass_cmdline_object => (is => 'rw', default=>sub{0});
 has undo => (is=>'rw', default=>sub{0});
 has undo_dir => (
     is => 'rw',
@@ -57,7 +42,6 @@ has undo_dir => (
         $dir;
     }
 );
-has format => (is => 'rw', default=>sub{'text'});
 # bool, is format set via cmdline opt?
 has format_set => (is => 'rw');
 has format_options => (is => 'rw');
@@ -94,197 +78,6 @@ has _pa => (
         #$log->tracef("Creating Perinci::Access object with args: %s", \%args);
         Perinci::Access->new(%args);
     }
-);
-has common_opts => (
-    is      => 'rw',
-    lazy    => 1,
-    default => sub {
-        my ($self) = @_;
-
-        my %opts;
-
-        $opts{version} = {
-            getopt  => "version|v",
-            usage   => N__("--version (or -v)"),
-            summary => N__("Show version"),
-            show_in_options => sub { $ENV{VERBOSE} },
-            handler => sub {
-                $self->_err("'url' not set, required for --version")
-                    unless $self->url;
-                unshift @{$self->{_actions}}, 'version';
-            },
-        };
-
-        $opts{help} = {
-            getopt  => "help|h|?",
-            usage   => N__("--help (or -h, -?) [--verbose]"),
-            summary => N__("Display this help message"),
-            show_in_options => sub { $ENV{VERBOSE} },
-            handler => sub {
-                unshift @{$self->{_actions}}, 'help';
-            },
-            order   => 0, # high
-        };
-
-        $opts{format} = {
-            getopt  => "format=s",
-            summary => N__("Choose output format, e.g. json, text"),
-            handler => sub {
-                $self->format_set(1);
-                $self->format($_[1]);
-            },
-        };
-
-        if ($REQ_VERSION >= 1.04) {
-            $opts{json} = {
-                getopt  => "json",
-                summary => N__("Equivalent to --format=json-pretty"),
-                handler => sub {
-                    $self->format_set(1);
-                    $self->format('json-pretty');
-                },
-            };
-            $opts{yaml} = {
-                getopt  => "yaml",
-                summary => N__("Equivalent to --format=yaml"),
-                handler => sub {
-                    $self->format_set(1);
-                    $self->format('yaml');
-                },
-            };
-            $opts{perl} = {
-                getopt  => "perl",
-                summary => N__("Equivalent to --format=perl"),
-                handler => sub {
-                    $self->format_set(1);
-                    $self->format('perl');
-                },
-            };
-        }
-
-        $opts{format_options} = {
-            getopt  => "format-options=s",
-            summary => N__("Pass options to formatter"),
-            handler => sub {
-                $self->format_options_set(1);
-                $self->format_options(__json_decode($_[1]));
-            },
-        };
-
-        if ($self->subcommands) {
-            $opts{subcommands} = {
-                getopt  => "subcommands",
-                usage   => N__("--subcommands"),
-                show_in_usage => sub {
-                    !$self->{_subcommand};
-                },
-                show_in_options => sub {
-                    $ENV{VERBOSE} && !$self->{_subcommand};
-                },
-                show_usage_in_help => sub {
-                    my $self = shift;
-                },
-                summary => N__("List available subcommands"),
-                show_in_help => 0,
-                handler => sub {
-                    unshift @{$self->{_actions}}, 'subcommands';
-                },
-            };
-        }
-
-        if (defined $self->default_subcommand) {
-            # 'cmd=SUBCOMMAND_NAME' can be used to select other subcommands when
-            # default_subcommand is in effect.
-            $opts{cmd} = {
-                getopt  => "cmd=s",
-                handler => sub {
-                    $self->{_subcommand_name} = $_[1];
-                },
-            };
-        }
-
-        # convenience for Log::Any::App-using apps
-        if ($self->log_any_app) {
-            # since the cmdline opts is consumed, Log::Any::App doesn't see
-            # this. we currently work around this via setting env.
-
-            $opts{quiet} = {
-                getopt  => "quiet",
-                summary => N__("Set log level to quiet"),
-                handler => sub {
-                    $ENV{QUIET} = 1;
-                },
-            };
-            $opts{verbose} = {
-                getopt  => "verbose",
-                summary => N__("Set log level to verbose"),
-                handler => sub {
-                    $ENV{VERBOSE} = 1;
-                },
-            };
-            $opts{debug} = {
-                getopt  => "debug",
-                summary => N__("Set log level to debug"),
-                handler => sub {
-                    $ENV{DEBUG} = 1;
-                },
-            };
-            $opts{trace} = {
-                getopt  => "trace",
-                summary => N__("Set log level to trace"),
-                handler => sub {
-                    $ENV{TRACE} = 1;
-                },
-            };
-
-            $opts{log_level} = {
-                getopt  => "log-level=s",
-                summary => N__("Set log level"),
-                handler => sub {
-                    $ENV{LOG_LEVEL} = $_[1];
-                },
-            };
-        }
-
-        if ($self->undo) {
-            $opts{history} = {
-                category => 'Undo options',
-                getopt  => 'history',
-                summary => N__('List actions history'),
-                handler => sub {
-                    unshift @{$self->{_actions}}, 'history';
-                },
-            };
-            $opts{clear_history} = {
-                category => 'Undo options',
-                getopt  => "clear-history",
-                summary => N__('Clear actions history'),
-                handler => sub {
-                    unshift @{$self->{_actions}}, 'clear_history';
-                },
-            };
-            $opts{undo} = {
-                category => 'Undo options',
-                getopt  => 'undo',
-                summary => N__('Undo previous action'),
-                handler => sub {
-                    unshift @{$self->{_actions}}, 'undo';
-                    #$self->{_tx_id} = $_[1];
-                },
-            };
-            $opts{redo} = {
-                category => 'Undo options',
-                getopt  => 'redo',
-                summary => N__('Redo previous undone action'),
-                handler => sub {
-                    unshift @{$self->{_actions}}, 'redo';
-                    #$self->{_tx_id} = $_[1];
-                },
-            };
-        }
-
-        \%opts;
-    },
 );
 has action_metadata => (
     is => 'rw',
@@ -340,8 +133,201 @@ sub _program_and_subcommand_name {
     $res;
 }
 
+sub _set_default_common_opts {
+    my ($self) = @_;
+
+    my %opts;
+
+    $opts{version} = {
+        getopt  => "version|v",
+        usage   => N__("--version (or -v)"),
+        summary => N__("Show version"),
+        show_in_options => sub { $ENV{VERBOSE} },
+        handler => sub {
+            $self->_err("'url' not set, required for --version")
+                unless $self->url;
+            unshift @{$self->{_actions}}, 'version';
+        },
+    };
+
+    $opts{help} = {
+        getopt  => "help|h|?",
+        usage   => N__("--help (or -h, -?) [--verbose]"),
+        summary => N__("Display this help message"),
+        show_in_options => sub { $ENV{VERBOSE} },
+        handler => sub {
+            unshift @{$self->{_actions}}, 'help';
+        },
+        order   => 0, # high
+    };
+
+    $opts{format} = {
+        getopt  => "format=s",
+        summary => N__("Choose output format, e.g. json, text"),
+        handler => sub {
+            $self->format_set(1);
+            $self->format($_[1]);
+        },
+    };
+
+    if ($REQ_VERSION >= 1.04) {
+        $opts{json} = {
+            getopt  => "json",
+            summary => N__("Equivalent to --format=json-pretty"),
+            handler => sub {
+                $self->format_set(1);
+                $self->format('json-pretty');
+            },
+        };
+        $opts{yaml} = {
+            getopt  => "yaml",
+            summary => N__("Equivalent to --format=yaml"),
+            handler => sub {
+                $self->format_set(1);
+                $self->format('yaml');
+            },
+        };
+        $opts{perl} = {
+            getopt  => "perl",
+            summary => N__("Equivalent to --format=perl"),
+            handler => sub {
+                $self->format_set(1);
+                $self->format('perl');
+            },
+        };
+    }
+
+    $opts{format_options} = {
+        getopt  => "format-options=s",
+        summary => N__("Pass options to formatter"),
+        handler => sub {
+            $self->format_options_set(1);
+            $self->format_options(__json_decode($_[1]));
+        },
+    };
+
+    if ($self->subcommands) {
+        $opts{subcommands} = {
+            getopt  => "subcommands",
+            usage   => N__("--subcommands"),
+            show_in_usage => sub {
+                !$self->{_subcommand};
+            },
+            show_in_options => sub {
+                $ENV{VERBOSE} && !$self->{_subcommand};
+            },
+            show_usage_in_help => sub {
+                my $self = shift;
+            },
+            summary => N__("List available subcommands"),
+            show_in_help => 0,
+            handler => sub {
+                unshift @{$self->{_actions}}, 'subcommands';
+            },
+        };
+    }
+
+    if (defined $self->default_subcommand) {
+        # 'cmd=SUBCOMMAND_NAME' can be used to select other subcommands when
+        # default_subcommand is in effect.
+        $opts{cmd} = {
+            getopt  => "cmd=s",
+            handler => sub {
+                $self->{_subcommand_name} = $_[1];
+            },
+        };
+    }
+
+    # convenience for Log::Any::App-using apps
+    if ($self->log_any_app) {
+        # since the cmdline opts is consumed, Log::Any::App doesn't see
+        # this. we currently work around this via setting env.
+
+        $opts{quiet} = {
+            getopt  => "quiet",
+            summary => N__("Set log level to quiet"),
+            handler => sub {
+                $ENV{QUIET} = 1;
+            },
+        };
+        $opts{verbose} = {
+            getopt  => "verbose",
+            summary => N__("Set log level to verbose"),
+            handler => sub {
+                $ENV{VERBOSE} = 1;
+            },
+        };
+        $opts{debug} = {
+            getopt  => "debug",
+            summary => N__("Set log level to debug"),
+            handler => sub {
+                $ENV{DEBUG} = 1;
+            },
+        };
+        $opts{trace} = {
+            getopt  => "trace",
+            summary => N__("Set log level to trace"),
+            handler => sub {
+                $ENV{TRACE} = 1;
+            },
+        };
+
+        $opts{log_level} = {
+            getopt  => "log-level=s",
+            summary => N__("Set log level"),
+            handler => sub {
+                $ENV{LOG_LEVEL} = $_[1];
+            },
+        };
+    }
+
+    if ($self->undo) {
+        $opts{history} = {
+            category => 'Undo options',
+            getopt  => 'history',
+            summary => N__('List actions history'),
+            handler => sub {
+                unshift @{$self->{_actions}}, 'history';
+            },
+        };
+        $opts{clear_history} = {
+            category => 'Undo options',
+            getopt  => "clear-history",
+            summary => N__('Clear actions history'),
+            handler => sub {
+                unshift @{$self->{_actions}}, 'clear_history';
+            },
+        };
+        $opts{undo} = {
+            category => 'Undo options',
+            getopt  => 'undo',
+            summary => N__('Undo previous action'),
+            handler => sub {
+                unshift @{$self->{_actions}}, 'undo';
+                #$self->{_tx_id} = $_[1];
+            },
+        };
+        $opts{redo} = {
+            category => 'Undo options',
+            getopt  => 'redo',
+            summary => N__('Redo previous undone action'),
+            handler => sub {
+                unshift @{$self->{_actions}}, 'redo';
+                #$self->{_tx_id} = $_[1];
+            },
+        };
+    }
+
+    \%opts;
+}
+
 sub BUILD {
     my ($self, $args) = @_;
+
+    # set default common_opts
+    if (!$self->{common_opts}) {
+        $self->_set_default_common_opts;
+    }
 
     unless ($ENV{COMP_LINE}) {
         # pick default color theme and set it
@@ -469,39 +455,6 @@ sub display_result {
     } else {
         print $handle $self->{_fres} // "";
     }
-}
-
-sub get_subcommand {
-    my ($self, $name) = @_;
-
-    my $scs = $self->subcommands;
-    return undef unless $scs;
-
-    if (reftype($scs) eq 'CODE') {
-        return $scs->($self, name=>$name);
-    } else {
-        return $scs->{$name};
-    }
-}
-
-sub list_subcommands {
-    my ($self) = @_;
-    state $cached;
-    return $cached if $cached;
-
-    my $scs = $self->subcommands;
-    my $res;
-    if ($scs) {
-        if (reftype($scs) eq 'CODE') {
-            $scs = $scs->($self);
-            $self->_err("Subcommands code didn't return a hashref")
-                unless ref($scs) eq 'HASH';
-        }
-        $res = $scs;
-    } else {
-        $res = {};
-    }
-    $cached = $res;
 }
 
 sub run_subcommands {
@@ -1382,8 +1335,6 @@ sub _unsetup_progress_output {
 }
 
 sub run_call {
-    require File::Which;
-
     my ($self) = @_;
     my $sc = $self->{_subcommand};
     my %fargs = %{$self->{_args} // {}};
