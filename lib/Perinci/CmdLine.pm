@@ -112,7 +112,6 @@ has common_opts => (
                 $self->_err("'url' not set, required for --version")
                     unless $self->url;
                 unshift @{$self->{_actions}}, 'version';
-                $self->{_check_required_args} = 0;
             },
         };
 
@@ -123,7 +122,6 @@ has common_opts => (
             show_in_options => sub { $ENV{VERBOSE} },
             handler => sub {
                 unshift @{$self->{_actions}}, 'help';
-                $self->{_check_required_args} = 0;
             },
             order   => 0, # high
         };
@@ -190,7 +188,6 @@ has common_opts => (
                 show_in_help => 0,
                 handler => sub {
                     unshift @{$self->{_actions}}, 'subcommands';
-                    $self->{_check_required_args} = 0;
                 },
             };
         }
@@ -201,7 +198,7 @@ has common_opts => (
             $opts{cmd} = {
                 getopt  => "cmd=s",
                 handler => sub {
-                    $self->{_selected_subcommand} = $_[1];
+                    $self->{_subcommand_name} = $_[1];
                 },
             };
         }
@@ -256,7 +253,6 @@ has common_opts => (
                 summary => N__('List actions history'),
                 handler => sub {
                     unshift @{$self->{_actions}}, 'history';
-                    $self->{_check_required_args} = 0;
                 },
             };
             $opts{clear_history} = {
@@ -265,7 +261,6 @@ has common_opts => (
                 summary => N__('Clear actions history'),
                 handler => sub {
                     unshift @{$self->{_actions}}, 'clear_history';
-                    $self->{_check_required_args} = 0;
                 },
             };
             $opts{undo} = {
@@ -275,7 +270,6 @@ has common_opts => (
                 handler => sub {
                     unshift @{$self->{_actions}}, 'undo';
                     #$self->{_tx_id} = $_[1];
-                    $self->{_check_required_args} = 0;
                 },
             };
             $opts{redo} = {
@@ -285,7 +279,6 @@ has common_opts => (
                 handler => sub {
                     unshift @{$self->{_actions}}, 'redo';
                     #$self->{_tx_id} = $_[1];
-                    $self->{_check_required_args} = 0;
                 },
             };
         }
@@ -603,8 +596,7 @@ sub run_completion {
     my ($self) = @_;
 
     my $sc = $self->{_subcommand};
-    my ($words, $cword) = @{ $self->{_comp_parse_res} };
-    my $word  = $words->[$cword] // "";
+    my $word  = $ARGV[$self->{_comp_cword}] // "";
 
     # determine whether we should complete function arg names/values or just
     # top-level opts + subcommands name
@@ -635,49 +627,12 @@ sub run_completion {
         }
 
         $log->tracef("not do_arg, cword=%d, words=%s, scn=%s, space_typed=%s",
-                     $cword, $words, $scn, $space_typed);
-    }
-
-    my @top_opts; # contain --help, -h, etc.
-    for my $o (keys %{{@{ $self->{_go_specs_common} }}}) {
-        $o =~ s/^--//;
-        $o =~ s/=.+$//;
-        my @o = split /\|/, $o;
-        for (@o) { push @top_opts, length > 1 ? "--$_" : "-$_" }
+                     $self->{_comp_cword}, \@ARGV, $scn, $space_typed);
     }
 
     my $res;
     if ($do_arg) {
         $log->trace("Completing subcommand argument names & values ...");
-
-        # remove subcommand name and general options from words so it doesn't
-        # interfere with matching function args
-        my $i = 0;
-        while ($i < @$words) {
-            if ($words->[$i] ~~ @top_opts ||
-                    (defined($self->{_scn_in_argv}) &&
-                         $words->[$i] eq $self->{_scn_in_argv})) {
-                splice @$words, $i, 1;
-                $cword-- unless $cword <= $i;
-                next;
-            } else {
-                $i++;
-            }
-        }
-        $log->tracef("cleaned words=%s, cword=%d", $words, $cword);
-
-        # convert @getopts' ('help|h|?' => ..., ...) to ['--help', '-h', '-?',
-        # ...]. XXX this should be moved to another module to remove
-        # duplication, as Perinci::Sub::GetArgs::Argv also does something
-        # similar.
-        my $common_opts = [];
-        for my $k (keys %{{@{ $self->{_go_specs_common} }}}) {
-            $k =~ s/^--?//;
-            $k =~ s/^([\w?-]+(?:\|[\w?-]+)*)(?:\W.*)?/$1/;
-            for (split /\|/, $k) {
-                push @$common_opts, (length == 1 ? "-$_" : "--$_");
-            }
-        }
 
         my $rres = $self->_pa->request(meta => $sc->{url});
         if ($rres->[0] != 200) {
@@ -686,9 +641,10 @@ sub run_completion {
             goto DISPLAY_RES;
         }
         my $meta = $rres->[2];
+        $self->_add_common_opts_after_meta;
 
         $res = Perinci::Sub::Complete::complete_cli_arg(
-            meta=>$meta, words=>$words, cword=>$cword,
+            meta=>$meta, words=>\@ARGV, cword=>$self->{_comp_cword},
             common_opts => $common_opts,
             riap_server_url => $sc->{url},
             riap_uri        => undef,
@@ -738,10 +694,6 @@ sub _add_common_opts_after_meta {
             },
         };
     }
-
-    # update the cached getopt specs
-    my @go_opts = $self->_gen_go_specs_from_common_opts;
-    $self->{_go_specs_common} = \@go_opts;
 }
 
 sub _help_draw_curtbl {
@@ -1543,56 +1495,62 @@ sub run_redo {
     $self->{_res}[0] == 200 ? 0 : 1;
 }
 
-sub _gen_go_specs_from_common_opts {
+# get subcommand and set $self->{_subcommand} for convenience, it can be taken
+# from subcommands(), or, in the case of app with a single command, {name=>'',
+# url=>$self->url()}.
+sub _set_subcommand {
     my $self = shift;
 
-    my @go_opts;
-    my $co = $self->common_opts;
-    for my $con (sort {
-        ($co->{$a}{order}//1) <=> ($co->{$b}{order}//1) || $a cmp $b
-    } keys %$co) {
-        my $cov = $co->{$con};
-        $self->_err("Invalid common option '$con': empty getopt")
-            unless $cov->{getopt};
-        push @go_opts, $cov->{getopt} => $cov->{handler};
+    if ($self->subcommands) {
+        my $scn;
+        if (defined $self->{_subcommand_name}) {
+            $scn = $self->{_subcommand_name};
+        } elsif (defined $self->default_subcommand) {
+            $scn = $self->default_subcommand;
+        } elsif (@ARGV) {
+            require List::MoreUtils;
+            my $i = List::MoreUtil::firstidx(sub {!/^-/}, @ARGV);
+            goto L1 unless defined $i;
+            $scn = $ARGV[$i];
+            $self->{_scn_in_argv} = $i;
+        } else {
+            goto L1;
+        }
+        my $sc = $self->get_subcommand($scn);
+        unless ($sc) {
+            if ($ENV{COMP_LINE}) {
+                goto L1;
+            } else {
+                $self->_err(
+                    "Unknown subcommand '$scn', use '".
+                        $self->program_name.
+                            " --subcommands' to list available subcommands");
+            }
+        }
+        $self->{_subcommand} = $sc;
+        $self->{_subcommand}{name} = $scn;
+    } else {
+        $self->{_subcommand} = {url=>$self->url, summary=>$self->summary};
+        $self->{_subcommand}{name} = '';
     }
+  L1:
+    unshift @{$self->{_actions}}, 'completion' if $ENV{COMP_LINE};
+    push @{$self->{_actions}}, 'help' if !@{$self->{_actions}};
 
-    @go_opts;
+    # unlogged, too early
+    $log->tracef("actions=%s, subcommand=%s",
+                 $self->{_actions}, $self->{_subcommand});
 }
 
-sub parse_common_opts {
-    require Getopt::Long;
-
-    $log->tracef("-> parse_common_opts()");
-    my ($self) = @_;
-
-    my @orig_ARGV = @ARGV;
-    $self->{_orig_argv} = \@orig_ARGV;
-
-    my @go_opts = $self->_gen_go_specs_from_common_opts;
-    $self->{_go_specs_common} = \@go_opts;
-    my $old_go_opts = Getopt::Long::Configure(
-        "pass_through", "no_ignore_case", "no_getopt_compat", "no_auto_abbrev");
-    # we disable auto abbreviation to reduce surprise, e.g. -a can be
-    # abbreviated from common option --action. this is still not the proper
-    # solution. the proper solution is to only do option parsing once, but is it
-    # feasible?
-    Getopt::Long::GetOptions(@go_opts);
-    $log->tracef("result of GetOptions for common options: remaining argv=%s, ".
-                     "actions=%s", \@ARGV, $self->{_actions});
-    Getopt::Long::Configure($old_go_opts);
-
-    if ($self->{_force_call}) {
-        @ARGV = @orig_ARGV;
-    }
-
-    $log->tracef("<- parse_common_opts()");
-}
-
-sub parse_subcommand_opts {
+sub parse_opts {
     require Perinci::Sub::GetArgs::Argv;
 
+    $log->tracef("-> parse_opts()");
     my ($self) = @_;
+
+    # copy original argv before parsing, this is used e.g. in undo history list
+    $self->{_orig_argv} = [@ARGV];
+
     my $sc = $self->{_subcommand};
     return unless $sc && $sc->{url};
     $log->tracef("-> parse_subcommand_opts()");
@@ -1624,7 +1582,6 @@ sub parse_subcommand_opts {
     my %ga_args = (
         argv                => \@ARGV,
         meta                => $meta,
-        check_required_args => $self->{_check_required_args} // 1,
         allow_extra_elems   => 1,
         per_arg_json        => 1,
         per_arg_yaml        => 1,
@@ -1643,11 +1600,6 @@ sub parse_subcommand_opts {
             0;
         },
     );
-    if ($self->{_force_call}) {
-        $ga_args{extra_getopts_before} = $self->{_go_specs_common};
-    } else {
-        $ga_args{extra_getopts_after}  = $self->{_go_specs_common};
-    }
     $res = Perinci::Sub::GetArgs::Argv::get_args_from_argv(%ga_args);
 
     # We load Log::Any::App rather late here, to be able to customize level via
@@ -1748,59 +1700,6 @@ sub parse_subcommand_opts {
     $log->tracef("<- _parse_subcommand_opts()");
 }
 
-# set $self->{_subcommand} for convenience, it can be taken from subcommands(),
-# or, in the case of app with a single command, {name=>'', url=>$self->url()}.
-sub _set_subcommand {
-    my ($self) = @_;
-
-    if ($self->subcommands) {
-        my $scn;
-        if (defined $self->{_selected_subcommand}) {
-            $scn = $self->{_selected_subcommand};
-        } elsif (defined $self->default_subcommand) {
-            $scn = $self->default_subcommand;
-        } elsif (@ARGV) {
-            $scn = shift @ARGV;
-            $self->{_scn_in_argv} = $scn;
-        } else {
-            goto L1;
-        }
-        my $sc = $self->get_subcommand($scn);
-        unless ($sc) {
-            if ($ENV{COMP_LINE}) {
-                goto L1;
-            } else {
-                $self->_err(
-                    "Unknown subcommand '$scn', use '".
-                        $self->program_name.
-                            " --subcommands' to list available subcommands");
-            }
-        }
-        $self->{_subcommand} = $sc;
-        $self->{_subcommand}{name} = $scn;
-        if ($self->{_force_call}) {
-            unshift @{$self->{_actions}}, 'call';
-        } else {
-            push @{$self->{_actions}}, 'call';
-        }
-    } else {
-        $self->{_subcommand} = {url=>$self->url, summary=>$self->summary};
-        $self->{_subcommand}{name} = '';
-        if ($self->{_force_call}) {
-            unshift @{$self->{_actions}}, 'call';
-        } else {
-            push @{$self->{_actions}}, 'call';
-        }
-    }
-  L1:
-    unshift @{$self->{_actions}}, 'completion' if $ENV{COMP_LINE};
-    push @{$self->{_actions}}, 'help' if !@{$self->{_actions}};
-
-    # unlogged, too early
-    $log->tracef("actions=%s, subcommand=%s",
-                 $self->{_actions}, $self->{_subcommand});
-}
-
 sub _load_log_any_app {
     my ($self) = @_;
     # Log::Any::App::init can already avoid being run twice, but we need to
@@ -1823,16 +1722,15 @@ sub _load_log_any_app {
 sub _init_request {
     my ($self) = @_;
     $self->{_actions} = []; # first action will be tried first, then 2nd, ...
-    undef $self->{_selected_subcommand};
-    undef $self->{_check_required_args};
+    undef $self->{_subcommand_name};
     undef $self->{_subcommand};
     undef $self->{_args};
     undef $self->{_send_argv};
     undef $self->{_orig_argv};
     undef $self->{_getargs_result};
-    undef $self->{_comp_parse_res};
-    undef $self->{_go_specs_common};
+    undef $self->{_comp_point};
     undef $self->{_scn_in_argv};
+    undef $self->{_go_specs_common};
     undef $self->{_dry_run};
     undef $self->{_help_curtbl};
     undef $self->{_help_info};
@@ -1865,27 +1763,14 @@ sub run {
         require Complete::Bash;
         my ($words, $cword) = Complete::Bash::parse_cmdline();
         @ARGV = @$words;
-        $self->{_comp_parse_res} = [$words, $cword]; # store for run_completion()
+        $self->{_comp_cword} = $cword; # store for run_completion()
     }
 
     #
-    # parse common opts first so we can catch --help, --subcommands, etc.
+    # parse command-line options
     #
 
-    $self->parse_common_opts;
-
-    #
-    # find out which subcommand to run, store it in $self->{_subcommand}
-    #
-
-    $self->_set_subcommand();
-
-    #
-    # parse subcommand options, this is to give change to function arguments
-    # like --help to be parsed into $self->{_args}
-    #
-
-    $self->parse_subcommand_opts unless $ENV{COMP_LINE};
+    $self->parse_opts unless $ENV{COMP_LINE};
 
     #
     # finally invoke the appropriate run_*() action method(s)
@@ -1938,7 +1823,7 @@ sub run {
 1;
 # ABSTRACT: Rinci/Riap-based command-line application framework
 
-=for Pod::Coverage ^(VERSION|BUILD|run_.+|help_section_.+|format_result|format_row|display_result|get_subcommand|list_subcommands|parse_common_opts|parse_subcommand_opts|format_set|format_options|format_options_set)$
+=for Pod::Coverage ^(VERSION|BUILD|run_.+|help_section_.+|format_result|format_row|display_result|get_subcommand|list_subcommands|parse_opts|format_set|format_options|format_options_set)$
 
 =head1 SYNOPSIS
 
@@ -2485,7 +2370,7 @@ Sometimes you want to add subcommands as common options instead. For example:
      getopt      => 'halt',
      summary     => 'Halt the server',
      handler     => sub {
-         $cmd->{_selected_subcommand} = 'shutdown';
+         $cmd->{_subcommand_name} = 'shutdown';
      },
  };
 

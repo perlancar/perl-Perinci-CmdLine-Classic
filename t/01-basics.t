@@ -236,7 +236,7 @@ subtest 'completion' => sub {
         args        => {url=>'/Foo/ok'},
         comp_line   => 'CMD -',
         comp_point0 => '     ^',
-        result      => [qw(--action
+        result      => [qw(
                            --arg1 --arg2 --arg3 --debug
                            --format --format-options
                            --help --log-level --quiet
@@ -254,7 +254,6 @@ subtest 'completion' => sub {
         comp_line   => 'CMD -',
         comp_point0 => '     ^',
         result      => [qw(
-                           --action
                            --debug --format --format-options
                            --help --log-level --quiet --subcommands
                            --trace --verbose --version
@@ -271,7 +270,6 @@ subtest 'completion' => sub {
         comp_line   => 'CMD -',
         comp_point0 => '     ^',
         result      => [qw(
-                           --action
                            --cmd
                            --debug --format --format-options
                            --help --log-level --quiet --subcommands
@@ -431,10 +429,10 @@ test_run(name      => "common option (--help) overrides function argument",
          exit_code => 0,
          output_re => qr/Usage/m,
      );
-test_run(name      => "common option (--help) does not override ".
-             "function argument when using --action=call",
+test_run(name      => "common option (--help) makes clashing function ".
+             "argument renamed to --help-arg",
          args      => {subcommands=>{f1=>{url=>'/Foo/f1'}}},
-         argv      => [qw/f1 --help --action=call/],
+         argv      => [qw/f1 --help-arg/],
          exit_code => 0,
          output_re => qr/^tolong/m,
      );
