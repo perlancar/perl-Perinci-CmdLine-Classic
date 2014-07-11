@@ -23,7 +23,6 @@ extends 'Perinci::CmdLine::Base';
 with 'SHARYANTO::Role::ColorTheme' unless $ENV{COMP_LINE};
 #with 'SHARYANTO::Role::TermAttrs' unless $ENV{COMP_LINE}; already loaded by ColorTheme
 
-has exit => (is=>'rw', default=>1);
 has log_any_app => (is => 'rw', default=>sub{1});
 has custom_completer => (is => 'rw');
 has custom_arg_completer => (is => 'rw');
@@ -42,11 +41,7 @@ has undo_dir => (
         $dir;
     }
 );
-# bool, is format set via cmdline opt?
-has format_set => (is => 'rw');
 has format_options => (is => 'rw');
-# bool, is format_options set via cmdline opt?
-has format_options_set => (is => 'rw');
 has pa_args => (is => 'rw');
 has _pa => (
     is => 'rw',
@@ -79,35 +74,6 @@ has _pa => (
         Perinci::Access->new(%args);
     }
 );
-has action_metadata => (
-    is => 'rw',
-    default => sub {
-        +{
-            clear_history => {
-            },
-            help => {
-                default_log => 0,
-                use_utf8 => 1,
-            },
-            history => {
-            },
-            subcommands => {
-                default_log => 0,
-                use_utf8 => 1,
-            },
-            redo => {
-            },
-            call => {
-            },
-            undo => {
-            },
-            version => {
-                default_log => 0,
-                use_utf8 => 1,
-            },
-        },
-    },
-);
 
 sub VERSION {
     my ($pkg, $req) = @_;
@@ -120,217 +86,219 @@ sub __json_decode {
     $json->decode(shift);
 }
 
-sub _err {
-    my $self = shift;
+sub err {
+    my ($self, $msg) = @_;
     my $msg = shift; $msg .= "\n" unless $msg =~ /\n\z/;
-    die $self->_color('error_label', "ERROR: ") . $msg;
-}
-
-sub _program_and_subcommand_name {
-    my $self = shift;
-    my $res = $self->program_name . " " . ($self->{_subcommand}{name} // "");
-    $res =~ s/\s+$//;
-    $res;
-}
-
-sub _set_default_common_opts {
-    my ($self) = @_;
-
-    my %opts;
-
-    $opts{version} = {
-        getopt  => "version|v",
-        usage   => N__("--version (or -v)"),
-        summary => N__("Show version"),
-        show_in_options => sub { $ENV{VERBOSE} },
-        handler => sub {
-            $self->_err("'url' not set, required for --version")
-                unless $self->url;
-            unshift @{$self->{_actions}}, 'version';
-        },
-    };
-
-    $opts{help} = {
-        getopt  => "help|h|?",
-        usage   => N__("--help (or -h, -?) [--verbose]"),
-        summary => N__("Display this help message"),
-        show_in_options => sub { $ENV{VERBOSE} },
-        handler => sub {
-            unshift @{$self->{_actions}}, 'help';
-        },
-        order   => 0, # high
-    };
-
-    $opts{format} = {
-        getopt  => "format=s",
-        summary => N__("Choose output format, e.g. json, text"),
-        handler => sub {
-            $self->format_set(1);
-            $self->format($_[1]);
-        },
-    };
-
-    if ($REQ_VERSION >= 1.04) {
-        $opts{json} = {
-            getopt  => "json",
-            summary => N__("Equivalent to --format=json-pretty"),
-            handler => sub {
-                $self->format_set(1);
-                $self->format('json-pretty');
-            },
-        };
-        $opts{yaml} = {
-            getopt  => "yaml",
-            summary => N__("Equivalent to --format=yaml"),
-            handler => sub {
-                $self->format_set(1);
-                $self->format('yaml');
-            },
-        };
-        $opts{perl} = {
-            getopt  => "perl",
-            summary => N__("Equivalent to --format=perl"),
-            handler => sub {
-                $self->format_set(1);
-                $self->format('perl');
-            },
-        };
-    }
-
-    $opts{format_options} = {
-        getopt  => "format-options=s",
-        summary => N__("Pass options to formatter"),
-        handler => sub {
-            $self->format_options_set(1);
-            $self->format_options(__json_decode($_[1]));
-        },
-    };
-
-    if ($self->subcommands) {
-        $opts{subcommands} = {
-            getopt  => "subcommands",
-            usage   => N__("--subcommands"),
-            show_in_usage => sub {
-                !$self->{_subcommand};
-            },
-            show_in_options => sub {
-                $ENV{VERBOSE} && !$self->{_subcommand};
-            },
-            show_usage_in_help => sub {
-                my $self = shift;
-            },
-            summary => N__("List available subcommands"),
-            show_in_help => 0,
-            handler => sub {
-                unshift @{$self->{_actions}}, 'subcommands';
-            },
-        };
-    }
-
-    if (defined $self->default_subcommand) {
-        # 'cmd=SUBCOMMAND_NAME' can be used to select other subcommands when
-        # default_subcommand is in effect.
-        $opts{cmd} = {
-            getopt  => "cmd=s",
-            handler => sub {
-                $self->{_subcommand_name} = $_[1];
-            },
-        };
-    }
-
-    # convenience for Log::Any::App-using apps
-    if ($self->log_any_app) {
-        # since the cmdline opts is consumed, Log::Any::App doesn't see
-        # this. we currently work around this via setting env.
-
-        $opts{quiet} = {
-            getopt  => "quiet",
-            summary => N__("Set log level to quiet"),
-            handler => sub {
-                $ENV{QUIET} = 1;
-            },
-        };
-        $opts{verbose} = {
-            getopt  => "verbose",
-            summary => N__("Set log level to verbose"),
-            handler => sub {
-                $ENV{VERBOSE} = 1;
-            },
-        };
-        $opts{debug} = {
-            getopt  => "debug",
-            summary => N__("Set log level to debug"),
-            handler => sub {
-                $ENV{DEBUG} = 1;
-            },
-        };
-        $opts{trace} = {
-            getopt  => "trace",
-            summary => N__("Set log level to trace"),
-            handler => sub {
-                $ENV{TRACE} = 1;
-            },
-        };
-
-        $opts{log_level} = {
-            getopt  => "log-level=s",
-            summary => N__("Set log level"),
-            handler => sub {
-                $ENV{LOG_LEVEL} = $_[1];
-            },
-        };
-    }
-
-    if ($self->undo) {
-        $opts{history} = {
-            category => 'Undo options',
-            getopt  => 'history',
-            summary => N__('List actions history'),
-            handler => sub {
-                unshift @{$self->{_actions}}, 'history';
-            },
-        };
-        $opts{clear_history} = {
-            category => 'Undo options',
-            getopt  => "clear-history",
-            summary => N__('Clear actions history'),
-            handler => sub {
-                unshift @{$self->{_actions}}, 'clear_history';
-            },
-        };
-        $opts{undo} = {
-            category => 'Undo options',
-            getopt  => 'undo',
-            summary => N__('Undo previous action'),
-            handler => sub {
-                unshift @{$self->{_actions}}, 'undo';
-                #$self->{_tx_id} = $_[1];
-            },
-        };
-        $opts{redo} = {
-            category => 'Undo options',
-            getopt  => 'redo',
-            summary => N__('Redo previous undone action'),
-            handler => sub {
-                unshift @{$self->{_actions}}, 'redo';
-                #$self->{_tx_id} = $_[1];
-            },
-        };
-    }
-
-    \%opts;
+     $self->_color('error_label', "ERROR: ") . $msg;
 }
 
 sub BUILD {
+    require Perinci::Result::Format;
+
     my ($self, $args) = @_;
 
-    # set default common_opts
+    if (!$self->{actions}) {
+        $self->{actions} = {
+            version => {
+                default_log => 0,
+                use_utf8 => 1,
+            },
+            help => {
+                default_log => 0,
+                use_utf8 => 1,
+            },
+            subcommands => {
+                default_log => 0,
+                use_utf8 => 1,
+            },
+            call => {},
+
+            history => {},
+            clear_history => {},
+            redo => {},
+            undo => {},
+        };
+    }
+
     if (!$self->{common_opts}) {
-        $self->_set_default_common_opts;
+        $opts{version} = {
+            getopt  => "version|v",
+            usage   => N__("--version (or -v)"),
+            summary => N__("Show version"),
+            show_in_options => sub { $ENV{VERBOSE} },
+            handler => sub {
+                die "'url' not set, required for --version"
+                    unless $self->url;
+                $self->select_subcommand('version');
+            },
+        };
+
+        $opts{help} = {
+            getopt  => "help|h|?",
+            usage   => N__("--help (or -h, -?) [--verbose]"),
+            summary => N__("Display this help message"),
+            show_in_options => sub { $ENV{VERBOSE} },
+            handler => sub {
+                $self->select_subcommand('help');
+            },
+            order   => 0, # high
+        };
+
+        $opts{format} = {
+            getopt  => "format=s",
+            summary => N__("Choose output format, e.g. json, text"),
+            handler => sub {
+                $self->selected_format($_[1]);
+            },
+        };
+
+        if ($REQ_VERSION >= 1.04) {
+            $opts{json} = {
+                getopt  => "json",
+                summary => N__("Equivalent to --format=json-pretty"),
+                handler => sub {
+                    $self->selected_format('json-pretty');
+                },
+            };
+            $opts{yaml} = {
+                getopt  => "yaml",
+                summary => N__("Equivalent to --format=yaml"),
+                handler => sub {
+                    $self->selected_format('yaml');
+                },
+            };
+            $opts{perl} = {
+                getopt  => "perl",
+                summary => N__("Equivalent to --format=perl"),
+                handler => sub {
+                    $self->selected_format('perl');
+                },
+            };
+        }
+
+        $opts{format_options} = {
+            getopt  => "format-options=s",
+            summary => N__("Pass options to formatter"),
+            handler => sub {
+                $self->format_options(__json_decode($_[1]));
+            },
+        };
+
+        if ($self->subcommands) {
+            $opts{subcommands} = {
+                getopt  => "subcommands",
+                usage   => N__("--subcommands"),
+                show_in_usage => sub {
+                    !$self->{selected_subcommand_name};
+                },
+                show_in_options => sub {
+                    $ENV{VERBOSE} && !$self->{selected_subcommand_name};
+                },
+                show_usage_in_help => sub {
+                    my $self = shift;
+                },
+                summary => N__("List available subcommands"),
+                show_in_help => 0,
+                handler => sub {
+                    $self->select_subcommand('subcommands');
+                },
+            };
+        }
+
+        if (defined $self->default_subcommand) {
+            # 'cmd=SUBCOMMAND_NAME' can be used to select other subcommands when
+            # default_subcommand is in effect.
+            $opts{cmd} = {
+                getopt  => "cmd=s",
+                handler => sub {
+                    $self->select_subcommand($_[1]);
+                },
+            };
+        }
+
+        # convenience for Log::Any::App-using apps
+        if ($self->log_any_app) {
+            # since the cmdline opts is consumed, Log::Any::App doesn't see
+            # this. we currently work around this via setting env.
+
+            $opts{quiet} = {
+                getopt  => "quiet",
+                summary => N__("Set log level to quiet"),
+                handler => sub {
+                    $ENV{QUIET} = 1;
+                },
+            };
+            $opts{verbose} = {
+                getopt  => "verbose",
+                summary => N__("Set log level to verbose"),
+                handler => sub {
+                    $ENV{VERBOSE} = 1;
+                },
+            };
+            $opts{debug} = {
+                getopt  => "debug",
+                summary => N__("Set log level to debug"),
+                handler => sub {
+                    $ENV{DEBUG} = 1;
+                },
+            };
+            $opts{trace} = {
+                getopt  => "trace",
+                summary => N__("Set log level to trace"),
+                handler => sub {
+                    $ENV{TRACE} = 1;
+                },
+            };
+
+            $opts{log_level} = {
+                getopt  => "log-level=s",
+                summary => N__("Set log level"),
+                handler => sub {
+                    $ENV{LOG_LEVEL} = $_[1];
+                },
+            };
+        }
+
+        if ($self->undo) {
+            $opts{history} = {
+                category => 'Undo options',
+                getopt  => 'history',
+                summary => N__('List actions history'),
+                handler => sub {
+                    unshift @{$self->{_actions}}, 'history';
+                },
+            };
+            $opts{clear_history} = {
+                category => 'Undo options',
+                getopt  => "clear-history",
+                summary => N__('Clear actions history'),
+                handler => sub {
+                    unshift @{$self->{_actions}}, 'clear_history';
+                },
+            };
+            $opts{undo} = {
+                category => 'Undo options',
+                getopt  => 'undo',
+                summary => N__('Undo previous action'),
+                handler => sub {
+                    unshift @{$self->{_actions}}, 'undo';
+                    #$self->{_tx_id} = $_[1];
+                },
+            };
+            $opts{redo} = {
+                category => 'Undo options',
+                getopt  => 'redo',
+                summary => N__('Redo previous undone action'),
+                handler => sub {
+                    unshift @{$self->{_actions}}, 'redo';
+                    #$self->{_tx_id} = $_[1];
+                },
+            };
+        }
+        $self->{common_opts} = \%opts;
     }
 
     unless ($ENV{COMP_LINE}) {
-        # pick default color theme and set it
         my $ct = $self->{color_theme} // $ENV{PERINCI_CMDLINE_COLOR_THEME};
         if (!$ct) {
             if ($self->use_color) {
@@ -343,12 +311,15 @@ sub BUILD {
         }
         $self->color_theme($ct);
     }
+
+    # available formats
+    $self->{formats} //= [keys %Perinci::Result::Format::Formats];
 }
 
 sub format_result {
     require Perinci::Result::Format;
 
-    my $self = shift;
+    my ($self, $res, $format, $meta) = @_;
     my $res  = $self->{_res};
     return unless $res;
 
@@ -358,23 +329,23 @@ sub format_result {
         return;
     }
 
-    my $format = $self->format_set ?
-        $self->format :
-            $self->{_meta}{"x.perinci.cmdline.default_format"} // $self->format;
-    $self->_err("Unknown output format '$format', please choose one of: ".
-        join(", ", sort keys(%Perinci::Result::Format::Formats)))
-            unless $Perinci::Result::Format::Formats{$format};
-    if ($self->format_options_set) {
-        $res->[3]{result_format_options} = $self->format_options;
-        $resmeta = $res->[3];
+    $format //= $meta->{"x.perinci.cmdline.default_format"};
+    $format //= 'text';
+
+    unless ($format ~~ @{ $self->formats }) {
+        warn "Unknown output format '$format'";
+        $format = 'text';
     }
+
+    $resmeta->{result_format_options} = $self->format_options
+        if $self->format_options;
 
     if ($resmeta->{is_stream}) {
         $log->tracef("Result is a stream");
+        return undef;
     } else {
         $log->tracef("Formatting output with %s", $format);
-        $self->{_fres} = Perinci::Result::Format::format(
-            $self->{_res}, $format);
+        return Perinci::Result::Format::format($res, $format);
     }
 }
 
@@ -401,13 +372,26 @@ sub format_row {
 sub display_result {
     require File::Which;
 
-    my $self = shift;
-
-    my $res  = $self->{_res};
-    return unless $res;
+    my ($self, $res, $fres) = @_;
 
     my $resmeta = $res->[3] // {};
 
+    # determine whether to binmode(STDOUT,":utf8")
+    my $utf8 = $ENV{UTF8};
+    if (!defined($utf8)) {
+        my $am = $self->action_metadata->{$action};
+        $utf8 //= $am->{use_utf8};
+    }
+    if (!defined($utf8) && $self->{_subcommand}) {
+        $utf8 //= $self->{_subcommand}{use_utf8};
+    }
+    $utf8 //= $self->use_utf8;
+    if ($utf8) {
+        binmode(STDOUT, ":utf8");
+    }
+
+    # determine filehandle to output to (normally STDOUT, but we can also send
+    # to a pager
     my $handle;
     {
         if ($resmeta->{"cmdline.page_result"}) {
@@ -453,7 +437,7 @@ sub display_result {
                             "object/(tied) array)\n");
         }
     } else {
-        print $handle $self->{_fres} // "";
+        print $handle $fres;
     }
 }
 
@@ -633,14 +617,13 @@ sub run_completion {
     0;
 }
 
-# some common opts can be added only after we get the function metadata
-sub _add_common_opts_after_meta {
-    my $self = shift;
+sub hook_after_get_meta {
+    my ($self, $meta) = @_;
 
-    if (risub($self->{_meta})->can_dry_run) {
+    if (risub($meta)->can_dry_run) {
         $self->common_opts->{dry_run} = {
             getopt  => 'dry-run',
-            summary => "Run in simulation mode (also via DRY_RUN=1)",
+            summary => N__("Run in simulation mode (also via DRY_RUN=1)"),
             handler => sub {
                 $self->{_dry_run} = 1;
                 $ENV{VERBOSE} = 1;
@@ -1409,7 +1392,7 @@ sub run_history {
     my $self = shift;
     my $res = $self->_pa->request(list_txs => "/", {detail=>1});
     $log->tracef("list_txs res=%s", $res);
-    return 1 unless $res->[0] == 200;
+    return $res unless $res->[0] == 200;
     $res->[2] = [sort {($b->{tx_commit_time}//0) <=> ($a->{tx_commit_time}//0)}
                      @{$res->[2]}];
     my @txs;
@@ -1424,231 +1407,22 @@ sub run_history {
             summary     => $tx->{tx_summary},
         };
     }
-    $self->{_res} = [200, "OK", \@txs];
-    0;
+    [200, "OK", \@txs];
 }
 
 sub run_clear_history {
     my $self = shift;
-    $self->{_res} = $self->_pa->request(discard_all_txs => "/");
-    $self->{_res}[0] == 200 ? 0 : 1;
+    $self->_pa->request(discard_all_txs => "/");
 }
 
 sub run_undo {
     my $self = shift;
-    $self->{_res} = $self->_pa->request(undo => "/");
-    $self->{_res}[0] == 200 ? 0 : 1;
+    $self->_pa->request(undo => "/");
 }
 
 sub run_redo {
     my $self = shift;
-    $self->{_res} = $self->_pa->request(redo => "/");
-    $self->{_res}[0] == 200 ? 0 : 1;
-}
-
-# get subcommand and set $self->{_subcommand} for convenience, it can be taken
-# from subcommands(), or, in the case of app with a single command, {name=>'',
-# url=>$self->url()}.
-sub _set_subcommand {
-    my $self = shift;
-
-    if ($self->subcommands) {
-        my $scn;
-        if (defined $self->{_subcommand_name}) {
-            $scn = $self->{_subcommand_name};
-        } elsif (defined $self->default_subcommand) {
-            $scn = $self->default_subcommand;
-        } elsif (@ARGV) {
-            require List::MoreUtils;
-            my $i = List::MoreUtil::firstidx(sub {!/^-/}, @ARGV);
-            goto L1 unless defined $i;
-            $scn = $ARGV[$i];
-            $self->{_scn_in_argv} = $i;
-        } else {
-            goto L1;
-        }
-        my $sc = $self->get_subcommand($scn);
-        unless ($sc) {
-            if ($ENV{COMP_LINE}) {
-                goto L1;
-            } else {
-                $self->_err(
-                    "Unknown subcommand '$scn', use '".
-                        $self->program_name.
-                            " --subcommands' to list available subcommands");
-            }
-        }
-        $self->{_subcommand} = $sc;
-        $self->{_subcommand}{name} = $scn;
-    } else {
-        $self->{_subcommand} = {url=>$self->url, summary=>$self->summary};
-        $self->{_subcommand}{name} = '';
-    }
-  L1:
-    unshift @{$self->{_actions}}, 'completion' if $ENV{COMP_LINE};
-    push @{$self->{_actions}}, 'help' if !@{$self->{_actions}};
-
-    # unlogged, too early
-    $log->tracef("actions=%s, subcommand=%s",
-                 $self->{_actions}, $self->{_subcommand});
-}
-
-sub parse_opts {
-    require Perinci::Sub::GetArgs::Argv;
-
-    $log->tracef("-> parse_opts()");
-    my ($self) = @_;
-
-    # copy original argv before parsing, this is used e.g. in undo history list
-    $self->{_orig_argv} = [@ARGV];
-
-    my $sc = $self->{_subcommand};
-    return unless $sc && $sc->{url};
-    $log->tracef("-> parse_subcommand_opts()");
-
-    my $res = $self->_pa->request(meta=>$sc->{url});
-    if ($res->[0] == 200) {
-        # prefill arguments using 'args' from subcommand specification, if any
-        $self->{_args} = {};
-        if ($sc->{args}) {
-            for (keys %{ $sc->{args} }) {
-                $self->{_args}{$_} = $sc->{args}{$_};
-            }
-        }
-    } else {
-        $log->warnf("Can't get metadata from %s: %d - %s", $sc->{url},
-                    $res->[0], $res->[1]);
-        $log->tracef("<- parse_subcommand_opts() (bailed)");
-        return;
-    }
-    my $meta = $res->[2];
-    $self->{_meta} = $meta;
-    $self->_add_common_opts_after_meta;
-
-    # also set dry-run on environment
-    do { $self->{_dry_run} = 1; $ENV{VERBOSE} = 1 } if $ENV{DRY_RUN};
-
-    # parse argv
-    my $src_seen;
-    my %ga_args = (
-        argv                => \@ARGV,
-        meta                => $meta,
-        allow_extra_elems   => 1,
-        per_arg_json        => 1,
-        per_arg_yaml        => 1,
-        on_missing_required_args => sub {
-            my %a = @_;
-            my ($an, $aa, $as) = ($a{arg}, $a{args}, $a{spec});
-            my $src = $as->{cmdline_src};
-            if ($src && $as->{req}) {
-                # don't complain, we will fill argument from other source
-                return 1;
-            } else {
-                # we have no other sources, so we complain about missing arg
-                say "Missing required argument: $an"
-                    if $self->{_check_required_args} // 1;
-            }
-            0;
-        },
-    );
-    $res = Perinci::Sub::GetArgs::Argv::get_args_from_argv(%ga_args);
-
-    # We load Log::Any::App rather late here, to be able to customize level via
-    # --debug, --dry-run, etc.
-    unless ($ENV{COMP_LINE}) {
-        my $do_log = $self->{_subcommand}{log_any_app};
-        $do_log //= $ENV{LOG};
-        $do_log //= $self->{action_metadata}{$self->{_actions}[0]}{default_log}
-            if @{ $self->{_actions} };
-        $do_log //= $self->log_any_app;
-        $self->_load_log_any_app if $do_log;
-    }
-
-    # we'll try giving argv to server side, but this currently means we skip
-    # processing cmdline_src.
-    if ($res->[0] == 502) {
-        $log->debugf("Failed parsing arguments (status 502), will try to send ".
-                         "argv to server");
-        $self->{_getargs_result} = $res;
-        $self->{_send_argv} = 1;
-        return;
-    }
-
-    $self->_err("Failed parsing arguments: $res->[0] - $res->[1]")
-        unless $res->[0] == 200;
-    for (keys %{ $res->[2] }) {
-        $self->{_args}{$_} = $res->[2]{$_};
-    }
-    $log->tracef("result of GetArgs for subcommand: remaining argv=%s, args=%s".
-                     ", actions=%s", \@ARGV, $self->{_args}, $self->{_actions});
-
-    # handle cmdline_src
-    if (!$ENV{COMP_LINE} && ($self->{_actions}[0] // "") eq 'call') {
-        my $args_p = $meta->{args} // {};
-        my $stdin_seen;
-        for my $an (sort keys %$args_p) {
-            #$log->tracef("TMP: handle cmdline_src for arg=%s", $an);
-            my $as = $args_p->{$an};
-            my $src = $as->{cmdline_src};
-            if ($src) {
-                $self->_err(
-                    "Invalid 'cmdline_src' value for argument '$an': $src")
-                    unless $src =~ /\A(stdin|file|stdin_or_files)\z/;
-                $self->_err(
-                    "Sorry, argument '$an' is set cmdline_src=$src, but type ".
-                        "is not 'str' or 'array', only those are supported now")
-                    unless $as->{schema}[0] =~ /\A(str|array)\z/;
-                if ($src =~ /stdin/) {
-                    $self->_err("Only one argument can be specified ".
-                                    "cmdline_src stdin/stdin_or_files")
-                        if $stdin_seen++;
-                }
-                my $is_ary = $as->{schema}[0] eq 'array';
-                if ($src eq 'stdin' || $src eq 'file' &&
-                        ($self->{_args}{$an}//"") eq '-') {
-                    $self->_err("Argument $an must be set to '-' which means ".
-                                    "from stdin")
-                        if defined($self->{_args}{$an}) &&
-                            $self->{_args}{$an} ne '-';
-                    $log->trace("Getting argument '$an' value from stdin ...");
-                    $self->{_args}{$an} = $is_ary ? [<STDIN>] :
-                        do { local $/; <STDIN> };
-                } elsif ($src eq 'stdin_or_files') {
-                    # push back argument value to @ARGV so <> can work to slurp
-                    # all the specified files
-                    local @ARGV = @ARGV;
-                    unshift @ARGV, $self->{_args}{$an}
-                        if defined $self->{_args}{$an};
-                    $log->tracef("Getting argument '$an' value from ".
-                                     "stdin_or_files, \@ARGV=%s ...", \@ARGV);
-                    $self->{_args}{$an} = $is_ary ? [<>] : do { local $/; <> };
-                } elsif ($src eq 'file') {
-                    unless (exists $self->{_args}{$an}) {
-                        if ($as->{req}) {
-                            $self->_err(
-                                "Please specify filename for argument '$an'");
-                        } else {
-                            next;
-                        }
-                    }
-                    $self->_err("Please specify filename for argument '$an'")
-                        unless defined $self->{_args}{$an};
-                    $log->trace("Getting argument '$an' value from ".
-                                    "file ...");
-                    my $fh;
-                    unless (open $fh, "<", $self->{_args}{$an}) {
-                        $self->_err("Can't open file '$self->{_args}{$an}' ".
-                                        "for argument '$an': $!")
-                    }
-                    $self->{_args}{$an} = $is_ary ? [<$fh>] :
-                        do { local $/; <$fh> };
-                }
-            }
-        }
-    }
-    $log->tracef("args after cmdline_src is processed: %s", $self->{_args});
-
-    $log->tracef("<- _parse_subcommand_opts()");
+    $self->_pa->request(redo => "/");
 }
 
 sub _load_log_any_app {
@@ -1667,114 +1441,40 @@ sub _load_log_any_app {
                  $0, $self->{_orig_argv});
 }
 
-# since there's now module like Perinci::CmdLine::Server which might reuse the
-# same instance for multiple run()'s/requests, use this to clean state between
-# requests.
-sub _init_request {
+# this hook is called at the start of run(), can be used to initialize stuffs
+sub hook_before_run {
     my ($self) = @_;
-    $self->{_actions} = []; # first action will be tried first, then 2nd, ...
-    undef $self->{_subcommand_name};
-    undef $self->{_subcommand};
-    undef $self->{_args};
-    undef $self->{_send_argv};
-    undef $self->{_orig_argv};
-    undef $self->{_getargs_result};
-    undef $self->{_comp_point};
-    undef $self->{_scn_in_argv};
-    undef $self->{_go_specs_common};
-    undef $self->{_dry_run};
-    undef $self->{_help_curtbl};
-    undef $self->{_help_info};
-    undef $self->{_help_meta};
-    undef $self->{_some_subcommands_not_shown_in_help};
-    undef $self->{_tx_id};
-    undef $self->{_meta};
-    undef $self->{_res};
-    undef $self->{_fres};
-    undef $self->{_compres};
 
-    # not reset
-    #$self->{_log_any_app_loaded};
+    $log->tracef("Start of CLI run");
+
+    # since there's now module like Perinci::CmdLine::Server which might reuse
+    # the same instance for multiple run()'s/requests, we clean state between
+    # requests.
+    {
+        undef $self->{_help_curtbl};
+        undef $self->{_help_info};
+        undef $self->{_help_meta};
+        undef $self->{_some_subcommands_not_shown_in_help};
+        undef $self->{_tx_id};
+        # save, for showing in history, among others
+        $self->{_orig_argv} = [@ARGV];
+
+        # not reset
+        #$self->{_log_any_app_loaded};
+    }
 }
 
-sub run {
-    my ($self) = @_;
-
-    $log->trace("-> CmdLine's run()");
-
-    $self->_init_request;
-
-    #
-    # workaround: detect (1) if we're being invoked for bash completion, get
-    # @ARGV from parsing COMP_LINE/COMP_POINT instead, since @ARGV given by bash
-    # is messed up / different
-    #
-
-    if ($ENV{COMP_LINE}) {
-        require Complete::Bash;
-        my ($words, $cword) = Complete::Bash::parse_cmdline();
-        @ARGV = @$words;
-        $self->{_comp_cword} = $cword; # store for run_completion()
-    }
-
-    #
-    # parse command-line options
-    #
-
-    $self->parse_opts unless $ENV{COMP_LINE};
-
-    #
-    # finally invoke the appropriate run_*() action method(s)
-    #
-
-    my $exit_code;
-    while (@{$self->{_actions}}) {
-        my $action = shift @{$self->{_actions}};
-        #$log->tracef("Trying action $action");
-
-        unless ($ENV{COMP_LINE}) {
-            # determine whether to binmode(STDOUT,":utf8")
-            my $utf8 = $ENV{UTF8};
-            if (!defined($utf8)) {
-                my $am = $self->action_metadata->{$action};
-                $utf8 //= $am->{use_utf8};
-            }
-            if (!defined($utf8) && $self->{_subcommand}) {
-                $utf8 //= $self->{_subcommand}{use_utf8};
-            }
-            $utf8 //= $self->use_utf8;
-            if ($utf8) {
-                binmode(STDOUT, ":utf8");
-            }
-        }
-
-        my $meth = "run_$action";
-        unless ($self->can($meth)) {
-            $self->_err("Unknown action '$action'");
-        }
-        $log->tracef("-> %s()", $meth);
-        $exit_code = $self->$meth;
-        $log->tracef("<- %s(), return=%s", $meth, $exit_code);
-        last if defined $exit_code;
-    }
-    $self->format_result;
-    $self->display_result;
-
-    $log->tracef("<- CmdLine's run(), exit code=%s", $exit_code);
-    if ($self->exit) {
-        $log->debugf("Program ending with exit code %d", $exit_code);
-        $self->_unsetup_progress_output;
-        exit $exit_code;
-    } else {
-        $self->_unsetup_progress_output;
-        return $exit_code;
-    }
+sub hook_after_run {
+    my ($self, $res) = @_;
+    $self->_unsetup_progress_output;
+    $log->tracef("End of CLI run, res status=%s, exit code=%s",
+                 $res->[0], $self->status2exitcode($res->[0]));
 }
 
 1;
 # ABSTRACT: Rinci/Riap-based command-line application framework
 
-=for Pod::Coverage ^(VERSION|BUILD|run_.+|help_section_.+|format_result|format_row|display_result|get_subcommand|list_subcommands|parse_opts|format_set|format_options|format_options_set)$
+=for Pod::Coverage ^(VERSION|BUILD|run_.+|help_section_.+|format_result|format_row|display_result|get_subcommand|list_subcommands|parse_opts|format|format_options)$
 
 =head1 SYNOPSIS
 
@@ -2107,7 +1807,7 @@ using the first argument (see B<subcommands>).
 
 If unset, will be retrieved from function metadata when needed.
 
-=head2 action_metadata => HASH
+=head2 actions => HASH
 
 Contains a list of known actions and their metadata. Keys should be action
 names, values should be metadata. Metadata is a hash containing these keys:
@@ -2335,8 +2035,8 @@ equivalent to executing the 'shutdown' subcommand:
 
 =head2 exit => BOOL (default 1)
 
-If set to 0, instead of exiting with exit(), run() will return the exit code
-instead.
+If set to 0, instead of outputting result and then exiting with exit(), run()
+will return enveloped response.
 
 =head2 log_any_app => BOOL (default: 1)
 
@@ -2402,20 +2102,23 @@ Where to put undo data. This is actually the transaction manager's data dir.
 
 =head1 METHODS
 
-=head2 new(%opts) => OBJ
+=head2 new(%opts) => obj
 
 Create an instance.
 
-=head2 run() -> INT
+=head2 run() -> undef | array
 
 The main routine. Its job is to parse command-line options in @ARGV and
 determine which action method (e.g. run_call(), run_help(), etc) to run. Action
-method should return an integer containing exit code. If action method returns
-undef, the next action candidate method will be tried.
+method should return enveloped response. If action method returns undef,
+the next action candidate method will be tried.
 
-After that, exit() will be called with the exit code from the action method (or,
-if C<exit> attribute is set to false, routine will return with exit code
-instead).
+After that, if C<exit> attribute is true, C<exit()> will be called with the exit
+code of 0 if response status is 200, or C<status - 300> (so, for example, an
+enveloped response C<< [500, "Can't delete file 'foo': permission denied"] >>
+will cause the CLI program to exit with exit code 200.
+
+If C<exit> attribute is false, the enveloped response will simply be returned.
 
 
 =head1 METADATA PROPERTY ATTRIBUTE
