@@ -1,5 +1,8 @@
 package Perinci::CmdLine;
 
+# DATE
+# VERSION
+
 use 5.010001;
 #use strict; # enabled by Moo
 #use warnings; # enabled by Moo
@@ -12,9 +15,6 @@ use Locale::TextDomain::UTF8 'Perinci-CmdLine';
 use Perinci::Object;
 use Perinci::ToUtil;
 use Scalar::Util qw(reftype blessed);
-
-# VERSION
-# DATE
 
 our $REQ_VERSION = 0; # version requested by user
 
@@ -617,8 +617,12 @@ sub run_completion {
     0;
 }
 
-sub hook_after_get_meta {
+sub get_meta {
     my ($self, $meta) = @_;
+
+    my $res = $self->_pa->request(meta => $self->selected_subcommand->{url});
+    die $res unless $res->[0] == 200;
+    my $meta = $res->[2];
 
     if (risub($meta)->can_dry_run) {
         $self->common_opts->{dry_run} = {
@@ -630,6 +634,8 @@ sub hook_after_get_meta {
             },
         };
     }
+
+    $meta;
 }
 
 sub _help_draw_curtbl {
@@ -1469,6 +1475,116 @@ sub hook_after_run {
     $self->_unsetup_progress_output;
     $log->tracef("End of CLI run, res status=%s, exit code=%s",
                  $res->[0], $self->status2exitcode($res->[0]));
+}
+
+sub hook_after_parse_opts {
+    my ($self, $parse_res) = @_;
+
+    # We load Log::Any::App rather late here, to be able to customize level via
+    # --debug, --dry-run, etc.
+    unless ($ENV{COMP_LINE}) {
+        my $do_log = $self->{_subcommand}{log_any_app};
+        $do_log //= $ENV{LOG};
+        $do_log //= $self->{action_metadata}{$self->{_actions}[0]}{default_log}
+            if @{ $self->{_actions} };
+        $do_log //= $self->log_any_app;
+        $self->_load_log_any_app if $do_log;
+    }
+
+    # we'll try giving argv to server side, but this currently means we skip
+    # processing cmdline_src.
+    if ($res->[0] == 502) {
+        #$log->debugf("Failed parsing arguments (status 502), will try to send ".
+        #                 "argv to server");
+        $self->{_getargs_result} = $res;
+        $self->{_send_argv} = 1;
+        return;
+    }
+
+    $self->_err("Failed parsing arguments: $res->[0] - $res->[1]")
+        unless $res->[0] == 200;
+    for (keys %{ $res->[2] }) {
+        $self->{_args}{$_} = $res->[2]{$_};
+    }
+    #$log->tracef("result of GetArgs for subcommand: remaining argv=%s, args=%s".
+    #                 ", actions=%s", \@ARGV, $self->{_args}, $self->{_actions});
+
+    # handle cmdline_src
+    if (!$ENV{COMP_LINE} && ($self->{_actions}[0] // "") eq 'call') {
+        my $args_p = $meta->{args} // {};
+        my $stdin_seen;
+        for my $an (sort keys %$args_p) {
+            #$log->tracef("TMP: handle cmdline_src for arg=%s", $an);
+            my $as = $args_p->{$an};
+            my $src = $as->{cmdline_src};
+            if ($src) {
+                $self->_err(
+                    "Invalid 'cmdline_src' value for argument '$an': $src")
+                    unless $src =~ /\A(stdin|file|stdin_or_files)\z/;
+                $self->_err(
+                    "Sorry, argument '$an' is set cmdline_src=$src, but type ".
+                        "is not 'str' or 'array', only those are supported now")
+                    unless $as->{schema}[0] =~ /\A(str|array)\z/;
+                if ($src =~ /stdin/) {
+                    $self->_err("Only one argument can be specified ".
+                                    "cmdline_src stdin/stdin_or_files")
+                        if $stdin_seen++;
+                }
+                my $is_ary = $as->{schema}[0] eq 'array';
+                if ($src eq 'stdin' || $src eq 'file' &&
+                        ($self->{_args}{$an}//"") eq '-') {
+                    $self->_err("Argument $an must be set to '-' which means ".
+                                    "from stdin")
+                        if defined($self->{_args}{$an}) &&
+                            $self->{_args}{$an} ne '-';
+                    #$log->trace("Getting argument '$an' value from stdin ...");
+                    $self->{_args}{$an} = $is_ary ? [<STDIN>] :
+                        do { local $/; <STDIN> };
+                } elsif ($src eq 'stdin_or_files') {
+                    # push back argument value to @ARGV so <> can work to slurp
+                    # all the specified files
+                    local @ARGV = @ARGV;
+                    unshift @ARGV, $self->{_args}{$an}
+                        if defined $self->{_args}{$an};
+                    #$log->tracef("Getting argument '$an' value from ".
+                    #                 "stdin_or_files, \@ARGV=%s ...", \@ARGV);
+                    $self->{_args}{$an} = $is_ary ? [<>] : do { local $/; <> };
+                } elsif ($src eq 'file') {
+                    unless (exists $self->{_args}{$an}) {
+                        if ($as->{req}) {
+                            $self->_err(
+                                "Please specify filename for argument '$an'");
+                        } else {
+                            next;
+                        }
+                    }
+                    $self->_err("Please specify filename for argument '$an'")
+                        unless defined $self->{_args}{$an};
+                    #$log->trace("Getting argument '$an' value from ".
+                    #                "file ...");
+                    my $fh;
+                    unless (open $fh, "<", $self->{_args}{$an}) {
+                        $self->_err("Can't open file '$self->{_args}{$an}' ".
+                                        "for argument '$an': $!")
+                    }
+                    $self->{_args}{$an} = $is_ary ? [<$fh>] :
+                        do { local $/; <$fh> };
+                }
+            }
+        }
+    }
+    #$log->tracef("args after cmdline_src is processed: %s", $self->{_args});
+
+    #$log->tracef("<- _parse_subcommand_opts()");
+}
+
+sub hook_after_select_subcommand {
+    my ($self, $name) = @_;
+
+    if (!defined($name)) {
+        my $scd = $self->selected_subcommand_data;
+        $scd->{log_any_app} = $self->log_any_app;
+    }
 }
 
 1;
