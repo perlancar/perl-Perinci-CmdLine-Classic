@@ -629,7 +629,7 @@ sub get_meta {
             getopt  => 'dry-run',
             summary => N__("Run in simulation mode (also via DRY_RUN=1)"),
             handler => sub {
-                $self->{_dry_run} = 1;
+                $self->dry_run(1);
                 $ENV{VERBOSE} = 1;
             },
         };
