@@ -1,5 +1,14 @@
 Revision history for Perinci-CmdLine
 
+1.17     2014-07-13 (SHARYANTO) (not yet released)
+
+         - Refactoring: split some functionality to Perinci-CmdLine-Base (in a
+           separate dist) for creating Perinci-CmdLine-Lite, a lightweight
+           alternative that doesn't use Perinci::Access::Perl and
+           Perinci::Sub::Wrapper.
+
+         run() and run_*()
+
 1.16     2014-07-03 (SHARYANTO)
 
          [REMOVED FEATURES]

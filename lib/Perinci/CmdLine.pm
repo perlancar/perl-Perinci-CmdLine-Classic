@@ -2583,6 +2583,8 @@ I/O handle for argument of type C<stream>/C<filehandle>.
 
 L<Perinci>, L<Rinci>, L<Riap>.
 
+L<Perinci::CmdLine::Lite>.
+
 Other CPAN modules to write command-line applications: L<App::Cmd>, L<App::Rad>,
 L<MooseX::Getopt>.
 
