@@ -315,6 +315,66 @@ Now you can say:
 =head2 Subcommands
 
 
+=head2 Default subcommand
+
+A default subcommand can be defined. This subcommand is selected without user
+specifying it the first command-line argument. A real-world example of this is
+from L<File::Trash::Undoable>. The B<trash-u> command is by default selecting
+the C<trash> subcommand:
+
+ % trash-u file1 file2
+
+is equivalent to:
+
+ % trash-u --cmd trash file1 file2
+
+To select another subcommand other than C<trash>, an explicit option is
+needed:
+
+ % trash-u --list-contents ; # select the list_contents subcommand
+ % trash-u --cmd empty     ; # select the empty subcommand
+
+This is done via something like:
+
+ Perinci::CmdLine->new(
+     subcommands => {
+         trash => { url=>... },
+         empty => { url=>... },
+         list_contents => { url=>... },
+     },
+     default_subcommand => 'trash',
+ )->run;
+
+
+=head2 Default subcommand (override via first command-line argument)
+
+There is also a choice to specify a default subcommand which is overrideable via
+first command-line argument. A real-world example of this is from
+L<App::GitUtils>. If the B<gu> command is specified without any argument:
+
+ % gu
+
+then it is equivalent to:
+
+ % gu info
+
+but user can specify other subcommands:
+
+ % gu post-commit
+
+This is accomplished by setting:
+
+ Perinci::CmdLine::Lite->new(
+     subcommands => {
+         info        => {...},
+         run_hooks   => {...},
+         post_commit => {...},
+         ...
+     },
+     default_subcommand => 'info',
+     get_subcommand_from_arg => 2,
+ )->run;
+
 
 =head2 Dynamic list of subcommands
 
