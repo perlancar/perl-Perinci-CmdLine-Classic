@@ -1584,13 +1584,185 @@ See L<Perinci::CmdLine::Manual>.
 
 =head1 REQUEST KEYS
 
-Extra stuffs put by this module to the C<$r> hash/stash.
+See also L<Perinci::CmdLine::Base>. Extra stuffs put by this module to the C<$r>
+hash/stash.
 
 =over
 
 =item * format_options => hash
 
 =back
+
+
+=head1 ATTRIBUTES
+
+All the attributes of L<Perinci::CmdLine::Base>, plus:
+
+=head2 log_any_app => BOOL (default: 1)
+
+Whether to load L<Log::Any::App> (enable logging output) by default. See
+L</"LOGGING"> for more details.
+
+=head2 use_utf8 => BOOL
+
+From L<SHARYANTO::Role::TermAttrs> (please see its docs for more details). There
+are several other attributes added by the role.
+
+=head2 custom_completer => CODEREF
+
+Will be passed to L<Perinci::Sub::Complete>'s C<complete_cli_arg()>. See its
+documentation for more details.
+
+=head2 custom_arg_completer => CODEREF | {ARGNAME=>CODEREF, ...}
+
+Will be passed to L<Perinci::Sub::Complete>'s C<complete_cli_arg()>. See its
+documentation for more details.
+
+=head2 pa_args => HASH
+
+Arguments to pass to L<Perinci::Access>. This is useful for passing e.g. HTTP
+basic authentication to Riap client (L<Perinci::Access::HTTP::Client>):
+
+ pa_args => {handler_args => {user=>$USER, password=>$PASS}}
+
+=head2 undo => BOOL (optional, default 0)
+
+Whether to enable undo/redo functionality. Some things to note if you intend to
+use undo:
+
+=over
+
+=item * These common command-line options will be recognized
+
+C<--undo>, C<--redo>, C<--history>, C<--clear-history>.
+
+=item * Transactions will be used
+
+C<< use_tx=>1 >> will be passed to L<Perinci::Access>, which will cause it to
+initialize the transaction manager. Riap requests begin_tx and commit_tx will
+enclose the call request to function.
+
+=item * Called function will need to support transaction and undo
+
+Function which does not meet qualifications will refuse to be called.
+
+Exception is when subcommand is specified with C<< undo=>0 >>, where transaction
+will not be used for that subcommand. For an example of disabling transaction
+for some subcommands, see C<bin/u-trash> in the distribution.
+
+=back
+
+=head2 undo_dir => STR (optional, default ~/.<program_name>/.undo)
+
+Where to put undo data. This is actually the transaction manager's data dir.
+
+
+=head1 METHODS
+
+All the methods of L<Perinci::CmdLine::Base>, plus:
+
+=over
+
+=back
+
+
+=head1 RESULT METADATA
+
+All those supported by L<Perinci::CmdLine::Base>, plus:
+
+=head2 property: is_stream => BOOL
+
+XXX should perhaps be defined as standard in L<Rinci::function>.
+
+If set to 1, signify that result is a stream. Result must be a glob, or an
+object that responds to getline() and eof() (like a Perl L<IO::Handle> object),
+or an array/tied array. Format must currently be C<text> (streaming YAML might
+be supported in the future). Items of result will be displayed to output as soon
+as it is retrieved, and unlike non-streams, it can be infinite.
+
+An example function:
+
+ $SPEC{cat_file} = { ... };
+ sub cat_file {
+     my %args = @_;
+     open my($fh), "<", $args{path} or return [500, "Can't open file: $!"];
+     [200, "OK", $fh, {is_stream=>1}];
+ }
+
+another example:
+
+ use Tie::Simple;
+ $SPEC{uc_file} = { ... };
+ sub uc_file {
+     my %args = @_;
+     open my($fh), "<", $args{path} or return [500, "Can't open file: $!"];
+     my @ary;
+     tie @ary, "Tie::Simple", undef,
+         SHIFT     => sub { eof($fh) ? undef : uc(~~<$fh> // "") },
+         FETCHSIZE => sub { eof($fh) ? 0 : 1 };
+     [200, "OK", \@ary, {is_stream=>1}];
+ }
+
+See also L<Data::Unixish> and L<App::dux> which deals with streams.
+
+=head2 attribute: cmdline.display_result => BOOL
+
+If you don't want to display function output (for example, function output is a
+detailed data structure which might not be important for end users), you can set
+C<cmdline.display_result> result metadata to false. Example:
+
+ $SPEC{foo} = { ... };
+ sub foo {
+     ...
+     [200, "OK", $data, {"cmdline.display_result"=>0}];
+ }
+
+=head2 attribute: cmdline.page_result => BOOL
+
+If you want to filter the result through pager (currently defaults to
+C<$ENV{PAGER}> or C<less -FRSX>), you can set C<cmdline.page_result> in result
+metadata to true.
+
+For example:
+
+ $SPEC{doc} = { ... };
+ sub doc {
+     ...
+     [200, "OK", $doc, {"cmdline.page_result"=>1}];
+ }
+
+=head2 attribute: cmdline.pager => STR
+
+Instruct Perinci::CmdLine to use specified pager instead of C<$ENV{PAGER}> or
+the default C<less> or C<more>.
+
+
+=head1 ENVIRONMENT
+
+All the environment variables that L<Perinci::CmdLine::Base> supports, plus:
+
+=head2 PERINCI_CMDLINE_COLOR_THEME => STR
+
+Can be used to set C<color_theme>.
+
+=head2 PROGRESS => BOOL
+
+Explicitly turn the progress bar on/off.
+
+=head2 PAGER => STR
+
+Like in other programs, can be set to select the pager program (when
+C<cmdline.page_result> result metadata is active). Can also be set to C<''> or
+C<0> to explicitly disable paging even though C<cmd.page_result> result metadata
+is active.
+
+=head2 COLOR => INT
+
+Please see L<SHARYANTO::Role::TermAttrs>.
+
+=head2 UTF8 => BOOL
+
+Please see L<SHARYANTO::Role::TermAttrs>.
 
 
 =head1 SEE ALSO
