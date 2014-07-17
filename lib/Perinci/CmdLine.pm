@@ -25,8 +25,6 @@ with 'SHARYANTO::Role::ColorTheme' unless $ENV{COMP_LINE};
 with 'Perinci::CmdLine::Role::Help' unless $ENV{COMP_LINE};
 
 has log_any_app => (is => 'rw', default=>sub{1});
-has custom_completer => (is => 'rw');
-has custom_arg_completer => (is => 'rw');
 has undo => (is=>'rw', default=>sub{0});
 has undo_dir => (
     is => 'rw',
@@ -64,7 +62,7 @@ has _pa => (
                     pa => $pa,
                 );
                 $txm;
-            };
+           };
         }
         $args{handlers} = {
             pl => Perinci::Access::Perl->new(%opts),
@@ -312,6 +310,9 @@ sub BUILD {
 
     # available formats
     $self->{formats} //= [keys %Perinci::Result::Format::Formats];
+
+    $self->{per_arg_json} //= 1;
+    $self->{per_arg_yaml} //= 1;
 }
 
 # format array item as row
@@ -765,98 +766,6 @@ sub run_version {
     0;
 }
 
-sub run_completion {
-    require Complete::Bash;
-    require Complete::Util;
-    require Perinci::Sub::Complete;
-
-    my ($self) = @_;
-
-    my $sc = $self->{_subcommand};
-    my $word  = $ARGV[$self->{_comp_cword}] // "";
-
-    # determine whether we should complete function arg names/values or just
-    # top-level opts + subcommands name
-    my $do_arg;
-    {
-        if (!$self->subcommands) {
-            $log->trace("do_arg because single command");
-            $do_arg++; last;
-        }
-
-        my $scn = $sc->{name} // "";
-
-        # whether user typed 'blah blah ^' or 'blah blah^'
-        my $space_typed = !defined($word);
-
-        # e.g: spanel delete-account ^
-        if ($self->subcommands && $cword > 0 && $space_typed) {
-            $log->trace("do_arg because last word typed (+space) is ".
-                            "subcommand name");
-            $do_arg++; last;
-        }
-
-        # e.g: spanel delete-account --format=yaml --acc^
-        if ($cword > 0 && !$space_typed && $word ne $scn) {
-            $log->trace("do_arg because subcommand name has been typed ".
-                            "in past words");
-            $do_arg++; last;
-        }
-
-        $log->tracef("not do_arg, cword=%d, words=%s, scn=%s, space_typed=%s",
-                     $self->{_comp_cword}, \@ARGV, $scn, $space_typed);
-    }
-
-    my $res;
-    if ($do_arg) {
-        $log->trace("Completing subcommand argument names & values ...");
-
-        my $rres = $self->_pa->request(meta => $sc->{url});
-        if ($rres->[0] != 200) {
-            $log->debugf("Can't get meta for completion: %s", $rres);
-            $res = [];
-            goto DISPLAY_RES;
-        }
-        my $meta = $rres->[2];
-        $self->_add_common_opts_after_meta;
-
-        $res = Perinci::Sub::Complete::complete_cli_arg(
-            meta=>$meta, words=>\@ARGV, cword=>$self->{_comp_cword},
-            common_opts => $common_opts,
-            riap_server_url => $sc->{url},
-            riap_uri        => undef,
-            riap_client     => $self->_pa,
-            custom_completer     => $self->custom_completer,
-            custom_arg_completer => $self->custom_arg_completer,
-        );
-
-    } else {
-        $log->trace("Completing top-level options + subcommand name ...");
-        my @ary;
-        push @ary, @top_opts;
-        my $scs = $self->list_subcommands;
-        push @ary, keys %$scs;
-        $res = {
-            completion => Complete::Util::complete_array_elem(
-                word=>$word, array=>\@ary,
-            ),
-            type=>'option',
-        };
-    }
-
-  DISPLAY_RES:
-    my $compres = Complete::Bash::format_completion($res);
-    if ($ENV{PERINCI_CMDLINE_SERVER}) {
-        # a flag that causes completion result to be stored in the object
-        # instead of printed. this is because we want to return result in a
-        # function
-        $self->{_compres} = $compres;
-    } else {
-        print $compres;
-    }
-    0;
-}
-
 sub run_call {
     my ($self, $r) = @_;
     my $sc = $self->{_subcommand};
@@ -1005,16 +914,6 @@ L</"LOGGING"> for more details.
 
 From L<SHARYANTO::Role::TermAttrs> (please see its docs for more details). There
 are several other attributes added by the role.
-
-=head2 custom_completer => CODEREF
-
-Will be passed to L<Perinci::Sub::Complete>'s C<complete_cli_arg()>. See its
-documentation for more details.
-
-=head2 custom_arg_completer => CODEREF | {ARGNAME=>CODEREF, ...}
-
-Will be passed to L<Perinci::Sub::Complete>'s C<complete_cli_arg()>. See its
-documentation for more details.
 
 =head2 pa_args => HASH
 
