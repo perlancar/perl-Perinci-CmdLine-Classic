@@ -40,8 +40,7 @@ has undo_dir => (
         $dir;
     }
 );
-has pa_args => (is => 'rw');
-has _pa => (
+has riap_client => (
     is => 'rw',
     lazy => 1,
     default => sub {
@@ -50,7 +49,7 @@ has _pa => (
         require Perinci::Access;
         require Perinci::Access::Perl;
         require Perinci::Access::Schemeless;
-        my %args = %{$self->pa_args // {}};
+        my %args = %{$self->riap_client_args // {}};
         my %opts;
         if ($self->undo) {
             $opts{use_tx} = 1;
@@ -336,9 +335,9 @@ sub format_row {
 }
 
 sub get_meta {
-    my ($self, $meta) = @_;
+    my ($self, $url) = @_;
 
-    my $res = $self->_pa->request(meta => $self->selected_subcommand->{url});
+    my $res = $self->riap_client->request(meta => $url);
     die $res unless $res->[0] == 200;
     my $meta = $res->[2];
 
@@ -735,7 +734,7 @@ sub run_version {
 
     my $url = $self->{_subcommand} && $self->{_subcommand}{url} ?
         $self->{_subcommand}{url} : $self->url;
-    my $res = $self->_pa->request(meta => $url);
+    my $res = $self->get_meta($url);
     my ($ver, $date);
     if ($res->[0] == 200) {
         $ver = $res->[2]{entity_v} // "?";
@@ -768,78 +767,69 @@ sub run_version {
 
 sub run_call {
     my ($self, $r) = @_;
-    my $sc = $self->{_subcommand};
-    my %fargs = %{$self->{_args} // {}};
-    $fargs{-cmdline} = $self if $sc->{pass_cmdline_object} //
-        $self->pass_cmdline_object;
+
+    my $scn = $r->{subcommand_name};
+    my $scd = $r->{subcommand_data};
+
+    my %fargs = %{$r->{args} // {}};
 
     my $tx_id;
 
-    my $dry_run = $self->{_dry_run};
-    my $using_tx = !$dry_run && $self->undo && ($sc->{undo} // 1);
+    my $dry_run = $r->{dry_run};
+    my $using_tx = !$dry_run && $self->undo && ($scd->{undo} // 1);
 
     # currently we don't attempt to insert tx_id or dry_run when using argv,
     # we'll just give up
-    if ($self->{_send_argv} && ($dry_run || $using_tx)) {
-        my $res = $self->{_getargs_result};
-        $self->_err("Failed parsing arguments (2): $res->[0] - $res->[1]");
+    if ($r->{send_argv} && ($dry_run || $using_tx)) {
+        return $r->{parse_argv_res};
     }
 
     if ($using_tx) {
         require UUID::Random;
         $tx_id = UUID::Random::generate();
         $tx_id =~ s/-.+//; # 32bit suffices for small number of txs
-        my $summary = join(" ", @{ $self->{_orig_argv} });
-        my $res = $self->_pa->request(
+        my $summary = join(" ", @{ $r->{orig_argv} });
+        my $tres = $self->riap_client->request(
             begin_tx => "/", {tx_id=>$tx_id, summary=>$summary});
-        if ($res->[0] != 200) {
-            $self->{_res} = [$res->[0],
-                             "Can't start transaction '$tx_id': $res->[1]"];
-            return 1;
+        if ($tres->[0] != 200) {
+            return [$tres->[0], "Can't start transaction '$tx_id': $tres->[1]"];
         }
     }
 
     # setup output progress indicator
-    if ($self->{_meta}{features}{progress}) {
+    if ($r->{meta}{features}{progress}) {
         $self->_setup_progress_output;
     }
 
     # call function
-    if ($self->{_send_argv}) {
-        $self->{_res} = $self->_pa->request(
-            call => $self->{_subcommand}{url},
-            {argv=>$self->{_orig_argv}}, # XXX tx_id, dry_run (see above)
+    my $res;
+    if ($r->{send_argv}) {
+        $res = $self->riap_client->request(
+            call => $scd->{url},
+            {argv=>$r->{orig_argv}}, # XXX tx_id, dry_run (see above)
         );
     } else {
         #$log->tracef("Calling function via _pa with arguments: %s", \%fargs);
-        $self->{_res} = $self->_pa->request(
-            call => $self->{_subcommand}{url},
+        $res = $self->riap_client->request(
+            call => $scd->{url},
             {args=>\%fargs, tx_id=>$tx_id, dry_run=>$dry_run});
     }
-    $log->tracef("call res=%s", $self->{_res});
+    $log->tracef("call res=%s", $res);
 
     # commit transaction (if using tx)
     if ($using_tx && $self->{_res}[0] =~ /\A(?:200|304)\z/) {
-        my $res = $self->_pa->request(commit_tx => "/", {tx_id=>$tx_id});
-        if ($res->[0] != 200) {
-            $self->{_res} = [$res->[0],
-                             "Can't commit transaction '$tx_id': $res->[1]"];
-            return 1;
+        my $tres = $self->riap_client->request(commit_tx => "/", {tx_id=>$tx_id});
+        if ($tres->[0] != 200) {
+            return [$tres->[0],"Can't commit transaction '$tx_id': $tres->[1]"];
         }
     }
 
-    my $resmeta = $self->{_res}[3] // {};
-    if (defined $resmeta->{"cmdline.exit_code"}) {
-        return $resmeta->{"cmdline.exit_code"};
-    } else {
-        return $self->{_res}[0] =~ /\A(?:200|304)\z/ ?
-            0 : $self->{_res}[0] - 300;
-    }
+    $res;
 }
 
 sub run_history {
     my ($self, $r) = @_;
-    my $res = $self->_pa->request(list_txs => "/", {detail=>1});
+    my $res = $self->riap_client->request(list_txs => "/", {detail=>1});
     $log->tracef("list_txs res=%s", $res);
     return $res unless $res->[0] == 200;
     $res->[2] = [sort {($b->{tx_commit_time}//0) <=> ($a->{tx_commit_time}//0)}
@@ -861,17 +851,17 @@ sub run_history {
 
 sub run_clear_history {
     my ($self, $r) = @_;
-    $self->_pa->request(discard_all_txs => "/");
+    $self->riap_client->request(discard_all_txs => "/");
 }
 
 sub run_undo {
     my ($self, $r) = @_;
-    $self->_pa->request(undo => "/");
+    $self->riap_client->request(undo => "/");
 }
 
 sub run_redo {
     my ($self, $r) = @_;
-    $self->_pa->request(redo => "/");
+    $self->riap_client->request(redo => "/");
 }
 
 1;
@@ -914,13 +904,6 @@ L</"LOGGING"> for more details.
 
 From L<SHARYANTO::Role::TermAttrs> (please see its docs for more details). There
 are several other attributes added by the role.
-
-=head2 pa_args => HASH
-
-Arguments to pass to L<Perinci::Access>. This is useful for passing e.g. HTTP
-basic authentication to Riap client (L<Perinci::Access::HTTP::Client>):
-
- pa_args => {handler_args => {user=>$USER, password=>$PASS}}
 
 =head2 undo => BOOL (optional, default 0)
 

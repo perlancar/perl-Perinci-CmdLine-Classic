@@ -560,11 +560,11 @@ sub run_help {
     my $sc = $self->{_subcommand};
     my $url = $sc ? $sc->{url} : $self->url;
     if ($url) {
-        my $res = $self->_pa->request(info => $url);
+        my $res = $self->riap_client->request(info => $url);
         $self->_err("Can't info '$url': $res->[0] - $res->[1]")
             unless $res->[0] == 200;
         $self->{_help_info} = $res->[2];
-        $res = $self->_pa->request(meta => $url);
+        $res = $self->riap_client->request(meta => $url);
         $self->_err("Can't meta '$url': $res->[0] - $res->[1]")
             unless $res->[0] == 200;
         $self->{_help_meta} = $res->[2];

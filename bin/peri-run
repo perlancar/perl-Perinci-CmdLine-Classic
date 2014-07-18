@@ -101,7 +101,7 @@ if (@ARGV && !@$oscs) {
         $type = 'package';
     } else {
         # try to find out the entity type
-        my $res = $cmd->_pa->request(info => $url);
+        my $res = $cmd->riap_client->request(info => $url);
         die "Can't 'info' $url: $res->[0] - $res->[1]\n"
             unless $res->[0] == 200;
         $type = $res->[2]{type} // '';
@@ -112,7 +112,7 @@ if (@ARGV && !@$oscs) {
     $cmd->program_name("$me $url")
         unless defined($ENV{PERINCI_CMDLINE_PROGRAM_NAME});
     if ($type eq 'package') {
-        my $res = $cmd->_pa->request(list => $url, {detail=>1});
+        my $res = $cmd->riap_client->request(list => $url, {detail=>1});
         die "Can't 'list' $url: $res->[0] - $res->[1]\n"
             unless $res->[0] == 200;
         my $scs = {};
