@@ -124,9 +124,10 @@ sub BUILD {
             summary => N__("Show version"),
             show_in_options => sub { $ENV{VERBOSE} },
             handler => sub {
+                my ($go, $val, $r) = @_;
                 die "'url' not set, required for --version"
                     unless $self->url;
-                $self->select_subcommand('version');
+                $r->{action} = 'version';
             },
         };
 
@@ -136,7 +137,8 @@ sub BUILD {
             summary => N__("Display this help message"),
             show_in_options => sub { $ENV{VERBOSE} },
             handler => sub {
-                $self->select_subcommand('help');
+                my ($go, $val, $r) = @_;
+                $r->{action} = 'help';
             },
             order   => 0, # high
         };
@@ -145,7 +147,8 @@ sub BUILD {
             getopt  => "format=s",
             summary => N__("Choose output format, e.g. json, text"),
             handler => sub {
-                $self->selected_format($_[1]);
+                my ($go, $val, $r) = @_;
+                $r->{format} = $val;
             },
         };
 
@@ -154,21 +157,24 @@ sub BUILD {
                 getopt  => "json",
                 summary => N__("Equivalent to --format=json-pretty"),
                 handler => sub {
-                    $self->selected_format('json-pretty');
+                    my ($go, $val, $r) = @_;
+                    $r->{format} = 'json-pretty';
                 },
             };
             $opts{yaml} = {
                 getopt  => "yaml",
                 summary => N__("Equivalent to --format=yaml"),
                 handler => sub {
-                    $self->selected_format('yaml');
+                    my ($go, $val, $r) = @_;
+                    $r->{format} = 'yaml';
                 },
             };
             $opts{perl} = {
                 getopt  => "perl",
                 summary => N__("Equivalent to --format=perl"),
                 handler => sub {
-                    $self->selected_format('perl');
+                    my ($go, $val, $r) = @_;
+                    $r->{format} = 'perl';
                 },
             };
         }
@@ -177,7 +183,8 @@ sub BUILD {
             getopt  => "format-options=s",
             summary => N__("Pass options to formatter"),
             handler => sub {
-                $self->format_options(__json_decode($_[1]));
+                my ($go, $val, $r) = @_;
+                $r->{format_options} = __json_decode($val);
             },
         };
 
@@ -197,7 +204,8 @@ sub BUILD {
                 summary => N__("List available subcommands"),
                 show_in_help => 0,
                 handler => sub {
-                    $self->select_subcommand('subcommands');
+                    my ($go, $val, $r) = @_;
+                    $r->{action} = 'subcommands';
                 },
             };
         }
@@ -208,7 +216,8 @@ sub BUILD {
             $opts{cmd} = {
                 getopt  => "cmd=s",
                 handler => sub {
-                    $self->select_subcommand($_[1]);
+                    my ($go, $val, $r) = @_;
+                    $r->{subcommand_name} = $val;
                 },
             };
         }
@@ -222,6 +231,7 @@ sub BUILD {
                 getopt  => "quiet",
                 summary => N__("Set log level to quiet"),
                 handler => sub {
+                    my ($go, $val, $r) = @_;
                     $ENV{QUIET} = 1;
                 },
             };
@@ -229,6 +239,7 @@ sub BUILD {
                 getopt  => "verbose",
                 summary => N__("Set log level to verbose"),
                 handler => sub {
+                    my ($go, $val, $r) = @_;
                     $ENV{VERBOSE} = 1;
                 },
             };
@@ -236,6 +247,7 @@ sub BUILD {
                 getopt  => "debug",
                 summary => N__("Set log level to debug"),
                 handler => sub {
+                    my ($go, $val, $r) = @_;
                     $ENV{DEBUG} = 1;
                 },
             };
@@ -243,6 +255,7 @@ sub BUILD {
                 getopt  => "trace",
                 summary => N__("Set log level to trace"),
                 handler => sub {
+                    my ($go, $val, $r) = @_;
                     $ENV{TRACE} = 1;
                 },
             };
@@ -251,7 +264,8 @@ sub BUILD {
                 getopt  => "log-level=s",
                 summary => N__("Set log level"),
                 handler => sub {
-                    $ENV{LOG_LEVEL} = $_[1];
+                    my ($go, $val, $r) = @_;
+                    $ENV{LOG_LEVEL} = $val;
                 },
             };
         }
@@ -262,7 +276,8 @@ sub BUILD {
                 getopt  => 'history',
                 summary => N__('List actions history'),
                 handler => sub {
-                    $self->r->{action} = 'history';
+                    my ($go, $val, $r) = @_;
+                    $r->{action} = 'history';
                 },
             };
             $opts{clear_history} = {
@@ -270,7 +285,8 @@ sub BUILD {
                 getopt  => "clear-history",
                 summary => N__('Clear actions history'),
                 handler => sub {
-                    $self->r->{action} = 'clear_history';
+                    my ($go, $val, $r) = @_;
+                    $r->{action} = 'clear_history';
                 },
             };
             $opts{undo} = {
@@ -278,7 +294,8 @@ sub BUILD {
                 getopt  => 'undo',
                 summary => N__('Undo previous action'),
                 handler => sub {
-                    $self->r->{action} = 'undo';
+                    my ($go, $val, $r) = @_;
+                    $r->{action} = 'undo';
                 },
             };
             $opts{redo} = {
@@ -286,7 +303,8 @@ sub BUILD {
                 getopt  => 'redo',
                 summary => N__('Redo previous undone action'),
                 handler => sub {
-                    $self->r->{action} = 'redo';
+                    my ($go, $val, $r) = @_;
+                    $r->{action} = 'redo';
                 },
             };
         }
@@ -346,7 +364,8 @@ sub get_meta {
             getopt  => 'dry-run',
             summary => N__("Run in simulation mode (also via DRY_RUN=1)"),
             handler => sub {
-                $self->dry_run(1);
+                my ($go, $val, $r) = @_;
+                $r->{dry_run} = 1;
                 $ENV{VERBOSE} = 1;
             },
         };
