@@ -146,6 +146,9 @@ sub BUILD {
         $opts{format} = {
             getopt  => "format=s",
             summary => N__("Choose output format, e.g. json, text"),
+            schema => ['str*' => in => [qw/text text-simple text-pretty
+                                          json json-pretty yaml perl
+                                          ruby phpserialization/]],
             handler => sub {
                 my ($go, $val, $r) = @_;
                 $r->{format} = $val;
