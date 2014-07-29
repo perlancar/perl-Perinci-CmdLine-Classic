@@ -221,6 +221,7 @@ sub BUILD {
                 handler => sub {
                     my ($go, $val, $r) = @_;
                     $r->{subcommand_name} = $val;
+                    $r->{subcommand_name_from} = '--cmd';
                 },
             };
         }
