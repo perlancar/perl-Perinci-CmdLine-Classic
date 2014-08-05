@@ -8,7 +8,6 @@ use 5.010001;
 #use warnings; # enabled by Moo
 use Log::Any '$log';
 
-use Data::Dump::OneLine qw(dump1);
 use Moo;
 use experimental 'smartmatch'; # must be after Moo
 use Locale::TextDomain::UTF8 'Perinci-CmdLine';
