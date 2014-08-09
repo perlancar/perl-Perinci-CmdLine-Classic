@@ -8,12 +8,16 @@ package Perinci::CmdLine::Role::Help;
 use 5.010;
 use Moo::Role;
 
-sub _help_draw_curtbl {
-    my $self = shift;
+use Locale::TextDomain::UTF8 'Perinci-CmdLine';
+use Perinci::Object;
+use Perinci::ToUtil;
 
-    if ($self->{_help_curtbl}) {
-        print $self->{_help_curtbl}->draw;
-        undef $self->{_help_curtbl};
+sub _help_draw_curtbl {
+    my ($self, $r) = @_;
+
+    if ($r->{_help_curtbl}) {
+        print $r->{_help_curtbl}->draw;
+        undef $r->{_help_curtbl};
     }
 }
 
@@ -23,10 +27,10 @@ sub _help_draw_curtbl {
 sub _help_add_table {
     require Text::ANSITable;
 
-    my ($self, %args) = @_;
+    my ($self, $r, %args) = @_;
     my $columns = $args{columns} // 1;
 
-    $self->_help_draw_curtbl;
+    $self->_help_draw_curtbl($r);
     my $t = Text::ANSITable->new;
     $t->border_style('Default::spacei_ascii');
     $t->cell_pad(0);
@@ -43,11 +47,11 @@ sub _help_add_table {
     $t->column_wrap(0); # we'll do our own wrapping, before indent
     $t->columns([0..$columns-1]);
 
-    $self->{_help_curtbl} = $t;
+    $r->{_help_curtbl} = $t;
 }
 
 sub _help_add_row {
-    my ($self, $row, $args) = @_;
+    my ($self, $r, $row, $args) = @_;
     $args //= {};
     my $wrap    = $args->{wrap}   // 0;
     my $indent  = $args->{indent} // 0;
@@ -55,11 +59,12 @@ sub _help_add_row {
 
     # start a new table if necessary
     $self->_help_add_table(
+        $r,
         columns=>$columns, column_widths=>$args->{column_widths})
-        if !$self->{_help_curtbl} ||
-            $columns != @{ $self->{_help_curtbl}{columns} };
+        if !$r->{_help_curtbl} ||
+            $columns != @{ $r->{_help_curtbl}{columns} };
 
-    my $t = $self->{_help_curtbl};
+    my $t = $r->{_help_curtbl};
     my $rownum = @{ $t->{rows} };
 
     $t->add_row($row);
@@ -76,8 +81,8 @@ sub _help_add_row {
 }
 
 sub _help_add_heading {
-    my ($self, $heading) = @_;
-    $self->_help_add_row([$self->_color('heading', $heading)]);
+    my ($self, $r, $heading) = @_;
+    $self->_help_add_row($r, [$self->_color('heading', $heading)]);
 }
 
 sub _color {
@@ -89,25 +94,25 @@ sub _color {
 }
 
 sub help_section_summary {
-    my ($self, %opts) = @_;
+    my ($self, $r) = @_;
 
-    my $summary = rimeta($self->{_help_meta})->langprop("summary");
+    my $summary = rimeta($r->{_help_meta})->langprop("summary");
     return unless $summary;
 
-    my $name = $self->_program_and_subcommand_name;
+    my $name = $self->get_program_and_subcommand_name;
     my $ct = join(
         "",
         $self->_color('program_name', $name),
         ($name && $summary ? ' - ' : ''),
         $summary // "",
     );
-    $self->_help_add_row([$ct], {wrap=>1});
+    $self->_help_add_row($r, [$ct], {wrap=>1});
 }
 
 sub _usage_args {
-    my $self = shift;
+    my ($self, $r) = @_;
 
-    my $m = $self->{_help_meta};
+    my $m = $r->{_help_meta};
     return "" unless $m;
     my $aa = $m->{args};
     return "" unless $aa;
@@ -127,26 +132,27 @@ sub _usage_args {
 }
 
 sub help_section_usage {
-    my ($self, %opts) = @_;
+    my ($self, $r) = @_;
 
     my $co = $self->common_opts;
     my @con = grep {
         my $cov = $co->{$_};
         my $show = $cov->{show_in_usage} // 1;
-        for ($show) { if (ref($_) eq 'CODE') { $_ = $_->($self) } }
+        for ($show) { if (ref($_) eq 'CODE') { $_ = $_->($self, $r) } }
         $show;
     } sort {
         ($co->{$a}{order}//1) <=> ($co->{$b}{order}//1) || $a cmp $b
     } keys %$co;
 
-    my $pn = $self->_color('program_name', $self->_program_and_subcommand_name);
+    my $pn = $self->_color(
+        'program_name', $self->get_program_and_subcommand_name);
     my $ct = "";
     for my $con (@con) {
         my $cov = $co->{$con};
         next unless $cov->{usage};
         $ct .= ($ct ? "\n" : "") . $pn . " " . __($cov->{usage});
     }
-    if ($self->subcommands && !$self->{_subcommand}) {
+    if ($self->subcommands && !$r->{subcommand_data}) {
         if (defined $self->default_subcommand) {
             $ct .= ($ct ? "\n" : "") . $pn .
                 " " . __("--cmd=<other-subcommand> [options]");
@@ -156,19 +162,19 @@ sub help_section_usage {
         }
     } else {
             $ct .= ($ct ? "\n" : "") . $pn .
-                " " . __("[options]"). $self->_usage_args;
+                " " . __("[options]"). $self->_usage_args($r);
     }
-    $self->_help_add_heading(__("Usage"));
-    $self->_help_add_row([$ct], {indent=>1});
+    $self->_help_add_heading($r, __("Usage"));
+    $self->_help_add_row($r, [$ct], {indent=>1});
 }
 
 sub help_section_options {
     require Getopt::Long::Util;
 
-    my ($self, %opts) = @_;
-    my $verbose = $opts{verbose};
-    my $info = $self->{_help_info};
-    my $meta = $self->{_help_meta};
+    my ($self, $r) = @_;
+    my $verbose = $r->{_help_verbose};
+    my $info = $r->{_help_info};
+    my $meta = $r->{_help_meta};
     my $args_p = $meta->{args};
     my $sc = $self->subcommands;
 
@@ -251,11 +257,11 @@ sub help_section_options {
             }
 
             my $def = defined($s->[1]{default}) && $s->[0] ne 'bool' ?
-                " (default: ".dump1($s->[1]{default}).")" : "";
+                " (default: ".Perinci::CmdLine::__json_decode($s->[1]{default}).")" : "";
             my $src = $a->{cmdline_src} // "";
             my $in;
             if ($s->[1]{in} && @{ $s->[1]{in} }) {
-                $in = dump1($s->[1]{in});
+                $in = Perinci::CmdLine::__json_decode($s->[1]{in});
             }
 
             my $cat;
@@ -312,7 +318,7 @@ sub help_section_options {
 
     # output gathered options
     for my $cat (sort keys %catopts) {
-        $self->_help_add_heading($cat);
+        $self->_help_add_heading($r, $cat);
         my @opts = sort {
             my $va = $a->{getopt};
             my $vb = $b->{getopt};
@@ -324,7 +330,7 @@ sub help_section_options {
                 my $ct = $self->_color('option_name', $o->{getopt}) .
                     ($o->{getopt_type} ? " [$o->{getopt_type}]" : "").
                         ($o->{getopt_note} ? $o->{getopt_note} : "");
-                $self->_help_add_row([$ct], {indent=>1});
+                $self->_help_add_row($r, [$ct], {indent=>1});
                 if ($o->{in} || $o->{summary} || $o->{description}) {
                     my $ct = "";
                     $ct .= ($ct ? "\n\n":"").ucfirst(__("value in")).
@@ -332,7 +338,7 @@ sub help_section_options {
                     $ct .= ($ct ? "\n\n":"")."$o->{summary}." if $o->{summary};
                     $ct .= ($ct ? "\n\n":"").$o->{description}
                         if $o->{description};
-                    $self->_help_add_row([$ct], {indent=>2, wrap=>1});
+                    $self->_help_add_row($r, [$ct], {indent=>2, wrap=>1});
                 }
             }
         } else {
@@ -350,17 +356,18 @@ sub help_section_options {
                 }
                 last unless @row;
                 for (@row+1 .. $columns) { push @row, "" }
-                $self->_help_add_row(\@row, {indent=>1});
+                $self->_help_add_row($r, \@row, {indent=>1});
             }
         }
     }
 }
 
 sub help_section_subcommands {
-    my ($self, %opts) = @_;
+    my ($self, $r) = @_;
 
+    my $verbose = $r->{_help_verbose};
     my $scs = $self->subcommands;
-    return unless $scs && !$self->{_subcommand};
+    return unless $scs && !$r->{subcommand_data};
 
     my @scs = sort keys %$scs;
     my @shown_scs;
@@ -373,18 +380,19 @@ sub help_section_subcommands {
 
     # for help_section_hints
     my $some_not_shown = @scs > @shown_scs;
-    $self->{_some_subcommands_not_shown_in_help} = 1 if $some_not_shown;
+    $r->{_help_hide_some_subcommands} = 1 if $some_not_shown;
 
     $self->_help_add_heading(
-        $some_not_shown ? __("Popular subcommands") : __("Subcommands"));
+        $r, $some_not_shown ? __("Popular subcommands") : __("Subcommands"));
 
     # in compact mode, we try to not exceed one screen, so show long mode only
     # if there are a few subcommands.
-    my $long_mode = $opts{verbose} || @shown_scs < 12;
+    my $long_mode = $verbose || @shown_scs < 12;
     if ($long_mode) {
         for (@shown_scs) {
             my $summary = rimeta($_)->langprop("summary");
             $self->_help_add_row(
+                $r,
                 [$self->_color('program_name', $_->{name}), $summary],
                 {column_widths=>[-17, -40], indent=>1});
         }
@@ -401,49 +409,52 @@ sub help_section_subcommands {
                 }
                 last unless @row;
                 for (@row+1 .. $columns) { push @row, "" }
-                $self->_help_add_row(\@row, {indent=>1});
+                $self->_help_add_row($r, \@row, {indent=>1});
             }
 
     }
 }
 
 sub help_section_hints {
-    my ($self, %opts) = @_;
+    my ($self, $r) = @_;
+
+    my $verbose = $r->{_help_verbose};
     my @hints;
-    unless ($opts{verbose}) {
+    unless ($verbose) {
         push @hints, N__("For more complete help, use '--help --verbose'");
     }
-    if ($self->{_some_subcommands_not_shown_in_help}) {
+    if ($self->{_help_hide_some_subcommands}) {
         push @hints,
             N__("To see all available subcommands, use '--subcommands'");
     }
     return unless @hints;
 
     $self->_help_add_row(
-        [join(" ", map { __($_)."." } @hints)], {wrap=>1});
+        $r, [join(" ", map { __($_)."." } @hints)], {wrap=>1});
 }
 
 sub help_section_description {
-    my ($self, %opts) = @_;
+    my ($self, $r) = @_;
 
-    my $desc = rimeta($self->{_help_meta})->langprop("description") //
+    my $desc = rimeta($r->{_help_meta})->langprop("description") //
         $self->description;
     return unless $desc;
 
-    $self->_help_add_heading(__("Description"));
-    $self->_help_add_row([$desc], {wrap=>1, indent=>1});
+    $self->_help_add_heading($r, __("Description"));
+    $self->_help_add_row($r, [$desc], {wrap=>1, indent=>1});
 }
 
 sub help_section_examples {
-    my ($self, %opts) = @_;
+    my ($self, $r) = @_;
 
-    my $verbose = $opts{verbose};
-    my $meta = $self->{_help_meta};
+    my $verbose = $r->{_help_verbose};
+    my $meta = $r->{_help_meta};
     my $egs = $meta->{examples};
     return unless $egs && @$egs;
 
-    $self->_help_add_heading(__("Examples"));
-    my $pn = $self->_color('program_name', $self->_program_and_subcommand_name);
+    $self->_help_add_heading($r, __("Examples"));
+    my $pn = $self->_color(
+        'program_name', $self->get_program_and_subcommand_name);
     for my $eg (@$egs) {
         my $argv;
         my $ct;
@@ -476,22 +487,22 @@ sub help_section_examples {
                 }
             }
         }
-        $self->_help_add_row([$ct], {indent=>1});
+        $self->_help_add_row($r, [$ct], {indent=>1});
         if ($verbose) {
             $ct = "";
             my $summary = rimeta($eg)->langprop('summary');
             if ($summary) { $ct .= "$summary." }
             my $desc = rimeta($eg)->langprop('description');
             if ($desc) { $ct .= "\n\n$desc" }
-            $self->_help_add_row([$ct], {indent=>2}) if $ct;
+            $self->_help_add_row($r, [$ct], {indent=>2}) if $ct;
         }
     }
 }
 
 sub help_section_result {
-    my ($self, %opts) = @_;
+    my ($self, $r) = @_;
 
-    my $meta   = $self->{_help_meta};
+    my $meta   = $r->{_help_meta};
     my $rmeta  = $meta->{result};
     my $rmetao = rimeta($rmeta);
     my $text;
@@ -542,8 +553,8 @@ sub help_section_result {
 
     return unless length $text;
 
-    $self->_help_add_heading(__("Result"));
-    $self->_help_add_row([$text], {wrap=>1, indent=>1});
+    $self->_help_add_heading($r, __("Result"));
+    $self->_help_add_row($r, [$text], {wrap=>1, indent=>1});
 }
 
 sub help_section_links {
@@ -554,7 +565,7 @@ sub run_help {
     my ($self, $r) = @_;
 
     my $verbose = $ENV{VERBOSE} // 0;
-    my %opts = (verbose=>$verbose);
+    local $r->{_help_verbose} = $verbose;
 
     # get function metadata first
     my $sc = $self->{_subcommand};
@@ -563,11 +574,11 @@ sub run_help {
         my $res = $self->riap_client->request(info => $url);
         $self->_err("Can't info '$url': $res->[0] - $res->[1]")
             unless $res->[0] == 200;
-        $self->{_help_info} = $res->[2];
+        $r->{_help_info} = $res->[2];
         $res = $self->riap_client->request(meta => $url);
         $self->_err("Can't meta '$url': $res->[0] - $res->[1]")
             unless $res->[0] == 200;
-        $self->{_help_meta} = $res->[2];
+        $r->{_help_meta} = $res->[2];
     }
 
     # ux: since --verbose will potentially show lots of paragraph text, let's
@@ -604,10 +615,10 @@ sub run_help {
 
     for my $s (@hsects) {
         my $meth = "help_section_$s";
-        $log->tracef("=> $meth(%s)", \%opts);
-        $self->$meth(%opts);
+        #$log->tracef("=> $meth()");
+        $self->$meth($r);
     }
-    $self->_help_draw_curtbl;
+    $self->_help_draw_curtbl($r);
     0;
 }
 
@@ -615,3 +626,14 @@ sub run_help {
 # ABSTRACT: Help-related routines
 
 =for Pod::Coverage ^(.+)$
+
+=head1 REQUEST KEYS
+
+=over
+
+=item * _help_*
+
+Temporary. Various data stored during help generation that is passed between the
+various C<_help_*> methods.
+
+=back

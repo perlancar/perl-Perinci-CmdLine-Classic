@@ -11,9 +11,7 @@ use Log::Any '$log';
 use Moo;
 use experimental 'smartmatch'; # must be after Moo
 use Locale::TextDomain::UTF8 'Perinci-CmdLine';
-use Perinci::Object;
-use Perinci::ToUtil;
-use Scalar::Util qw(reftype blessed);
+use Scalar::Util qw(blessed);
 
 our $REQ_VERSION = 0; # version requested by user
 
@@ -70,6 +68,35 @@ has riap_client => (
         Perinci::Access->new(%args);
     }
 );
+has action_metadata => (
+    is => 'rw',
+    default => sub {
+        +{
+            clear_history => {
+            },
+            help => {
+                default_log => 0,
+                use_utf8 => 1,
+            },
+            history => {
+            },
+            subcommands => {
+                default_log => 0,
+                use_utf8 => 1,
+            },
+            redo => {
+            },
+            call => {
+            },
+            undo => {
+            },
+            version => {
+                default_log => 0,
+                use_utf8 => 1,
+            },
+        },
+    },
+);
 
 sub VERSION {
     my ($pkg, $req) = @_;
@@ -82,16 +109,28 @@ sub __json_decode {
     $json->decode(shift);
 }
 
+sub _color {
+    my ($self, $color_name, $text) = @_;
+    use DD; dd $self;
+    my $color_code = $color_name ?
+        $self->get_theme_color_as_ansi($color_name) : "";
+    my $reset_code = $color_code ? "\e[0m" : "";
+    "$color_code$text$reset_code";
+}
+
 sub err {
     my ($self, $msg) = @_;
-    my $msg = shift; $msg .= "\n" unless $msg =~ /\n\z/;
-     $self->_color('error_label', "ERROR: ") . $msg;
+    $msg .= "\n" unless $msg =~ /\n\z/;
+    $self->_color('error_label', "ERROR: ") . $msg;
 }
 
 sub BUILD {
-    require Perinci::Result::Format;
-
     my ($self, $args) = @_;
+
+    my $formats = [qw(
+                         text text-simple text-pretty
+                         json json-pretty yaml perl
+                         ruby phpserialization)];
 
     if (!$self->{actions}) {
         $self->{actions} = {
@@ -117,7 +156,9 @@ sub BUILD {
     }
 
     if (!$self->{common_opts}) {
-        $opts{version} = {
+        my $copts = {};
+
+        $copts->{version} = {
             getopt  => "version|v",
             usage   => N__("--version (or -v)"),
             summary => N__("Show version"),
@@ -127,10 +168,11 @@ sub BUILD {
                 die "'url' not set, required for --version"
                     unless $self->url;
                 $r->{action} = 'version';
+                $r->{skip_parse_subcommand_argv} = 1;
             },
         };
 
-        $opts{help} = {
+        $copts->{help} = {
             getopt  => "help|h|?",
             usage   => N__("--help (or -h, -?) [--verbose]"),
             summary => N__("Display this help message"),
@@ -138,16 +180,15 @@ sub BUILD {
             handler => sub {
                 my ($go, $val, $r) = @_;
                 $r->{action} = 'help';
+                $r->{skip_parse_subcommand_argv} = 1;
             },
             order   => 0, # high
         };
 
-        $opts{format} = {
+        $copts->{format} = {
             getopt  => "format=s",
             summary => N__("Choose output format, e.g. json, text"),
-            schema => ['str*' => in => [qw/text text-simple text-pretty
-                                          json json-pretty yaml perl
-                                          ruby phpserialization/]],
+            schema => ['str*' => in => $formats],
             handler => sub {
                 my ($go, $val, $r) = @_;
                 $r->{format} = $val;
@@ -155,7 +196,7 @@ sub BUILD {
         };
 
         if ($REQ_VERSION >= 1.04) {
-            $opts{json} = {
+            $copts->{json} = {
                 getopt  => "json",
                 summary => N__("Equivalent to --format=json-pretty"),
                 handler => sub {
@@ -163,7 +204,7 @@ sub BUILD {
                     $r->{format} = 'json-pretty';
                 },
             };
-            $opts{yaml} = {
+            $copts->{yaml} = {
                 getopt  => "yaml",
                 summary => N__("Equivalent to --format=yaml"),
                 handler => sub {
@@ -171,7 +212,7 @@ sub BUILD {
                     $r->{format} = 'yaml';
                 },
             };
-            $opts{perl} = {
+            $copts->{perl} = {
                 getopt  => "perl",
                 summary => N__("Equivalent to --format=perl"),
                 handler => sub {
@@ -181,7 +222,7 @@ sub BUILD {
             };
         }
 
-        $opts{format_options} = {
+        $copts->{format_options} = {
             getopt  => "format-options=s",
             summary => N__("Pass options to formatter"),
             handler => sub {
@@ -191,23 +232,23 @@ sub BUILD {
         };
 
         if ($self->subcommands) {
-            $opts{subcommands} = {
+            $copts->{subcommands} = {
                 getopt  => "subcommands",
                 usage   => N__("--subcommands"),
                 show_in_usage => sub {
-                    !$self->{selected_subcommand_name};
+                    my ($self, $r) = @_;
+                    !$r->{subcommand_name};
                 },
                 show_in_options => sub {
-                    $ENV{VERBOSE} && !$self->{selected_subcommand_name};
-                },
-                show_usage_in_help => sub {
-                    my $self = shift;
+                    my ($self, $r) = @_;
+                    $ENV{VERBOSE} && !$r->{subcommand_name};
                 },
                 summary => N__("List available subcommands"),
                 show_in_help => 0,
                 handler => sub {
                     my ($go, $val, $r) = @_;
                     $r->{action} = 'subcommands';
+                    $r->{skip_parse_subcommand_argv} = 1;
                 },
             };
         }
@@ -215,7 +256,7 @@ sub BUILD {
         if (defined $self->default_subcommand) {
             # 'cmd=SUBCOMMAND_NAME' can be used to select other subcommands when
             # default_subcommand is in effect.
-            $opts{cmd} = {
+            $copts->{cmd} = {
                 getopt  => "cmd=s",
                 handler => sub {
                     my ($go, $val, $r) = @_;
@@ -230,7 +271,7 @@ sub BUILD {
             # since the cmdline opts is consumed, Log::Any::App doesn't see
             # this. we currently work around this via setting env.
 
-            $opts{quiet} = {
+            $copts->{quiet} = {
                 getopt  => "quiet",
                 summary => N__("Set log level to quiet"),
                 handler => sub {
@@ -238,7 +279,7 @@ sub BUILD {
                     $ENV{QUIET} = 1;
                 },
             };
-            $opts{verbose} = {
+            $copts->{verbose} = {
                 getopt  => "verbose",
                 summary => N__("Set log level to verbose"),
                 handler => sub {
@@ -246,7 +287,7 @@ sub BUILD {
                     $ENV{VERBOSE} = 1;
                 },
             };
-            $opts{debug} = {
+            $copts->{debug} = {
                 getopt  => "debug",
                 summary => N__("Set log level to debug"),
                 handler => sub {
@@ -254,7 +295,7 @@ sub BUILD {
                     $ENV{DEBUG} = 1;
                 },
             };
-            $opts{trace} = {
+            $copts->{trace} = {
                 getopt  => "trace",
                 summary => N__("Set log level to trace"),
                 handler => sub {
@@ -263,7 +304,7 @@ sub BUILD {
                 },
             };
 
-            $opts{log_level} = {
+            $copts->{log_level} = {
                 getopt  => "log-level=s",
                 summary => N__("Set log level"),
                 handler => sub {
@@ -274,7 +315,7 @@ sub BUILD {
         }
 
         if ($self->undo) {
-            $opts{history} = {
+            $copts->{history} = {
                 category => 'Undo options',
                 getopt  => 'history',
                 summary => N__('List actions history'),
@@ -283,7 +324,7 @@ sub BUILD {
                     $r->{action} = 'history';
                 },
             };
-            $opts{clear_history} = {
+            $copts->{clear_history} = {
                 category => 'Undo options',
                 getopt  => "clear-history",
                 summary => N__('Clear actions history'),
@@ -292,7 +333,7 @@ sub BUILD {
                     $r->{action} = 'clear_history';
                 },
             };
-            $opts{undo} = {
+            $copts->{undo} = {
                 category => 'Undo options',
                 getopt  => 'undo',
                 summary => N__('Undo previous action'),
@@ -301,7 +342,7 @@ sub BUILD {
                     $r->{action} = 'undo';
                 },
             };
-            $opts{redo} = {
+            $copts->{redo} = {
                 category => 'Undo options',
                 getopt  => 'redo',
                 summary => N__('Redo previous undone action'),
@@ -311,7 +352,7 @@ sub BUILD {
                 },
             };
         }
-        $self->{common_opts} = \%opts;
+        $self->{common_opts} = $copts;
     }
 
     unless ($ENV{COMP_LINE}) {
@@ -328,9 +369,7 @@ sub BUILD {
         $self->color_theme($ct);
     }
 
-    # available formats
-    $self->{formats} //= [keys %Perinci::Result::Format::Formats];
-
+    $self->{formats} //= $formats;
     $self->{per_arg_json} //= 1;
     $self->{per_arg_yaml} //= 1;
 }
@@ -494,7 +533,7 @@ sub hook_after_parse_argv {
         my $do_log = $r->{subcommand_data}{log_any_app}
             if $r->{subcommand_data};
         $do_log //= $ENV{LOG};
-        $do_log //= $self->{action_metadata}{$r->{action}}{default_log}
+        $do_log //= $self->action_metadata->{$r->{action}}{default_log}
             if $self->{action};
         $do_log //= $self->log_any_app;
         $self->_load_log_any_app if $do_log;
@@ -610,8 +649,8 @@ sub hook_format_result {
         $format = 'text';
     }
 
-    $resmeta->{result_format_options} = $self->format_options
-        if $self->format_options;
+    $resmeta->{result_format_options} = $r->{format_options}
+        if $r->{format_options};
 
     if ($resmeta->{is_stream}) {
         $log->tracef("Result is a stream");
@@ -634,11 +673,12 @@ sub hook_display_result {
     # determine whether to binmode(STDOUT,":utf8")
     my $utf8 = $ENV{UTF8};
     if (!defined($utf8)) {
-        my $am = $self->action_metadata->{$action};
+        my $am = $self->action_metadata->{$r->{action}}
+            if $r->{action};
         $utf8 //= $am->{use_utf8};
     }
-    if (!defined($utf8) && $self->{_subcommand}) {
-        $utf8 //= $self->{_subcommand}{use_utf8};
+    if (!defined($utf8) && $r->{subcommand_data}) {
+        $utf8 //= $r->{subcommand_data}{use_utf8};
     }
     $utf8 //= $self->use_utf8;
     if ($utf8) {
@@ -752,10 +792,9 @@ sub run_subcommands {
 }
 
 sub run_version {
-    my ($self) = @_;
+    my ($self, $r) = @_;
 
-    my $url = $self->{_subcommand} && $self->{_subcommand}{url} ?
-        $self->{_subcommand}{url} : $self->url;
+    my $url = $r->{subcommand_data}{url} // $self->url;
     my $res = $self->get_meta($url);
     my ($ver, $date);
     if ($res->[0] == 200) {
