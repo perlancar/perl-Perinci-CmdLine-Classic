@@ -147,14 +147,6 @@ subtest 'dry run' => sub {
     );
 };
 
-goto DONE_TESTING;
-
-test_run(name      => 'noop',
-         args      => {url=>'/Foo/noop'},
-         argv      => [],
-         exit_code => 0,
-     );
-
 subtest 'cmdline_src' => sub {
     test_run(
         name => 'unknown value',
@@ -304,18 +296,6 @@ subtest 'cmdline_src' => sub {
     done_testing;
 };
 
-test_run(name      => 'dry_run (using dry_run) (w/o)',
-         args      => {url=>'/Foo/dry_run'},
-         argv      => [],
-         exit_code => 0,
-         output_re => qr/2/,
-     );
-test_run(name      => 'dry_run (using dry_run) (w/)',
-         args      => {url=>'/Foo/dry_run'},
-         argv      => [qw/--dry-run/],
-         exit_code => 0,
-         output_re => qr/1/,
-     );
 test_run(name      => 'dry_run (using tx) (w/o)',
          args      => {url=>'/Foo/tx'},
          argv      => [],
