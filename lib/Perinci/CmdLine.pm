@@ -11,6 +11,7 @@ use Log::Any '$log';
 use Moo;
 use experimental 'smartmatch'; # must be after Moo
 use Locale::TextDomain::UTF8 'Perinci-CmdLine';
+use Perinci::Object;
 use Scalar::Util qw(blessed);
 
 our $REQ_VERSION = 0; # version requested by user
