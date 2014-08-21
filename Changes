@@ -9,8 +9,11 @@ Revision history for Perinci-CmdLine
 
          - Move script peri-run to Perinci-CmdLine-Any.
 
-         - Remove --action (see notes about the change in the way command-line
-           options are parsed).
+         - Remove --action (see note in the Incompatible Changes section about
+           the change in the way command-line options are parsed).
+
+         - Move examples/ to Perinci-CmdLine-Examples, to help reduce
+           dependencies.
 
          [INCOMPATIBLE CHANGES]
 
@@ -40,9 +43,6 @@ Revision history for Perinci-CmdLine
 
          - Refactoring: help-generating methods now separated into a separate
            role (Perinci::CmdLine::Role::Help), just to be more organized.
-
-         - Remove prereqs for scripts in examples/ to cut down on the number of
-           dependencies.
 
          [DOCUMENTATION]
 
