@@ -773,12 +773,14 @@ sub hook_after_run {
 }
 
 sub run_subcommands {
-    my ($self) = @_;
+    my ($self, $r) = @_;
 
     if (!$self->subcommands) {
-        say __("There are no subcommands") . ".";
-        return 0;
+        return [200, "OK", __("There are no subcommands") . ".",
+                {"x.perinci.cmdline._skip_format"=>1}];
     }
+
+    $r->{_help_buf} = '';
 
     my $subcommands = $self->list_subcommands;
 
@@ -803,6 +805,7 @@ sub run_subcommands {
     for my $cat (sort keys %percat_subc) {
         if ($has_many_cats) {
             $self->_help_add_heading(
+                $r,
                 __x("{category} subcommands",
                     category => ucfirst($cat || __("main"))));
         }
@@ -811,48 +814,42 @@ sub run_subcommands {
             my $sc = $subc->{$scn};
             my $summary = rimeta($sc)->langprop("summary");
             $self->_help_add_row(
+                $r,
                 [$self->_color('program_name', $scn), $summary],
                 {column_widths=>[-17, -40], indent=>1});
         }
     }
-    $self->_help_draw_curtbl;
+    $self->_help_draw_curtbl($r);
 
-    0;
+    [200, "OK", $r->{_help_buf},
+     {"x.perinci.cmdline._skip_format"=>1}];
 }
 
 sub run_version {
     my ($self, $r) = @_;
 
     my $url = $r->{subcommand_data}{url} // $self->url;
-    my $res = $self->get_meta($url);
-    my ($ver, $date);
-    if ($res->[0] == 200) {
-        $ver = $res->[2]{entity_v} // "?";
-        $date = $res->[2]{entity_date};
-    } else {
-        $log->warnf("Can't request 'meta' action on %s: %d - %s",
-                    $url, $res->[0], $res->[1]);
-        $ver = '?';
-        $date = undef;
-    }
+    my $meta = $self->get_meta($url);
+    my $ver = $meta->{entity_v} // "?";
+    my $date = $meta->{entity_date};
 
-    say __x(
-        "{program} version {version}",
-        program => $self->_color('program_name',
-                                 $self->_program_and_subcommand_name),
-        version => $self->_color('emphasis', $ver)) .
-            ($date ? " ($date)" : "");
-    {
-        no strict 'refs';
-        say "  ", __x(
+    [200, "OK", join(
+        "",
+        __x(
+            "{program} version {version}",
+            program => $self->_color('program_name',
+                                     $self->get_program_and_subcommand_name),
+            version => $self->_color('emphasis', $ver)),
+        ($date ? " ($date)" : ""),
+        "\n",
+        "  ", __x(
             "{program} version {version}",
             program => $self->_color('emphasis', "Perinci::CmdLine"),
             version => $self->_color('emphasis',
-                                     $Perinci::CmdLine::VERSION || "dev"))
-            . ($Perinci::CmdLine::DATE ? " ($Perinci::CmdLine::DATE)" : "");
-    }
-
-    0;
+                                     $Perinci::CmdLine::VERSION || "dev")),
+        ($Perinci::CmdLine::DATE ? " ($Perinci::CmdLine::DATE)" : ""),
+        "\n",
+    ), {"x.perinci.cmdline._skip_format"=>1}];
 }
 
 sub run_call {
