@@ -355,20 +355,6 @@ sub BUILD {
         $self->{common_opts} = $copts;
     }
 
-    unless ($ENV{COMP_LINE}) {
-        my $ct = $self->{color_theme} // $ENV{PERINCI_CMDLINE_COLOR_THEME};
-        if (!$ct) {
-            if ($self->use_color) {
-                my $bg = $self->detect_terminal->{default_bgcolor} // '';
-                $ct = 'Default::default' .
-                    ($bg eq 'ffffff' ? '_whitebg' : '');
-            } else {
-                $ct = 'Default::no_color';
-            }
-        }
-        $self->color_theme($ct);
-    }
-
     $self->{formats} //= $formats;
     $self->{per_arg_json} //= 1;
     $self->{per_arg_yaml} //= 1;
@@ -517,6 +503,20 @@ sub _load_log_any_app {
 # this hook is called at the start of run(), can be used to initialize stuffs
 sub hook_before_run {
     my ($self, $r) = @_;
+
+    unless ($ENV{COMP_LINE}) {
+        my $ct = $self->{color_theme} // $ENV{PERINCI_CMDLINE_COLOR_THEME};
+        if (!$ct) {
+            if ($self->use_color) {
+                my $bg = $self->detect_terminal->{default_bgcolor} // '';
+                $ct = 'Default::default' .
+                    ($bg eq 'ffffff' ? '_whitebg' : '');
+            } else {
+                $ct = 'Default::no_color';
+            }
+        }
+        $self->color_theme($ct);
+    }
 
     $log->tracef("Start of CLI run");
 
