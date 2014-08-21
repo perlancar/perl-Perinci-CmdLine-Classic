@@ -112,7 +112,6 @@ sub __json_decode {
 
 sub _color {
     my ($self, $color_name, $text) = @_;
-    use DD; dd $self;
     my $color_code = $color_name ?
         $self->get_theme_color_as_ansi($color_name) : "";
     my $reset_code = $color_code ? "\e[0m" : "";
