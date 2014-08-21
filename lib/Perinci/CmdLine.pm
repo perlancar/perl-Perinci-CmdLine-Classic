@@ -625,6 +625,9 @@ sub hook_after_parse_argv {
 }
 
 sub hook_format_result {
+    # save startup time under completion
+    return if $ENV{COMP_LINE};
+
     require Perinci::Result::Format;
 
     my ($self, $r) = @_;
@@ -670,6 +673,11 @@ sub hook_display_result {
     my $res  = $r->{res};
     my $fres = $r->{fres};
     my $resmeta = $res->[3] // {};
+
+    if ($ENV{COMP_LINE}) {
+        print $res->[2];
+        return;
+    }
 
     # determine whether to binmode(STDOUT,":utf8")
     my $utf8 = $ENV{UTF8};
