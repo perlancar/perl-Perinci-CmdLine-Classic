@@ -124,242 +124,6 @@ sub err {
     $self->_color('error_label', "ERROR: ") . $msg;
 }
 
-sub BUILD {
-    my ($self, $args) = @_;
-
-    my $formats = [qw(
-                         text text-simple text-pretty
-                         json json-pretty yaml perl
-                         ruby phpserialization)];
-
-    if (!$self->{actions}) {
-        $self->{actions} = {
-            version => {
-                default_log => 0,
-                use_utf8 => 1,
-            },
-            help => {
-                default_log => 0,
-                use_utf8 => 1,
-            },
-            subcommands => {
-                default_log => 0,
-                use_utf8 => 1,
-            },
-            call => {},
-
-            history => {},
-            clear_history => {},
-            redo => {},
-            undo => {},
-        };
-    }
-
-    if (!$self->{common_opts}) {
-        my $copts = {};
-
-        $copts->{version} = {
-            getopt  => "version|v",
-            usage   => N__("--version (or -v)"),
-            summary => N__("Show version"),
-            show_in_options => sub { $ENV{VERBOSE} },
-            handler => sub {
-                my ($go, $val, $r) = @_;
-                die "'url' not set, required for --version"
-                    unless $self->url;
-                $r->{action} = 'version';
-                $r->{skip_parse_subcommand_argv} = 1;
-            },
-        };
-
-        $copts->{help} = {
-            getopt  => "help|h|?",
-            usage   => N__("--help (or -h, -?) [--verbose]"),
-            summary => N__("Display this help message"),
-            show_in_options => sub { $ENV{VERBOSE} },
-            handler => sub {
-                my ($go, $val, $r) = @_;
-                $r->{action} = 'help';
-                $r->{skip_parse_subcommand_argv} = 1;
-            },
-            order   => 0, # high
-        };
-
-        $copts->{format} = {
-            getopt  => "format=s",
-            summary => N__("Choose output format, e.g. json, text"),
-            schema => ['str*' => in => $formats],
-            handler => sub {
-                my ($go, $val, $r) = @_;
-                $r->{format} = $val;
-            },
-        };
-
-        if ($REQ_VERSION >= 1.04) {
-            $copts->{json} = {
-                getopt  => "json",
-                summary => N__("Equivalent to --format=json-pretty"),
-                handler => sub {
-                    my ($go, $val, $r) = @_;
-                    $r->{format} = 'json-pretty';
-                },
-            };
-            $copts->{yaml} = {
-                getopt  => "yaml",
-                summary => N__("Equivalent to --format=yaml"),
-                handler => sub {
-                    my ($go, $val, $r) = @_;
-                    $r->{format} = 'yaml';
-                },
-            };
-            $copts->{perl} = {
-                getopt  => "perl",
-                summary => N__("Equivalent to --format=perl"),
-                handler => sub {
-                    my ($go, $val, $r) = @_;
-                    $r->{format} = 'perl';
-                },
-            };
-        }
-
-        $copts->{format_options} = {
-            getopt  => "format-options=s",
-            summary => N__("Pass options to formatter"),
-            handler => sub {
-                my ($go, $val, $r) = @_;
-                $r->{format_options} = __json_decode($val);
-            },
-        };
-
-        if ($self->subcommands) {
-            $copts->{subcommands} = {
-                getopt  => "subcommands",
-                usage   => N__("--subcommands"),
-                show_in_usage => sub {
-                    my ($self, $r) = @_;
-                    !$r->{subcommand_name};
-                },
-                show_in_options => sub {
-                    my ($self, $r) = @_;
-                    $ENV{VERBOSE} && !$r->{subcommand_name};
-                },
-                summary => N__("List available subcommands"),
-                show_in_help => 0,
-                handler => sub {
-                    my ($go, $val, $r) = @_;
-                    $r->{action} = 'subcommands';
-                    $r->{skip_parse_subcommand_argv} = 1;
-                },
-            };
-        }
-
-        if (defined $self->default_subcommand) {
-            # 'cmd=SUBCOMMAND_NAME' can be used to select other subcommands when
-            # default_subcommand is in effect.
-            $copts->{cmd} = {
-                getopt  => "cmd=s",
-                handler => sub {
-                    my ($go, $val, $r) = @_;
-                    $r->{subcommand_name} = $val;
-                    $r->{subcommand_name_from} = '--cmd';
-                },
-            };
-        }
-
-        # convenience for Log::Any::App-using apps
-        if ($self->log_any_app) {
-            # since the cmdline opts is consumed, Log::Any::App doesn't see
-            # this. we currently work around this via setting env.
-
-            $copts->{quiet} = {
-                getopt  => "quiet",
-                summary => N__("Set log level to quiet"),
-                handler => sub {
-                    my ($go, $val, $r) = @_;
-                    $ENV{QUIET} = 1;
-                },
-            };
-            $copts->{verbose} = {
-                getopt  => "verbose",
-                summary => N__("Set log level to verbose"),
-                handler => sub {
-                    my ($go, $val, $r) = @_;
-                    $ENV{VERBOSE} = 1;
-                },
-            };
-            $copts->{debug} = {
-                getopt  => "debug",
-                summary => N__("Set log level to debug"),
-                handler => sub {
-                    my ($go, $val, $r) = @_;
-                    $ENV{DEBUG} = 1;
-                },
-            };
-            $copts->{trace} = {
-                getopt  => "trace",
-                summary => N__("Set log level to trace"),
-                handler => sub {
-                    my ($go, $val, $r) = @_;
-                    $ENV{TRACE} = 1;
-                },
-            };
-
-            $copts->{log_level} = {
-                getopt  => "log-level=s",
-                summary => N__("Set log level"),
-                handler => sub {
-                    my ($go, $val, $r) = @_;
-                    $ENV{LOG_LEVEL} = $val;
-                },
-            };
-        }
-
-        if ($self->undo) {
-            $copts->{history} = {
-                category => 'Undo options',
-                getopt  => 'history',
-                summary => N__('List actions history'),
-                handler => sub {
-                    my ($go, $val, $r) = @_;
-                    $r->{action} = 'history';
-                },
-            };
-            $copts->{clear_history} = {
-                category => 'Undo options',
-                getopt  => "clear-history",
-                summary => N__('Clear actions history'),
-                handler => sub {
-                    my ($go, $val, $r) = @_;
-                    $r->{action} = 'clear_history';
-                },
-            };
-            $copts->{undo} = {
-                category => 'Undo options',
-                getopt  => 'undo',
-                summary => N__('Undo previous action'),
-                handler => sub {
-                    my ($go, $val, $r) = @_;
-                    $r->{action} = 'undo';
-                },
-            };
-            $copts->{redo} = {
-                category => 'Undo options',
-                getopt  => 'redo',
-                summary => N__('Redo previous undone action'),
-                handler => sub {
-                    my ($go, $val, $r) = @_;
-                    $r->{action} = 'redo';
-                },
-            };
-        }
-        $self->{common_opts} = $copts;
-    }
-
-    $self->{formats} //= $formats;
-    $self->{per_arg_json} //= 1;
-    $self->{per_arg_yaml} //= 1;
-}
-
 # format array item as row
 sub format_row {
     require Data::Format::Pretty::Console;
@@ -504,19 +268,274 @@ sub _load_log_any_app {
 sub hook_before_run {
     my ($self, $r) = @_;
 
-    unless ($ENV{COMP_LINE}) {
-        my $ct = $self->{color_theme} // $ENV{PERINCI_CMDLINE_COLOR_THEME};
-        if (!$ct) {
-            if ($self->use_color) {
-                my $bg = $self->detect_terminal->{default_bgcolor} // '';
-                $ct = 'Default::default' .
-                    ($bg eq 'ffffff' ? '_whitebg' : '');
-            } else {
-                $ct = 'Default::no_color';
-            }
+    # temporary, these used to be put in BUILD but i experience something weird.
+    # if i put:
+    #
+    #   use Data::Dump; dd $self;
+    #   if (!$self->{actions} = {
+    #       ...
+    #
+    # then the object contains the normal stuff (including attributes
+    # initialized by role, particularly $self->subcommands etc). BUT, if i put:
+    #
+    #   if (!$self->{actions} = {
+    #       use Data::Dump; dd $self;
+    #       ...
+    #
+    # then $self only contains attributes set in the BUILD. this is very weird
+    # and i can't pinpoint the cause yet. i've tried downgrading Moo from
+    # 1.006000 to 1.00{5,4}000 but the bug remains. so for now i put
+    # initialization in here.
+
+    unless ($self->{__init}++) {
+        my $formats = [qw(
+                             text text-simple text-pretty
+                             json json-pretty yaml perl
+                             ruby phpserialization)];
+
+        if (!$self->{actions}) {
+            $self->{actions} = {
+                version => {
+                    default_log => 0,
+                    use_utf8 => 1,
+                },
+                help => {
+                    default_log => 0,
+                    use_utf8 => 1,
+                },
+                subcommands => {
+                    default_log => 0,
+                    use_utf8 => 1,
+                },
+                call => {},
+
+                history => {},
+                clear_history => {},
+                redo => {},
+                undo => {},
+            };
         }
-        $self->color_theme($ct);
-    }
+
+        if (!$self->{common_opts}) {
+
+            my $copts = {};
+
+            $copts->{version} = {
+                getopt  => "version|v",
+                usage   => N__("--version (or -v)"),
+                summary => N__("Show version"),
+                show_in_options => sub { $ENV{VERBOSE} },
+                handler => sub {
+                    my ($go, $val, $r) = @_;
+                    die "'url' not set, required for --version"
+                        unless $self->url;
+                    $r->{action} = 'version';
+                    $r->{skip_parse_subcommand_argv} = 1;
+                },
+            };
+
+            $copts->{help} = {
+                getopt  => "help|h|?",
+                usage   => N__("--help (or -h, -?) [--verbose]"),
+                summary => N__("Display this help message"),
+                show_in_options => sub { $ENV{VERBOSE} },
+                handler => sub {
+                    my ($go, $val, $r) = @_;
+                    $r->{action} = 'help';
+                    $r->{skip_parse_subcommand_argv} = 1;
+                },
+                order   => 0, # high
+            };
+
+            $copts->{format} = {
+                getopt  => "format=s",
+                summary => N__("Choose output format, e.g. json, text"),
+                schema => ['str*' => in => $formats],
+                handler => sub {
+                    my ($go, $val, $r) = @_;
+                    $r->{format} = $val;
+                },
+            };
+
+            if ($REQ_VERSION >= 1.04) {
+                $copts->{json} = {
+                    getopt  => "json",
+                    summary => N__("Equivalent to --format=json-pretty"),
+                    handler => sub {
+                        my ($go, $val, $r) = @_;
+                        $r->{format} = 'json-pretty';
+                    },
+                };
+                $copts->{yaml} = {
+                    getopt  => "yaml",
+                    summary => N__("Equivalent to --format=yaml"),
+                    handler => sub {
+                        my ($go, $val, $r) = @_;
+                        $r->{format} = 'yaml';
+                    },
+                };
+                $copts->{perl} = {
+                    getopt  => "perl",
+                    summary => N__("Equivalent to --format=perl"),
+                    handler => sub {
+                        my ($go, $val, $r) = @_;
+                        $r->{format} = 'perl';
+                    },
+                };
+            }
+
+            $copts->{format_options} = {
+                getopt  => "format-options=s",
+                summary => N__("Pass options to formatter"),
+                handler => sub {
+                    my ($go, $val, $r) = @_;
+                    $r->{format_options} = __json_decode($val);
+                },
+            };
+
+            if ($self->subcommands) {
+                $copts->{subcommands} = {
+                    getopt  => "subcommands",
+                    usage   => N__("--subcommands"),
+                    show_in_usage => sub {
+                        my ($self, $r) = @_;
+                        !$r->{subcommand_name};
+                    },
+                    show_in_options => sub {
+                        my ($self, $r) = @_;
+                        $ENV{VERBOSE} && !$r->{subcommand_name};
+                    },
+                    summary => N__("List available subcommands"),
+                    show_in_help => 0,
+                    handler => sub {
+                        my ($go, $val, $r) = @_;
+                        $r->{action} = 'subcommands';
+                        $r->{skip_parse_subcommand_argv} = 1;
+                    },
+                };
+            }
+
+            if (defined $self->default_subcommand) {
+                # 'cmd=SUBCOMMAND_NAME' can be used to select other subcommands
+                # when default_subcommand is in effect.
+                $copts->{cmd} = {
+                    getopt  => "cmd=s",
+                    handler => sub {
+                        my ($go, $val, $r) = @_;
+                        $r->{subcommand_name} = $val;
+                        $r->{subcommand_name_from} = '--cmd';
+                    },
+                };
+            }
+
+            # convenience for Log::Any::App-using apps
+            if ($self->log_any_app) {
+                # since the cmdline opts is consumed, Log::Any::App doesn't see
+                # this. we currently work around this via setting env.
+
+                $copts->{quiet} = {
+                    getopt  => "quiet",
+                    summary => N__("Set log level to quiet"),
+                    handler => sub {
+                        my ($go, $val, $r) = @_;
+                        $ENV{QUIET} = 1;
+                    },
+                };
+                $copts->{verbose} = {
+                    getopt  => "verbose",
+                    summary => N__("Set log level to verbose"),
+                    handler => sub {
+                        my ($go, $val, $r) = @_;
+                        $ENV{VERBOSE} = 1;
+                        $r->{_help_verbose} = 1;
+                    },
+                };
+                $copts->{debug} = {
+                    getopt  => "debug",
+                    summary => N__("Set log level to debug"),
+                    handler => sub {
+                        my ($go, $val, $r) = @_;
+                        $ENV{DEBUG} = 1;
+                    },
+                };
+                $copts->{trace} = {
+                    getopt  => "trace",
+                    summary => N__("Set log level to trace"),
+                    handler => sub {
+                        my ($go, $val, $r) = @_;
+                        $ENV{TRACE} = 1;
+                    },
+                };
+
+                $copts->{log_level} = {
+                    getopt  => "log-level=s",
+                    summary => N__("Set log level"),
+                    handler => sub {
+                        my ($go, $val, $r) = @_;
+                        $ENV{LOG_LEVEL} = $val;
+                    },
+                };
+            }
+
+            if ($self->undo) {
+                $copts->{history} = {
+                    category => 'Undo options',
+                    getopt  => 'history',
+                    summary => N__('List actions history'),
+                    handler => sub {
+                        my ($go, $val, $r) = @_;
+                        $r->{action} = 'history';
+                    },
+                };
+                $copts->{clear_history} = {
+                    category => 'Undo options',
+                    getopt  => "clear-history",
+                    summary => N__('Clear actions history'),
+                    handler => sub {
+                        my ($go, $val, $r) = @_;
+                        $r->{action} = 'clear_history';
+                    },
+                };
+                $copts->{undo} = {
+                    category => 'Undo options',
+                    getopt  => 'undo',
+                    summary => N__('Undo previous action'),
+                    handler => sub {
+                        my ($go, $val, $r) = @_;
+                        $r->{action} = 'undo';
+                    },
+                };
+                $copts->{redo} = {
+                    category => 'Undo options',
+                    getopt  => 'redo',
+                    summary => N__('Redo previous undone action'),
+                    handler => sub {
+                        my ($go, $val, $r) = @_;
+                        $r->{action} = 'redo';
+                    },
+                };
+            }
+            $self->{common_opts} = $copts;
+        }
+
+        $self->{formats} //= $formats;
+        $self->{per_arg_json} //= 1;
+        $self->{per_arg_yaml} //= 1;
+
+        unless ($ENV{COMP_LINE}) {
+            my $ct = $self->{color_theme} // $ENV{PERINCI_CMDLINE_COLOR_THEME};
+            if (!$ct) {
+                if ($self->use_color) {
+                    my $bg = $self->detect_terminal->{default_bgcolor} // '';
+                    $ct = 'Default::default' .
+                        ($bg eq 'ffffff' ? '_whitebg' : '');
+                } else {
+                    $ct = 'Default::no_color';
+                }
+            }
+            $self->color_theme($ct);
+        }
+    } # __init
 
     $log->tracef("Start of CLI run");
 
