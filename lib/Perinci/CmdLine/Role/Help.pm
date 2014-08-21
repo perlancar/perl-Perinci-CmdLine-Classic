@@ -16,7 +16,7 @@ sub _help_draw_curtbl {
     my ($self, $r) = @_;
 
     if ($r->{_help_curtbl}) {
-        print $r->{_help_curtbl}->draw;
+        $r->{_help_buf} .= $r->{_help_curtbl}->draw;
         undef $r->{_help_curtbl};
     }
 }
@@ -564,6 +564,8 @@ sub help_section_links {
 sub run_help {
     my ($self, $r) = @_;
 
+    $r->{_help_buf} = '';
+
     my $verbose = $ENV{VERBOSE} // 0;
     local $r->{_help_verbose} = $verbose;
 
@@ -619,7 +621,7 @@ sub run_help {
         $self->$meth($r);
     }
     $self->_help_draw_curtbl($r);
-    0;
+    [200, "OK", $r->{_help_buf}, {"x.perinci.cmdline._skip_format"=>1}];
 }
 
 1;

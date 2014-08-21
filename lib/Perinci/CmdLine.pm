@@ -646,13 +646,15 @@ sub hook_format_result {
     # save startup time under completion
     return if $ENV{COMP_LINE};
 
-    require Perinci::Result::Format;
-
     my ($self, $r) = @_;
 
     my $res    = $r->{res};
     my $format = $r->{format};
     my $meta   = $r->{meta};
+
+    require Perinci::Result::Format;
+
+    return if $res->[3]{"x.perinci.cmdline._skip_format"};
 
     # default
     $r->{fres} = '';
@@ -692,7 +694,7 @@ sub hook_display_result {
     my $fres = $r->{fres};
     my $resmeta = $res->[3] // {};
 
-    if ($ENV{COMP_LINE}) {
+    if ($ENV{COMP_LINE} || $res->[3]{"x.perinci.cmdline._skip_format"}) {
         print $res->[2];
         return;
     }
