@@ -249,10 +249,10 @@ sub _unsetup_progress_output {
 }
 
 sub _load_log_any_app {
-    my ($self) = @_;
+    my ($self, $r) = @_;
     # Log::Any::App::init can already avoid being run twice, but we need to
     # check anyway to avoid logging starting message below twice.
-    return if $self->{_log_any_app_loaded}++;
+    return if $r->{_log_any_app_loaded}++;
     require Log::Any::App;
     Log::Any::App::init();
 
@@ -261,7 +261,7 @@ sub _load_log_any_app {
     # rather late and might not be the first message to be logged (see log
     # messages in run()) if user already loads Log::Any::App by herself.
     $log->debugf("Program %s started with arguments: %s",
-                 $0, $self->{_orig_argv});
+                 $0, $r->{orig_argv});
 }
 
 # this hook is called at the start of run(), can be used to initialize stuffs
@@ -555,7 +555,7 @@ sub hook_after_parse_argv {
         $do_log //= $self->action_metadata->{$r->{action}}{default_log}
             if $self->{action};
         $do_log //= $self->log_any_app;
-        $self->_load_log_any_app if $do_log;
+        $self->_load_log_any_app($r) if $do_log;
     }
 
     # we'll try giving argv to server side, but this currently means we skip
@@ -568,7 +568,7 @@ sub hook_after_parse_argv {
     }
 
     #$log->tracef("result of GetArgs for subcommand: remaining argv=%s, args=%s".
-    #                 ", actions=%s", \@ARGV, $self->{_args}, $self->{_actions});
+    #                 ", action=%s", \@ARGV, $r->{args}, $r->{action});
 
     my $action = $r->{action};
     my $meta   = $r->{meta};
@@ -582,62 +582,62 @@ sub hook_after_parse_argv {
             my $as = $args_p->{$an};
             my $src = $as->{cmdline_src};
             if ($src) {
-                $self->_err(
-                    "Invalid 'cmdline_src' value for argument '$an': $src")
+                die [531,
+                     "Invalid 'cmdline_src' value for argument '$an': $src"]
                     unless $src =~ /\A(stdin|file|stdin_or_files)\z/;
-                $self->_err(
-                    "Sorry, argument '$an' is set cmdline_src=$src, but type ".
-                        "is not 'str' or 'array', only those are supported now")
+                die [531,
+                     "Sorry, argument '$an' is set cmdline_src=$src, but type ".
+                         "is not 'str'/'array', only those are supported now"]
                     unless $as->{schema}[0] =~ /\A(str|array)\z/;
                 if ($src =~ /stdin/) {
-                    $self->_err("Only one argument can be specified ".
-                                    "cmdline_src stdin/stdin_or_files")
+                    die [531, "Only one argument can be specified ".
+                             "cmdline_src stdin/stdin_or_files"]
                         if $stdin_seen++;
                 }
                 my $is_ary = $as->{schema}[0] eq 'array';
                 if ($src eq 'stdin' || $src eq 'file' &&
-                        ($self->{_args}{$an}//"") eq '-') {
-                    $self->_err("Argument $an must be set to '-' which means ".
-                                    "from stdin")
-                        if defined($self->{_args}{$an}) &&
-                            $self->{_args}{$an} ne '-';
+                        ($r->{args}{$an}//"") eq '-') {
+                    die [400, "Argument $an must be set to '-' which means ".
+                             "from stdin"]
+                        if defined($r->{args}{$an}) &&
+                            $r->{args}{$an} ne '-';
                     #$log->trace("Getting argument '$an' value from stdin ...");
-                    $self->{_args}{$an} = $is_ary ? [<STDIN>] :
+                    $r->{args}{$an} = $is_ary ? [<STDIN>] :
                         do { local $/; <STDIN> };
                 } elsif ($src eq 'stdin_or_files') {
                     # push back argument value to @ARGV so <> can work to slurp
                     # all the specified files
                     local @ARGV = @ARGV;
-                    unshift @ARGV, $self->{_args}{$an}
-                        if defined $self->{_args}{$an};
+                    unshift @ARGV, $r->{args}{$an}
+                        if defined $r->{args}{$an};
                     #$log->tracef("Getting argument '$an' value from ".
                     #                 "stdin_or_files, \@ARGV=%s ...", \@ARGV);
-                    $self->{_args}{$an} = $is_ary ? [<>] : do { local $/; <> };
+                    $r->{args}{$an} = $is_ary ? [<>] : do { local $/; <> };
                 } elsif ($src eq 'file') {
-                    unless (exists $self->{_args}{$an}) {
+                    unless (exists $r->{args}{$an}) {
                         if ($as->{req}) {
-                            $self->_err(
-                                "Please specify filename for argument '$an'");
+                            die [400,
+                                 "Please specify filename for argument '$an'"];
                         } else {
                             next;
                         }
                     }
-                    $self->_err("Please specify filename for argument '$an'")
-                        unless defined $self->{_args}{$an};
+                    die [400, "Please specify filename for argument '$an'"]
+                        unless defined $r->{args}{$an};
                     #$log->trace("Getting argument '$an' value from ".
                     #                "file ...");
                     my $fh;
-                    unless (open $fh, "<", $self->{_args}{$an}) {
-                        $self->_err("Can't open file '$self->{_args}{$an}' ".
-                                        "for argument '$an': $!")
+                    unless (open $fh, "<", $r->{args}{$an}) {
+                        die [500, "Can't open file '$r->{args}{$an}' ".
+                                 "for argument '$an': $!"];
                     }
-                    $self->{_args}{$an} = $is_ary ? [<$fh>] :
+                    $r->{args}{$an} = $is_ary ? [<$fh>] :
                         do { local $/; <$fh> };
                 }
             }
         }
     }
-    #$log->tracef("args after cmdline_src is processed: %s", $self->{_args});
+    #$log->tracef("args after cmdline_src is processed: %s", $r->{args});
 
     #$log->tracef("<- _parse_subcommand_opts()");
 }
@@ -728,7 +728,7 @@ sub hook_display_result {
                 $pager = "more" if File::Which::which("more");
             }
             unless (defined $pager) {
-                $self->_err("Can't determine PAGER");
+                die [500, "Can't determine PAGER"];
             }
             last unless $pager; # ENV{PAGER} can be set 0/'' to disable paging
             $log->tracef("Paging output using %s", $pager);
@@ -738,8 +738,8 @@ sub hook_display_result {
     $handle //= \*STDOUT;
 
     if ($resmeta->{is_stream}) {
-        $self->_err("Can't format stream as " . $self->format .
-                        ", please use --format text")
+        die [500, "Can't format stream as " . $self->format .
+                 ", please use --format text"]
             unless $self->format =~ /^text/;
         my $r = $res->[2];
         if (ref($r) eq 'GLOB') {
@@ -757,8 +757,8 @@ sub hook_display_result {
                 print $self->format_row(shift(@$r));
             }
         } else {
-            $self->_err("Invalid stream in result (not a glob/IO::Handle-like ".
-                            "object/(tied) array)\n");
+            die [500, "Invalid stream in result (not a glob/IO::Handle-like ".
+                     "object/(tied) array)\n"];
         }
     } else {
         print $handle $fres;
@@ -904,7 +904,7 @@ sub run_call {
     $log->tracef("call res=%s", $res);
 
     # commit transaction (if using tx)
-    if ($using_tx && $self->{_res}[0] =~ /\A(?:200|304)\z/) {
+    if ($using_tx && $r->{res}[0] =~ /\A(?:200|304)\z/) {
         my $tres = $self->riap_client->request(commit_tx => "/", {tx_id=>$tx_id});
         if ($tres->[0] != 200) {
             return [$tres->[0],"Can't commit transaction '$tx_id': $tres->[1]"];
