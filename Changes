@@ -1,6 +1,13 @@
 Revision history for Perinci-CmdLine
 
-1.17     2014-07-23 (SHARYANTO)
+1.18     2014-08-22 (SHARYANTO)
+
+         - Bugfix: Try to init attributes in BUILD again (previously this is
+           moved to hook_before_run because of some weirdness that makes
+           accessing attribute from role not work in inner block of BUILD).
+
+
+1.17     2014-08-22 (SHARYANTO)
 
          [REMOVED FEATURES]
 
