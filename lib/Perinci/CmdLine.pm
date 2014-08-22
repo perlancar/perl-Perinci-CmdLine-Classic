@@ -118,11 +118,12 @@ sub _color {
     "$color_code$text$reset_code";
 }
 
-sub err {
-    my ($self, $msg) = @_;
-    $msg .= "\n" unless $msg =~ /\n\z/;
-    $self->_color('error_label', "ERROR: ") . $msg;
-}
+#NOW UNUSED
+#sub err {
+#    my ($self, $msg) = @_;
+#    $msg .= "\n" unless $msg =~ /\n\z/;
+#    $self->_color('error_label', "ERROR: ") . $msg;
+#}
 
 # format array item as row
 sub format_row {
