@@ -621,7 +621,7 @@ sub run_help {
         $self->$meth($r);
     }
     $self->_help_draw_curtbl($r);
-    [200, "OK", $r->{_help_buf}, {"x.perinci.cmdline._skip_format"=>1}];
+    [200, "OK", $r->{_help_buf}, {"x.perinci.cmdline.skip_format"=>1}];
 }
 
 1;
