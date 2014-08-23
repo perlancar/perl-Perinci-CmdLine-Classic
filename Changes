@@ -1,5 +1,16 @@
 Revision history for Perinci-CmdLine
 
+1.19     2014-08-23 (SHARYANTO)
+
+         [INCOMPATIBLE CHANGES]
+
+         - Replace result metadata cmdline.display_result with cmdline.result.
+
+         [ENHANCEMENTS]
+
+         - Add result metadata cmdline.skip_format.
+
+
 1.18     2014-08-22 (SHARYANTO)
 
          - Bugfix: Try to init attributes in BUILD again (previously this is
