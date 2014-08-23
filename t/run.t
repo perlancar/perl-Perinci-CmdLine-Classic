@@ -299,6 +299,43 @@ subtest 'cmdline_src' => sub {
     done_testing;
 };
 
+subtest 'result metadata' => sub {
+    subtest 'cmdline.exit_code' => sub {
+        test_run(
+            args      => {url=>'/Perinci/Examples/CmdLineResMeta/exit_code'},
+            argv      => [qw//],
+            status    => 200,
+            exit_code => 7,
+        );
+    };
+    subtest 'cmdline.result' => sub {
+        test_run(
+            args      => {url=>'/Perinci/Examples/CmdLineResMeta/result'},
+            argv      => [qw//],
+            output_re => qr/false/,
+        );
+    };
+    subtest 'cmdline.default_format' => sub {
+        test_run(
+            args      => {url=>'/Perinci/Examples/CmdLineResMeta/default_format'},
+            argv      => [qw//],
+            output_re => qr/null/,
+        );
+        test_run(
+            args      => {url=>'/Perinci/Examples/CmdLineResMeta/default_format'},
+            argv      => [qw/--format text/],
+            output_re => qr/\A\z/,
+        );
+    };
+    subtest 'cmdline.skip_format' => sub {
+        test_run(
+            args      => {url=>'/Perinci/Examples/CmdLineResMeta/skip_format'},
+            argv      => [qw//],
+            output_re => qr/ARRAY\(0x/,
+        );
+    };
+};
+
 test_run(name      => 'dry_run (using tx) (w/o)',
          args      => {url=>'/Perinci/Examples/Tx/check_state'},
          argv      => [],

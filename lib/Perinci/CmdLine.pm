@@ -659,34 +659,20 @@ sub hook_format_result {
     my ($self, $r) = @_;
 
     my $res    = $r->{res};
-    my $format = $r->{format};
+    my $format = $r->{format} // 'text';
     my $meta   = $r->{meta};
 
     require Perinci::Result::Format;
-
-    return if $res->[3]{"x.perinci.cmdline._skip_format"};
-
-    # default
-    $r->{fres} = '';
-
-    my $resmeta = $res->[3] // {};
-    unless ($resmeta->{"cmdline.display_result"} // 1) {
-        $res->[2] = undef;
-        return;
-    }
-
-    $format //= $meta->{"x.perinci.cmdline.default_format"};
-    $format //= 'text';
 
     unless ($format ~~ @{ $self->formats }) {
         warn "Unknown output format '$format'";
         $format = 'text';
     }
 
-    $resmeta->{result_format_options} = $r->{format_options}
+    $res->[3]{result_format_options} = $r->{format_options}
         if $r->{format_options};
 
-    if ($resmeta->{is_stream}) {
+    if ($res->[3]{is_stream}) {
         $log->tracef("Result is a stream");
         return undef;
     } else {
@@ -704,7 +690,7 @@ sub hook_display_result {
     my $fres = $r->{fres};
     my $resmeta = $res->[3] // {};
 
-    if ($ENV{COMP_LINE} || $res->[3]{"x.perinci.cmdline._skip_format"}) {
+    if ($ENV{COMP_LINE} || $res->[3]{"cmdline.skip_format"}) {
         print $res->[2];
         return;
     }
@@ -1081,18 +1067,6 @@ another example:
  }
 
 See also L<Data::Unixish> and L<App::dux> which deals with streams.
-
-=head2 attribute: cmdline.display_result => BOOL
-
-If you don't want to display function output (for example, function output is a
-detailed data structure which might not be important for end users), you can set
-C<cmdline.display_result> result metadata to false. Example:
-
- $SPEC{foo} = { ... };
- sub foo {
-     ...
-     [200, "OK", $data, {"cmdline.display_result"=>0}];
- }
 
 =head2 attribute: cmdline.page_result => BOOL
 
