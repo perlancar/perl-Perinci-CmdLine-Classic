@@ -471,6 +471,7 @@ sub _init_attrs {
                 handler => sub {
                     my ($go, $val, $r) = @_;
                     $r->{action} = 'history';
+                    $r->{skip_parse_subcommand_argv} = 1;
                 },
             };
             $copts->{clear_history} = {
@@ -480,6 +481,7 @@ sub _init_attrs {
                 handler => sub {
                     my ($go, $val, $r) = @_;
                     $r->{action} = 'clear_history';
+                    $r->{skip_parse_subcommand_argv} = 1;
                 },
             };
             $copts->{undo} = {
@@ -489,6 +491,7 @@ sub _init_attrs {
                 handler => sub {
                     my ($go, $val, $r) = @_;
                     $r->{action} = 'undo';
+                    $r->{skip_parse_subcommand_argv} = 1;
                 },
             };
             $copts->{redo} = {
@@ -498,6 +501,7 @@ sub _init_attrs {
                 handler => sub {
                     my ($go, $val, $r) = @_;
                     $r->{action} = 'redo';
+                    $r->{skip_parse_subcommand_argv} = 1;
                 },
             };
         }
@@ -900,7 +904,7 @@ sub run_call {
     $log->tracef("call res=%s", $res);
 
     # commit transaction (if using tx)
-    if ($using_tx && $r->{res}[0] =~ /\A(?:200|304)\z/) {
+    if ($using_tx && $res->[0] =~ /\A(?:200|304)\z/) {
         my $tres = $self->riap_client->request(commit_tx => "/", {tx_id=>$tx_id});
         if ($tres->[0] != 200) {
             return [$tres->[0],"Can't commit transaction '$tx_id': $tres->[1]"];
