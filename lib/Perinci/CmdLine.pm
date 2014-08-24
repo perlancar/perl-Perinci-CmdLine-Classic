@@ -106,173 +106,6 @@ sub VERSION {
 
 sub BUILD {
     my ($self, $args) = @_;
-    $self->_init_attrs;
-}
-
-sub __json_decode {
-    require JSON;
-    state $json = do { JSON->new->allow_nonref };
-    $json->decode(shift);
-}
-
-sub _color {
-    my ($self, $color_name, $text) = @_;
-    my $color_code = $color_name ?
-        $self->get_theme_color_as_ansi($color_name) : "";
-    my $reset_code = $color_code ? "\e[0m" : "";
-    "$color_code$text$reset_code";
-}
-
-#NOW UNUSED
-#sub err {
-#    my ($self, $msg) = @_;
-#    $msg .= "\n" unless $msg =~ /\n\z/;
-#    $self->_color('error_label', "ERROR: ") . $msg;
-#}
-
-# format array item as row
-sub format_row {
-    require Data::Format::Pretty::Console;
-    state $dfpc = Data::Format::Pretty::Console->new({interactive=>0});
-
-    my ($self, $row) = @_;
-    my $ref = ref($row);
-    # we catch common cases to be faster (avoid dfpc's structure identification)
-    if (!$ref) {
-        # simple scalar
-        return ($row // "") . "\n";
-    } elsif ($ref eq 'ARRAY' && !(grep {ref($_)} @$row)) {
-        # an array of scalars
-        return join("\t", map { $dfpc->_format_cell($_) } @$row) . "\n";
-    } else {
-        # otherwise, just feed it to dfpc
-        return $dfpc->_format($row);
-    }
-}
-
-sub get_meta {
-    my ($self, $url) = @_;
-
-    my $res = $self->riap_client->request(meta => $url);
-    die $res unless $res->[0] == 200;
-    my $meta = $res->[2];
-
-    if (risub($meta)->can_dry_run) {
-        $self->common_opts->{dry_run} = {
-            getopt  => 'dry-run',
-            summary => N__("Run in simulation mode (also via DRY_RUN=1)"),
-            handler => sub {
-                my ($go, $val, $r) = @_;
-                $r->{dry_run} = 1;
-                $ENV{VERBOSE} = 1;
-            },
-        };
-    }
-
-    $meta;
-}
-
-my ($ph1, $ph2); # patch handles
-my $setup_progress;
-sub _setup_progress_output {
-    my $self = shift;
-
-    if ($ENV{PROGRESS} // (-t STDOUT)) {
-        require Progress::Any::Output;
-        Progress::Any::Output->set("TermProgressBarColor");
-        my $out = $Progress::Any::outputs{''}[0];
-        $setup_progress = 1;
-        # we need to patch the logger adapters so it won't interfere with
-        # progress meter's output
-        require Monkey::Patch::Action;
-        $ph1 = Monkey::Patch::Action::patch_package(
-            'Log::Log4perl::Appender::Screen', 'log',
-            'replace', sub {
-                my ($self, %params) = @_;
-
-                my $msg = $params{message};
-                $msg =~ s/\n//g;
-
-                # clean currently displayed progress bar first
-                if ($out->{lastlen}) {
-                    print
-                        "\b" x $out->{lastlen},
-                            " " x $out->{lastlen},
-                                "\b" x $out->{lastlen};
-                    undef $out->{lastlen};
-                }
-
-                # force output update so progress bar is displayed again
-                # immediately
-                $Progress::Any::output_data{"$out"}{force_update} = 1;
-
-                say $msg;
-            },
-        ) if defined &{"Log::Log4perl::Appender::Screen::log"};
-        $ph2 = Monkey::Patch::Action::patch_package(
-            'Log::Log4perl::Appender::ScreenColoredLevels', 'log',
-            'replace', sub {
-                my ($self, %params) = @_;
-                # BEGIN copy-paste'ish from ScreenColoredLevels.pm
-                my $msg = $params{message};
-                $msg =~ s/\n//g;
-                if (my $color=$self->{color}->{$params{log4p_level}}) {
-                    $msg = Term::ANSIColor::colored($msg, $color);
-                }
-                # END copy-paste'ish
-
-                # clean currently displayed progress bar first
-                if ($out->{lastlen}) {
-                    print
-                        "\b" x $out->{lastlen},
-                            " " x $out->{lastlen},
-                                "\b" x $out->{lastlen};
-                    undef $out->{lastlen};
-                }
-
-                # force output update so progress bar is displayed again
-                # immediately
-                $Progress::Any::output_data{"$out"}{force_update} = 1;
-
-                # XXX duplicated code above, perhaps move this to
-                # TermProgressBarColor's clean_bar() or something
-
-                say $msg;
-            }
-        ) if defined &{"Log::Log4perl::Appender::ScreenColoredLevels::log"};
-    }
-}
-
-sub _unsetup_progress_output {
-    my $self = shift;
-
-    return unless $setup_progress;
-    my $out = $Progress::Any::outputs{''}[0];
-    $out->cleanup if $out->can("cleanup");
-    undef $ph1;
-    undef $ph2;
-    $setup_progress = 0;
-}
-
-sub _load_log_any_app {
-    my ($self, $r) = @_;
-    # Log::Any::App::init can already avoid being run twice, but we need to
-    # check anyway to avoid logging starting message below twice.
-    return if $r->{_log_any_app_loaded}++;
-    require Log::Any::App;
-    Log::Any::App::init();
-
-    # we log this after we initialize Log::Any::App, since Log::Any::App might
-    # not be loaded at all. yes, this means that this log message is printed
-    # rather late and might not be the first message to be logged (see log
-    # messages in run()) if user already loads Log::Any::App by herself.
-    $log->debugf("Program %s started with arguments: %s",
-                 $0, $r->{orig_argv});
-}
-
-sub _init_attrs {
-    my $self = shift;
-    return if $self->{__init}++;
 
     my $formats = [qw(
                          text text-simple text-pretty
@@ -527,30 +360,171 @@ sub _init_attrs {
     }
 }
 
+sub __json_decode {
+    require JSON;
+    state $json = do { JSON->new->allow_nonref };
+    $json->decode(shift);
+}
+
+sub _color {
+    my ($self, $color_name, $text) = @_;
+    my $color_code = $color_name ?
+        $self->get_theme_color_as_ansi($color_name) : "";
+    my $reset_code = $color_code ? "\e[0m" : "";
+    "$color_code$text$reset_code";
+}
+
+#NOW UNUSED
+#sub err {
+#    my ($self, $msg) = @_;
+#    $msg .= "\n" unless $msg =~ /\n\z/;
+#    $self->_color('error_label', "ERROR: ") . $msg;
+#}
+
+# format array item as row
+sub format_row {
+    require Data::Format::Pretty::Console;
+    state $dfpc = Data::Format::Pretty::Console->new({interactive=>0});
+
+    my ($self, $row) = @_;
+    my $ref = ref($row);
+    # we catch common cases to be faster (avoid dfpc's structure identification)
+    if (!$ref) {
+        # simple scalar
+        return ($row // "") . "\n";
+    } elsif ($ref eq 'ARRAY' && !(grep {ref($_)} @$row)) {
+        # an array of scalars
+        return join("\t", map { $dfpc->_format_cell($_) } @$row) . "\n";
+    } else {
+        # otherwise, just feed it to dfpc
+        return $dfpc->_format($row);
+    }
+}
+
+sub get_meta {
+    my ($self, $url) = @_;
+
+    my $res = $self->riap_client->request(meta => $url);
+    die $res unless $res->[0] == 200;
+    my $meta = $res->[2];
+
+    if (risub($meta)->can_dry_run) {
+        $self->common_opts->{dry_run} = {
+            getopt  => 'dry-run',
+            summary => N__("Run in simulation mode (also via DRY_RUN=1)"),
+            handler => sub {
+                my ($go, $val, $r) = @_;
+                $r->{dry_run} = 1;
+                $ENV{VERBOSE} = 1;
+            },
+        };
+    }
+
+    $meta;
+}
+
+my ($ph1, $ph2); # patch handles
+my $setup_progress;
+sub _setup_progress_output {
+    my $self = shift;
+
+    if ($ENV{PROGRESS} // (-t STDOUT)) {
+        require Progress::Any::Output;
+        Progress::Any::Output->set("TermProgressBarColor");
+        my $out = $Progress::Any::outputs{''}[0];
+        $setup_progress = 1;
+        # we need to patch the logger adapters so it won't interfere with
+        # progress meter's output
+        require Monkey::Patch::Action;
+        $ph1 = Monkey::Patch::Action::patch_package(
+            'Log::Log4perl::Appender::Screen', 'log',
+            'replace', sub {
+                my ($self, %params) = @_;
+
+                my $msg = $params{message};
+                $msg =~ s/\n//g;
+
+                # clean currently displayed progress bar first
+                if ($out->{lastlen}) {
+                    print
+                        "\b" x $out->{lastlen},
+                            " " x $out->{lastlen},
+                                "\b" x $out->{lastlen};
+                    undef $out->{lastlen};
+                }
+
+                # force output update so progress bar is displayed again
+                # immediately
+                $Progress::Any::output_data{"$out"}{force_update} = 1;
+
+                say $msg;
+            },
+        ) if defined &{"Log::Log4perl::Appender::Screen::log"};
+        $ph2 = Monkey::Patch::Action::patch_package(
+            'Log::Log4perl::Appender::ScreenColoredLevels', 'log',
+            'replace', sub {
+                my ($self, %params) = @_;
+                # BEGIN copy-paste'ish from ScreenColoredLevels.pm
+                my $msg = $params{message};
+                $msg =~ s/\n//g;
+                if (my $color=$self->{color}->{$params{log4p_level}}) {
+                    $msg = Term::ANSIColor::colored($msg, $color);
+                }
+                # END copy-paste'ish
+
+                # clean currently displayed progress bar first
+                if ($out->{lastlen}) {
+                    print
+                        "\b" x $out->{lastlen},
+                            " " x $out->{lastlen},
+                                "\b" x $out->{lastlen};
+                    undef $out->{lastlen};
+                }
+
+                # force output update so progress bar is displayed again
+                # immediately
+                $Progress::Any::output_data{"$out"}{force_update} = 1;
+
+                # XXX duplicated code above, perhaps move this to
+                # TermProgressBarColor's clean_bar() or something
+
+                say $msg;
+            }
+        ) if defined &{"Log::Log4perl::Appender::ScreenColoredLevels::log"};
+    }
+}
+
+sub _unsetup_progress_output {
+    my $self = shift;
+
+    return unless $setup_progress;
+    my $out = $Progress::Any::outputs{''}[0];
+    $out->cleanup if $out->can("cleanup");
+    undef $ph1;
+    undef $ph2;
+    $setup_progress = 0;
+}
+
+sub _load_log_any_app {
+    my ($self, $r) = @_;
+    # Log::Any::App::init can already avoid being run twice, but we need to
+    # check anyway to avoid logging starting message below twice.
+    return if $r->{_log_any_app_loaded}++;
+    require Log::Any::App;
+    Log::Any::App::init();
+
+    # we log this after we initialize Log::Any::App, since Log::Any::App might
+    # not be loaded at all. yes, this means that this log message is printed
+    # rather late and might not be the first message to be logged (see log
+    # messages in run()) if user already loads Log::Any::App by herself.
+    $log->debugf("Program %s started with arguments: %s",
+                 $0, $r->{orig_argv});
+}
+
 # this hook is called at the start of run(), can be used to initialize stuffs
 sub hook_before_run {
     my ($self, $r) = @_;
 
-    # temporary, these used to be put in BUILD but i experience something weird.
-    # if i put:
-    #
-    #   use Data::Dump; dd $self;
-    #   if (!$self->{actions} = {
-    #       ...
-    #
-    # then the object contains the normal stuff (including attributes
-    # initialized by role, particularly $self->subcommands etc). BUT, if i put:
-    #
-    #   if (!$self->{actions} = {
-    #       use Data::Dump; dd $self;
-    #       ...
-    #
-    # then $self only contains attributes set in the BUILD. this is very weird
-    # and i can't pinpoint the cause yet. i've tried downgrading Moo from
-    # 1.006000 to 1.00{5,4}000 but the bug remains. so for now i put
-    # initialization in here.
-
-    $self->_init_attrs;
     $log->tracef("Start of CLI run");
 
     # save, for showing in history, among others
