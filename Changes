@@ -1,5 +1,11 @@
 Revision history for Perinci-CmdLine
 
+1.20     2014-08-24 (SHARYANTO)
+
+         - Bug fix: Edit to make tx-related actions (--undo, --redo, --history,
+           etc) work.
+
+
 1.19     2014-08-23 (SHARYANTO)
 
          [INCOMPATIBLE CHANGES]
