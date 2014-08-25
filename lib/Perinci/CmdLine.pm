@@ -247,6 +247,34 @@ sub BUILD {
             };
         }
 
+        if ($self->read_config) {
+            $copts->{config_path} = {
+                getopt  => 'config-path=s@',
+                summary => N__('Set path to configuration file'),
+                handler => sub {
+                    my ($go, $val, $r) = @_;
+                    $r->{config_paths} //= [];
+                    push @{ $r->{config_paths} }, $val;
+                },
+            };
+            $copts->{no_config} = {
+                getopt  => 'noconfig|no-config',
+                summary => N__('Do not use any configuration file'),
+                handler => sub {
+                    my ($go, $val, $r) = @_;
+                    $r->{read_config} = 0;
+                },
+            };
+            $copts->{config_profile} = {
+                getopt  => 'config-profile=s',
+                summary => N__('Set configuration profile to use'),
+                handler => sub {
+                    my ($go, $val, $r) = @_;
+                    $r->{config_profile} = $val;
+                },
+            };
+        }
+
         # convenience for Log::Any::App-using apps
         if ($self->log_any_app) {
             # since the cmdline opts is consumed, Log::Any::App doesn't see
