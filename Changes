@@ -1,5 +1,14 @@
 Revision history for Perinci-CmdLine
 
+1.22     2014-08-26 (SHARYANTO)
+
+         - No functional changes.
+
+         - Update translations (id, fr).
+
+         - Fix tests so non-English locale can pass too [CT].
+
+
 1.21     2014-08-25 (SHARYANTO)
 
          [ENHANCEMENTS]
