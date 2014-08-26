@@ -18,7 +18,7 @@ subtest 'help action' => sub {
         args      => {url=>'/Perinci/Examples/noop'},
         argv      => [qw/--help/],
         exit_code => 0,
-        output_re => qr/^Options/ms,
+        output_re => qr/--help.+--version/ms,
     );
 };
 
@@ -28,7 +28,7 @@ subtest 'version action' => sub {
         args      => {url=>'/Perinci/Examples/noop'},
         argv      => [qw/--version/],
         exit_code => 0,
-        output_re => qr/version \Q$Perinci::Examples::VERSION\E/,
+        output_re => qr/\Q$Perinci::Examples::VERSION\E/,
     );
 };
 
