@@ -41,7 +41,7 @@ subtest 'subcommands action' => sub {
         }},
         argv      => [qw/--subcommands/],
         exit_code => 0,
-        output_re => qr/^\s*dies\s+Boom\s*\n\s*noop\s+Mmmm/m,
+        output_re => qr/^\s*dies\s+(\{en_US )?Boom\}?\s*\n\s*noop\s+(\{en_US )?Mmmm\}?/m,
     );
     test_run(
         name      => 'unknown subcommand = error',
