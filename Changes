@@ -1,5 +1,13 @@
 Revision history for Perinci-CmdLine
 
+1.23     2014-08-26 (SHARYANTO)
+
+         - No functional changes.
+
+         - Use Perinci::CmdLine::Base 0.22 (change of configuration profile
+           syntax).
+
+
 1.22     2014-08-26 (SHARYANTO)
 
          - No functional changes.
