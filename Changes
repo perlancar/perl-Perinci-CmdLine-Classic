@@ -2,6 +2,8 @@ Revision history for Perinci-CmdLine
 
 1.24     2014-08-27 (SHARYANTO)
 
+         - No functional changes.
+
          - [Internal] Move cmdline_src handling functionality to
            Perinci::CmdLine::Base.
 
