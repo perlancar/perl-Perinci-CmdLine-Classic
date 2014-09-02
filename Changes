@@ -1,5 +1,11 @@
 Revision history for Perinci-CmdLine
 
+1.25     2014-09-02 (SHARYANTO)
+
+         - [Bugfix] Help on subcommand produced main help (some old code has not
+           been adjusted).
+
+
 1.24     2014-08-27 (SHARYANTO)
 
          - No functional changes.
