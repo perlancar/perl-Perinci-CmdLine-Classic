@@ -99,7 +99,7 @@ sub help_section_summary {
     my $summary = rimeta($r->{_help_meta})->langprop("summary");
     return unless $summary;
 
-    my $name = $self->get_program_and_subcommand_name;
+    my $name = $self->get_program_and_subcommand_name($r);
     my $ct = join(
         "",
         $self->_color('program_name', $name),
@@ -145,14 +145,14 @@ sub help_section_usage {
     } keys %$co;
 
     my $pn = $self->_color(
-        'program_name', $self->get_program_and_subcommand_name);
+        'program_name', $self->get_program_and_subcommand_name($r));
     my $ct = "";
     for my $con (@con) {
         my $cov = $co->{$con};
         next unless $cov->{usage};
         $ct .= ($ct ? "\n" : "") . $pn . " " . __($cov->{usage});
     }
-    if ($self->subcommands && !$r->{subcommand_data}) {
+    if ($self->subcommands && !$r->{subcommand_name}) {
         if (defined $self->default_subcommand) {
             $ct .= ($ct ? "\n" : "") . $pn .
                 " " . __("--cmd=<other-subcommand> [options]");
@@ -367,7 +367,7 @@ sub help_section_subcommands {
 
     my $verbose = $r->{_help_verbose};
     my $scs = $self->subcommands;
-    return unless $scs && !$r->{subcommand_data};
+    return unless $scs && !$r->{subcommand_name};
 
     my @scs = sort keys %$scs;
     my @shown_scs;
@@ -454,7 +454,7 @@ sub help_section_examples {
 
     $self->_help_add_heading($r, __("Examples"));
     my $pn = $self->_color(
-        'program_name', $self->get_program_and_subcommand_name);
+        'program_name', $self->get_program_and_subcommand_name($r));
     for my $eg (@$egs) {
         my $argv;
         my $ct;
@@ -570,18 +570,15 @@ sub run_help {
     local $r->{_help_verbose} = $verbose;
 
     # get function metadata first
-    my $sc = $self->{_subcommand};
-    my $url = $sc ? $sc->{url} : $self->url;
-    if ($url) {
-        my $res = $self->riap_client->request(info => $url);
-        $self->_err("Can't info '$url': $res->[0] - $res->[1]")
-            unless $res->[0] == 200;
-        $r->{_help_info} = $res->[2];
-        $res = $self->riap_client->request(meta => $url);
-        $self->_err("Can't meta '$url': $res->[0] - $res->[1]")
-            unless $res->[0] == 200;
-        $r->{_help_meta} = $res->[2];
-    }
+    my $url = $r->{subcommand_data}{url} // $self->url;
+    my $res = $self->riap_client->request(info => $url);
+    $self->_err("Can't info '$url': $res->[0] - $res->[1]")
+        unless $res->[0] == 200;
+    $r->{_help_info} = $res->[2];
+    $res = $self->riap_client->request(meta => $url);
+    $self->_err("Can't meta '$url': $res->[0] - $res->[1]")
+        unless $res->[0] == 200;
+    $r->{_help_meta} = $res->[2];
 
     # ux: since --verbose will potentially show lots of paragraph text, let's
     # default to 80 and not wider width, unless user specifically requests
