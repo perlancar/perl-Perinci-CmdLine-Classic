@@ -429,14 +429,10 @@ sub format_row {
     }
 }
 
-sub get_meta {
-    my ($self, $url) = @_;
+sub hook_after_get_meta {
+    my ($self, $r) = @_;
 
-    my $res = $self->riap_client->request(meta => $url);
-    die $res unless $res->[0] == 200;
-    my $meta = $res->[2];
-
-    if (risub($meta)->can_dry_run) {
+    if (risub($r->{meta})->can_dry_run) {
         $self->common_opts->{dry_run} = {
             getopt  => 'dry-run',
             summary => N__("Run in simulation mode (also via DRY_RUN=1)"),
@@ -447,8 +443,6 @@ sub get_meta {
             },
         };
     }
-
-    $meta;
 }
 
 my ($ph1, $ph2); # patch handles
@@ -760,7 +754,7 @@ sub run_version {
     my ($self, $r) = @_;
 
     my $url = $r->{subcommand_data}{url} // $self->url;
-    my $meta = $self->get_meta($url);
+    my $meta = $self->get_meta($r, $url);
     my $ver = $meta->{entity_v} // "?";
     my $date = $meta->{entity_date};
 
