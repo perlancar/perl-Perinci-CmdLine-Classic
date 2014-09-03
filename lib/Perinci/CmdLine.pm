@@ -567,18 +567,6 @@ sub hook_after_parse_argv {
         $do_log //= $self->log_any_app;
         $self->_load_log_any_app($r) if $do_log;
     }
-
-    # we'll try giving argv to server side, but this currently means we skip
-    # processing cmdline_src.
-    if ($r->{parse_argv_res}[0] == 502) {
-        #$log->debugf("Failed parsing arguments (status 502), will try to send ".
-        #                 "argv to server");
-        $r->{send_argv} = 1;
-        return;
-    }
-
-    #$log->tracef("result of GetArgs for subcommand: remaining argv=%s, args=%s".
-    #                 ", action=%s", \@ARGV, $r->{args}, $r->{action});
 }
 
 sub hook_format_result {
