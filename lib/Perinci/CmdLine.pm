@@ -394,6 +394,12 @@ sub __json_decode {
     $json->decode(shift);
 }
 
+sub __json_encode {
+    require JSON;
+    state $json = do { JSON->new->allow_nonref };
+    $json->encode(shift);
+}
+
 sub _color {
     my ($self, $color_name, $text) = @_;
     my $color_code = $color_name ?

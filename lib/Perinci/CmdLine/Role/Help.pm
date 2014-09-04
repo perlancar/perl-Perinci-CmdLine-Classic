@@ -261,7 +261,7 @@ sub help_section_options {
             my $src = $a->{cmdline_src} // "";
             my $in;
             if ($s->[1]{in} && @{ $s->[1]{in} }) {
-                $in = $s->[1]{in};
+                $in = Perinci::CmdLine::__json_encode($s->[1]{in});
             }
 
             my $cat;
