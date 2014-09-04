@@ -261,7 +261,7 @@ sub help_section_options {
             my $src = $a->{cmdline_src} // "";
             my $in;
             if ($s->[1]{in} && @{ $s->[1]{in} }) {
-                $in = Perinci::CmdLine::__json_decode($s->[1]{in});
+                $in = $s->[1]{in};
             }
 
             my $cat;
@@ -570,15 +570,17 @@ sub run_help {
     local $r->{_help_verbose} = $verbose;
 
     # get function metadata first
-    my $url = $r->{subcommand_data}{url} // $self->url;
-    my $res = $self->riap_client->request(info => $url);
-    $self->_err("Can't info '$url': $res->[0] - $res->[1]")
-        unless $res->[0] == 200;
-    $r->{_help_info} = $res->[2];
-    $res = $self->riap_client->request(meta => $url);
-    $self->_err("Can't meta '$url': $res->[0] - $res->[1]")
-        unless $res->[0] == 200;
-    $r->{_help_meta} = $res->[2];
+    unless ($r->{_help_meta}) {
+        my $url = $r->{subcommand_data}{url} // $self->url;
+        my $res = $self->riap_client->request(info => $url);
+        $self->_err("Can't info '$url': $res->[0] - $res->[1]")
+            unless $res->[0] == 200;
+        $r->{_help_info} = $res->[2];
+        $res = $self->riap_client->request(meta => $url);
+        $self->_err("Can't meta '$url': $res->[0] - $res->[1]")
+            unless $res->[0] == 200;
+        $r->{_help_meta} = $res->[2]; # cache here
+    }
 
     # ux: since --verbose will potentially show lots of paragraph text, let's
     # default to 80 and not wider width, unless user specifically requests
@@ -614,6 +616,7 @@ sub run_help {
 
     for my $s (@hsects) {
         my $meth = "help_section_$s";
+        #say "D:$meth";
         #$log->tracef("=> $meth()");
         $self->$meth($r);
     }
