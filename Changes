@@ -1,13 +1,18 @@
 Revision history for Perinci-CmdLine
 
+1.29     2014-09-05 (PERLANCAR)
+
+         - [Bugfix] Forgot another json decode which should've been encode.
+
+
 1.28     2014-09-04 (PERLANCAR)
 
-         - Fix bug in displaying 'in' schema property in help.
+         - [Bugfix] Fix bug in displaying 'in' schema property in help.
 
 
 1.27     2014-09-04 (PERLANCAR)
 
-         - Fix bugs that caused App::riap to die.
+         - [Bugfix] Fix bugs that caused App::riap to die.
 
 
 1.26     2014-09-03 (PERLANCAR)
@@ -57,7 +62,7 @@ Revision history for Perinci-CmdLine
 
 1.20     2014-08-24 (SHARYANTO)
 
-         - Bug fix: Edit to make tx-related actions (--undo, --redo, --history,
+         - [Bug fix] Edit to make tx-related actions (--undo, --redo, --history,
            etc) work.
 
 
@@ -74,7 +79,7 @@ Revision history for Perinci-CmdLine
 
 1.18     2014-08-22 (SHARYANTO)
 
-         - Bugfix: Try to init attributes in BUILD again (previously this is
+         - [Bugfix] Try to init attributes in BUILD again (previously this is
            moved to hook_before_run because of some weirdness that makes
            accessing attribute from role not work in inner block of BUILD).
 
