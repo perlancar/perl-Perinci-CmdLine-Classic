@@ -212,6 +212,7 @@ sub help_section_options {
             ($args_p->{$a}{pos} // 99) <=> ($args_p->{$b}{pos} // 99) ||
                 $a cmp $b
             } keys %$args_p) {
+            #say "D:arg $an";
             my $a = $args_p->{$an};
             my $s = $a->{schema} || [any=>{}];
             my $got = Perinci::ToUtil::sah2human_short($s);
@@ -257,7 +258,7 @@ sub help_section_options {
             }
 
             my $def = defined($s->[1]{default}) && $s->[0] ne 'bool' ?
-                " (default: ".Perinci::CmdLine::__json_decode($s->[1]{default}).")" : "";
+                " (default: ".Perinci::CmdLine::__json_encode($s->[1]{default}).")" : "";
             my $src = $a->{cmdline_src} // "";
             my $in;
             if ($s->[1]{in} && @{ $s->[1]{in} }) {
