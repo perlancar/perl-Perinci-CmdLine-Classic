@@ -1,5 +1,11 @@
 Revision history for Perinci-CmdLine
 
+1.30    2014-09-11 (PERLANCAR)
+
+	- Add support for cmdline_src=stdin_line and is_password (Rinci
+	  1.1.53).
+
+
 1.29     2014-09-05 (PERLANCAR)
 
          - [Bugfix] Forgot another json decode which should've been encode.
