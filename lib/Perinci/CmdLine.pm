@@ -98,6 +98,7 @@ has action_metadata => (
         },
     },
 );
+has default_prompt_template => (is=>'rw');
 
 sub VERSION {
     my ($pkg, $req) = @_;
@@ -111,6 +112,10 @@ sub BUILD {
                          text text-simple text-pretty
                          json json-pretty yaml perl
                          ruby phpserialization)];
+
+    if (!$self->{default_prompt_template}) {
+        $self->{default_prompt_template} = N__("Enter %s:") . " ",
+    }
 
     if (!$self->{actions}) {
         $self->{actions} = {
