@@ -421,11 +421,13 @@ sub _color {
 #}
 
 # format array item as row
-sub format_row {
-    require Data::Format::Pretty::Console;
-    state $dfpc = Data::Format::Pretty::Console->new({interactive=>0});
+sub hook_format_row {
+    state $dfpc = do {
+        require Data::Format::Pretty::Console;
+        Data::Format::Pretty::Console->new({interactive=>0});
+    };
 
-    my ($self, $row) = @_;
+    my ($self, $r, $row) = @_;
     my $ref = ref($row);
     # we catch common cases to be faster (avoid dfpc's structure identification)
     if (!$ref) {
@@ -618,10 +620,7 @@ sub hook_display_result {
     my $fres = $r->{fres};
     my $resmeta = $res->[3] // {};
 
-    if ($ENV{COMP_LINE} || $res->[3]{"cmdline.skip_format"}) {
-        print $res->[2];
-        return;
-    }
+    my $handle = $r->{output_handle};
 
     # determine whether to binmode(STDOUT,":utf8")
     my $utf8 = $ENV{UTF8};
@@ -638,55 +637,12 @@ sub hook_display_result {
         binmode(STDOUT, ":utf8");
     }
 
-    # determine filehandle to output to (normally STDOUT, but we can also send
-    # to a pager
-    my $handle;
-    {
-        if ($resmeta->{"cmdline.page_result"}) {
-            my $pager = $resmeta->{"cmdline.pager"} //
-                $ENV{PAGER};
-            unless (defined $pager) {
-                $pager = "less -FRSX" if File::Which::which("less");
-            }
-            unless (defined $pager) {
-                $pager = "more" if File::Which::which("more");
-            }
-            unless (defined $pager) {
-                die [500, "Can't determine PAGER"];
-            }
-            last unless $pager; # ENV{PAGER} can be set 0/'' to disable paging
-            $log->tracef("Paging output using %s", $pager);
-            open $handle, "| $pager";
-        }
+    if ($ENV{COMP_LINE} || $res->[3]{"cmdline.skip_format"}) {
+        print $handle $res->[2];
+        return;
     }
-    $handle //= \*STDOUT;
 
-    if ($resmeta->{is_stream}) {
-        die [500, "Can't format stream as " . $self->format .
-                 ", please use --format text"]
-            unless $self->format =~ /^text/;
-        my $r = $res->[2];
-        if (ref($r) eq 'GLOB') {
-            while (!eof($r)) {
-                print $handle ~~<$r>;
-            }
-        } elsif (blessed($r) && $r->can('getline') && $r->can('eof')) {
-            # IO::Handle-like object
-            while (!$r->eof) {
-                print $r->getline;
-            }
-        } elsif (ref($r) eq 'ARRAY') {
-            # tied array
-            while (~~(@$r) > 0) {
-                print $self->format_row(shift(@$r));
-            }
-        } else {
-            die [500, "Invalid stream in result (not a glob/IO::Handle-like ".
-                     "object/(tied) array)\n"];
-        }
-    } else {
-        print $handle $fres;
-    }
+    $self->display_result($r);
 }
 
 sub hook_after_run {
@@ -961,60 +917,6 @@ All the methods of L<Perinci::CmdLine::Base>, plus:
 
 All those supported by L<Perinci::CmdLine::Base>, plus:
 
-=head2 property: is_stream => BOOL
-
-XXX should perhaps be defined as standard in L<Rinci::function>.
-
-If set to 1, signify that result is a stream. Result must be a glob, or an
-object that responds to getline() and eof() (like a Perl L<IO::Handle> object),
-or an array/tied array. Format must currently be C<text> (streaming YAML might
-be supported in the future). Items of result will be displayed to output as soon
-as it is retrieved, and unlike non-streams, it can be infinite.
-
-An example function:
-
- $SPEC{cat_file} = { ... };
- sub cat_file {
-     my %args = @_;
-     open my($fh), "<", $args{path} or return [500, "Can't open file: $!"];
-     [200, "OK", $fh, {is_stream=>1}];
- }
-
-another example:
-
- use Tie::Simple;
- $SPEC{uc_file} = { ... };
- sub uc_file {
-     my %args = @_;
-     open my($fh), "<", $args{path} or return [500, "Can't open file: $!"];
-     my @ary;
-     tie @ary, "Tie::Simple", undef,
-         SHIFT     => sub { eof($fh) ? undef : uc(~~<$fh> // "") },
-         FETCHSIZE => sub { eof($fh) ? 0 : 1 };
-     [200, "OK", \@ary, {is_stream=>1}];
- }
-
-See also L<Data::Unixish> and L<App::dux> which deals with streams.
-
-=head2 attribute: cmdline.page_result => BOOL
-
-If you want to filter the result through pager (currently defaults to
-C<$ENV{PAGER}> or C<less -FRSX>), you can set C<cmdline.page_result> in result
-metadata to true.
-
-For example:
-
- $SPEC{doc} = { ... };
- sub doc {
-     ...
-     [200, "OK", $doc, {"cmdline.page_result"=>1}];
- }
-
-=head2 attribute: cmdline.pager => STR
-
-Instruct Perinci::CmdLine to use specified pager instead of C<$ENV{PAGER}> or
-the default C<less> or C<more>.
-
 
 =head1 ENVIRONMENT
 
@@ -1027,13 +929,6 @@ Can be used to set C<color_theme>.
 =head2 PROGRESS => BOOL
 
 Explicitly turn the progress bar on/off.
-
-=head2 PAGER => STR
-
-Like in other programs, can be set to select the pager program (when
-C<cmdline.page_result> result metadata is active). Can also be set to C<''> or
-C<0> to explicitly disable paging even though C<cmd.page_result> result metadata
-is active.
 
 =head2 COLOR => INT
 
