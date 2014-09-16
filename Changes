@@ -1,5 +1,12 @@
 Revision history for Perinci-CmdLine
 
+1.31    2014-09-16 (PERLANCAR)
+
+	- No functional changes.
+
+        - Move page/stream output functionality to Perinci::CmdLine::Base.
+
+
 1.30    2014-09-11 (PERLANCAR)
 
 	- Add support for cmdline_src=stdin_line and is_password (Rinci
