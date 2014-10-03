@@ -630,7 +630,8 @@ sub hook_display_result {
     if (!defined($utf8) && $r->{subcommand_data}) {
         $utf8 //= $r->{subcommand_data}{use_utf8};
     }
-    $utf8 //= $self->use_utf8;
+    $utf8 //= $self->use_utf8
+        if $self->can("use_utf8");
     if ($utf8) {
         binmode(STDOUT, ":utf8");
     }
