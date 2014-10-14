@@ -1,5 +1,12 @@
 Revision history for Perinci-CmdLine
 
+1.33    2014-10-14 (PERLANCAR)
+
+	- No functional changes.
+
+	- Include screenshots.
+
+
 1.32    2014-10-03 (PERLANCAR)
 
 	- Avoid error when completing (no use_utf8 method).
