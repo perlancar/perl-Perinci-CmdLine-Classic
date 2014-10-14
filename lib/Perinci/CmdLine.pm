@@ -856,6 +856,10 @@ Screenshots:
 
 <p><img src="http://blogs.perl.org/users/perlancar/screenshot-pericmd-completion.jpg" /><br />Tab completion
 
+<p><img src="http://blogs.perl.org/users/perlancar/screenshot-pericmd-format.jpg" /><br />Some output formats
+
+<p><img src="http://blogs.perl.org/users/perlancar/screenshot-trashu.jpg" /><br />Undo/redo
+
 =end HTML
 
 
