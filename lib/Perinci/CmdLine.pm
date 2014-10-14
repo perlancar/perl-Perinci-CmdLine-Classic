@@ -854,6 +854,8 @@ Screenshots:
 
 <p><img src="http://blogs.perl.org/users/perlancar/progany-tpc.jpg" /><br />Progress bar
 
+<p><img src="http://blogs.perl.org/users/perlancar/screenshot-pericmd-completion.jpg" /><br />Tab completion
+
 =end HTML
 
 
