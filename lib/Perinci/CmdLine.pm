@@ -624,20 +624,25 @@ sub hook_display_result {
     my $handle = $r->{output_handle};
 
     # determine whether to binmode(STDOUT,":utf8")
-    my $utf8 = $ENV{UTF8};
-    if (!defined($utf8)) {
+    my $utf8;
+    {
+        last if defined($utf8 = $ENV{UTF8});
+        if ($resmeta->{'x.hint.result_binary'}) {
+            # XXX only when format is text?
+            $utf8 = 0; last;
+        }
         my $am = $self->action_metadata->{$r->{action}}
             if $r->{action};
-        $utf8 //= $am->{use_utf8};
+        last if defined($utf8 //= $am->{use_utf8});
+
+        if ($r->{subcommand_data}) {
+            last if defined($utf8 //= $r->{subcommand_data}{use_utf8});
+        }
+
+        $utf8 //= $self->use_utf8
+            if $self->can("use_utf8");
     }
-    if (!defined($utf8) && $r->{subcommand_data}) {
-        $utf8 //= $r->{subcommand_data}{use_utf8};
-    }
-    $utf8 //= $self->use_utf8
-        if $self->can("use_utf8");
-    if ($utf8) {
-        binmode(STDOUT, ":utf8");
-    }
+    binmode(STDOUT, ":utf8") if $utf8;
 
     if ($ENV{COMP_LINE} || $res->[3]{"cmdline.skip_format"}) {
         print $handle $res->[2];
