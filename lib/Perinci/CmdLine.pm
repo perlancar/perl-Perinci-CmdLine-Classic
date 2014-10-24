@@ -608,6 +608,8 @@ sub hook_format_result {
     if ($res->[3]{is_stream}) {
         $log->tracef("Result is a stream");
         return undef;
+    } elsif ($res->[3]{'x.hint.result_binary'} && $format =~ /text/) {
+        $r->{fres} = $res->[2];
     } else {
         $log->tracef("Formatting output with %s", $format);
         $r->{fres} = Perinci::Result::Format::format($res, $format);
