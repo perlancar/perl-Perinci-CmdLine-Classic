@@ -1,5 +1,13 @@
 Revision history for Perinci-CmdLine
 
+1.36    2014-10-24 (PERLANCAR)
+
+	- Update dep version (has better binary result/arg support).
+
+	- Format binary result as-is (no newline/send to
+	  Perinci::Result::Format) when format is text.
+
+
 1.35    2014-10-24 (PERLANCAR)
 
 	- Default utf8 to off if outputting binary data.
