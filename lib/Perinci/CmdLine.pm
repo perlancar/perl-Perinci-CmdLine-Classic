@@ -47,7 +47,10 @@ has riap_client => (
         require Perinci::Access;
         require Perinci::Access::Perl;
         require Perinci::Access::Schemeless;
-        my %args = %{$self->riap_client_args // {}};
+        my %args = (
+            riap_version => $self->riap_version,
+            %{$self->riap_client_args // {}},
+        );
         my %opts;
         if ($self->undo) {
             $opts{use_tx} = 1;
