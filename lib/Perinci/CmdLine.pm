@@ -944,6 +944,12 @@ All the methods of L<Perinci::CmdLine::Base>, plus:
 
 All those supported by L<Perinci::CmdLine::Base>, plus:
 
+=head2 x.hint.result_binary => bool
+
+If set to true, then when formatting to C<text> formats, this class won't print
+any newline to keep the data being printed unmodified.
+
+
 
 =head1 ENVIRONMENT
 
