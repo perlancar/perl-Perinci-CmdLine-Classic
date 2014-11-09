@@ -22,7 +22,7 @@ with 'SHARYANTO::Role::ColorTheme' unless $ENV{COMP_LINE};
 #with 'SHARYANTO::Role::TermAttrs' unless $ENV{COMP_LINE}; already loaded by ColorTheme
 with 'Perinci::CmdLine::Role::Help' unless $ENV{COMP_LINE};
 
-has log_any_app => (is => 'rw', default=>sub{1});
+has log => (is => 'rw', default=>sub{1});
 has undo => (is=>'rw', default=>sub{0});
 has undo_dir => (
     is => 'rw',
@@ -102,6 +102,9 @@ has action_metadata => (
     },
 );
 has default_prompt_template => (is=>'rw');
+
+# OLD name for backward compat, will be removed later
+sub log_any_app { goto \&log }
 
 sub VERSION {
     my ($pkg, $req) = @_;
@@ -284,7 +287,7 @@ sub BUILD {
         }
 
         # convenience for Log::Any::App-using apps
-        if ($self->log_any_app) {
+        if ($self->log) {
             # since the cmdline opts is consumed, Log::Any::App doesn't see
             # this. we currently work around this via setting env.
 
@@ -575,12 +578,13 @@ sub hook_after_parse_argv {
     # We load Log::Any::App rather late here, so user can customize level via
     # --debug, --dry-run, etc.
     unless ($ENV{COMP_LINE}) {
-        my $do_log = $r->{subcommand_data}{log_any_app}
-            if $r->{subcommand_data};
+        my $do_log = $r->{subcommand_data}{log} //
+            $r->{subcommand_data}{log_any_app} # OLD compat, will be removed later
+                if $r->{subcommand_data};
         $do_log //= $ENV{LOG};
         $do_log //= $self->action_metadata->{$r->{action}}{default_log}
             if $self->{action};
-        $do_log //= $self->log_any_app;
+        $do_log //= $self->log;
         $self->_load_log_any_app($r) if $do_log;
     }
 }
@@ -889,7 +893,7 @@ hash/stash.
 
 All the attributes of L<Perinci::CmdLine::Base>, plus:
 
-=head2 log_any_app => BOOL (default: 1)
+=head2 log => BOOL (default: 1)
 
 Whether to load L<Log::Any::App> (enable logging output) by default. See
 L</"LOGGING"> for more details.
