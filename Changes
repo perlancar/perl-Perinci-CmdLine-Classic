@@ -1,5 +1,15 @@
 Revision history for Perinci-CmdLine
 
+1.37    2014-11-09 (PERLANCAR)
+
+	- [Incompatible change] Rename attribute 'log_any_app' to 'log' for
+	  compatibility with Perinci::CmdLine::Lite, old name is still
+	  provided for backward compatibility reason but will be removed in
+	  the future.
+
+	- Document about x.hint.result_binary.
+
+
 1.36    2014-10-24 (PERLANCAR)
 
 	- Update dep version (has better binary result/arg support).
