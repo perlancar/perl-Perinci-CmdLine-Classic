@@ -225,7 +225,7 @@ sub help_section_options {
                 if ($s->[1]{default}) {
                     $ane = "no$ane";
                     my $negsummary = rimeta($a)->langprop(
-                        "x.perinci.cmdline.negative_summary");
+                        "summary.alt.neg");
                     $summary = $negsummary if $negsummary;
                 } elsif (defined $s->[1]{default}) {
                     #$ane = $ane;
