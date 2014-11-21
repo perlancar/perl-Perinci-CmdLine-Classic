@@ -109,28 +109,6 @@ sub help_section_summary {
     $self->_help_add_row($r, [$ct], {wrap=>1});
 }
 
-sub _usage_args {
-    my ($self, $r) = @_;
-
-    my $m = $r->{_help_meta};
-    return "" unless $m;
-    my $aa = $m->{args};
-    return "" unless $aa;
-
-    # arguments with pos defined
-    my @a = sort { $aa->{$a}{pos} <=> $aa->{$b}{pos} }
-        grep { defined($aa->{$_}{pos}) } keys %$aa;
-    my $res = "";
-    for (@a) {
-        $res .= " ";
-        my $label = lc($_);
-        $res .= $aa->{$_}{req} ? "<$label>" : "[$label]";
-        $res .= " ..." if $aa->{$_}{greedy};
-        last if $aa->{$_}{greedy};
-    }
-    $res;
-}
-
 sub help_section_usage {
     my ($self, $r) = @_;
 
@@ -161,184 +139,82 @@ sub help_section_usage {
                 " " . __("<subcommand> [options]");
         }
     } else {
-            $ct .= ($ct ? "\n" : "") . $pn .
-                " " . __("[options]"). $self->_usage_args($r);
+        my $usage = $r->{_help_cliospec}{usage_line};
+        $usage =~ s/\[\[prog\]\]/$pn/;
+        $usage =~ s/\[options\]/__("[options]")/e;
+        $ct .= ($ct ? "\n" : "") . $usage;
     }
     $self->_help_add_heading($r, __("Usage"));
     $self->_help_add_row($r, [$ct], {indent=>1});
 }
 
 sub help_section_options {
-    require Getopt::Long::Util;
-
     my ($self, $r) = @_;
+
+    my $opts = $r->{_help_cliospec}{opts};
+    return unless keys %$opts;
+
     my $verbose = $r->{_help_verbose};
     my $info = $r->{_help_info};
     my $meta = $r->{_help_meta};
     my $args_p = $meta->{args};
     my $sc = $self->subcommands;
 
-    # stored gathered options by category, e.g. $catopts{"Common options"} (an
-    # array containing options)
-    my %catopts;
+    # group options by raw category, e.g. $cats{""} (for options
+    # without category and common options) or $cat{"cat1"}.
+    my %cats; # val = [ospec, ...]
 
-    my $t_opts = __("Options");
-    my $t_copts = __("Common options");
-
-    # gather common opts
-    my $co = $self->common_opts;
-    my @con = grep {
-        my $cov = $co->{$_};
-        my $show = $cov->{show_in_options} // 1;
-        for ($show) { if (ref($_) eq 'CODE') { $_ = $_->($self) } }
-        $show;
-    } sort {
-        ($co->{$a}{order}//1) <=> ($co->{$b}{order}//1) || $a cmp $b
-    } keys %$co;
-    for my $con (@con) {
-        my $cov = $co->{$con};
-        my $cat = $cov->{category} ? __($cov->{category}) :
-            ($sc ? $t_copts : $t_opts);
-        my $go = $cov->{getopt};
-        push @{ $catopts{$cat} }, {
-            getopt=>Getopt::Long::Util::humanize_getopt_long_opt_spec($cov->{getopt}),
-            summary=> $cov->{summary} ? __($cov->{summary}) : "",
-        };
+    for (keys %$opts) {
+        push @{ $cats{$opts->{$_}{raw_category} // ''} }, $_;
     }
 
-    # gather function opts (XXX: categorize according to tags)
-    if ($info && $info->{type} eq 'function' && $args_p && %$args_p) {
-        for my $an (sort {
-            ($args_p->{$a}{pos} // 99) <=> ($args_p->{$b}{pos} // 99) ||
-                $a cmp $b
-            } keys %$args_p) {
-            #say "D:arg $an";
-            my $a = $args_p->{$an};
-            my $s = $a->{schema} || [any=>{}];
-            my $got = Perinci::ToUtil::sah2human_short($s);
-            my $ane = $an; $ane =~ s/_/-/g; $ane =~ s/\W/-/g;
-            my $summary = rimeta($a)->langprop("summary");
+    for my $cat (sort keys %cats) {
+        # find the longest option
+        my @opts = sort {length($b)<=>length($a)} @{ $cats{$cat} };
+        my $len = length($opts[0]);
+        # sort again by name
+        @opts = sort {
+            (my $a_without_dash = $a) =~ s/^-+//;
+            (my $b_without_dash = $b) =~ s/^-+//;
+            lc($a) cmp lc($b);
+        } @opts;
 
-            my $suf = "";
-            if ($s->[0] eq 'bool') {
-                $got = undef;
-                if ($s->[1]{default}) {
-                    $ane = "no$ane";
-                    my $negsummary = rimeta($a)->langprop(
-                        "summary.alt.neg");
-                    $summary = $negsummary if $negsummary;
-                } elsif (defined $s->[1]{default}) {
-                    #$ane = $ane;
-                } else {
-                    $ane = "[no]$ane";
-                }
-            } elsif ($s->[0] eq 'float' || $s->[0] eq 'num') {
-                $ane .= "=f";
-            } elsif ($s->[0] eq 'int') {
-                $ane .= "=i";
-            } elsif ($s->[0] eq 'hash' || $s->[0] eq 'array') {
-                $suf = "-json";
-                $ane = "$ane-json=val";
-            } else {
-                $ane .= "=s";
-            }
-
-            # add aliases which does not have code
-            for my $al0 (keys %{ $a->{cmdline_aliases} // {}}) {
-                my $alspec = $a->{cmdline_aliases}{$al0};
-                next if $alspec->{code};
-                my $al = $al0; $al =~ s/_/-/g;
-                if (length($al) == 1) {
-                    $al = "-$al";
-                    $ane .= ", $al";
-                } else {
-                    $al = "--$al";
-                    $ane .= ", $al$suf";
-                }
-            }
-
-            my $def = defined($s->[1]{default}) && $s->[0] ne 'bool' ?
-                " (default: ".Perinci::CmdLine::__json_encode($s->[1]{default}).")" : "";
-            my $src = $a->{cmdline_src} // "";
-            my $in;
-            if ($s->[1]{in} && @{ $s->[1]{in} }) {
-                $in = Perinci::CmdLine::__json_encode($s->[1]{in});
-            }
-
-            my $cat;
-            for my $tag (@{ $a->{tags} // []}) {
-                my $tn = ref($tag) ? $tag->{name} : $tag;
-                next unless $tn =~ /^category:(.+)/;
-                $cat = $1;
-                last;
-            }
-            if ($cat) {
-                $cat = __x("{category} options", category=>ucfirst($cat));
-            } else {
-                $cat = $t_opts;
-            }
-
-            push @{ $catopts{$cat} }, {
-                getopt => "--$ane",
-                getopt_type => $got,
-                getopt_note =>join(
-                    "",
-                    ($a->{req} ? " (" . __("required") . ")" : ""),
-                    (defined($a->{pos}) ? " (" .
-                         __x("or as argument #{index}",
-                            index => ($a->{pos}+1).($a->{greedy} ? "+":"")).")":""),
-                    ($src eq 'stdin' ?
-                         " (" . __("from stdin") . ")" : ""),
-                    ($src eq 'stdin_or_files' ?
-                         " (" . __("from stdin/files") . ")" : ""),
-                    $def
-                ),
-                req => $a->{req},
-                summary => $summary,
-                description => rimeta($a)->langprop("description"),
-                in => $in,
-            };
-
-            # add aliases which have code as separate options
-            for my $al0 (keys %{ $a->{cmdline_aliases} // {}}) {
-                my $alspec = $a->{cmdline_aliases}{$al0};
-                next unless $alspec->{code};
-                push @{ $catopts{$cat} }, {
-                    getopt => length($al0) > 1 ? "--$al0" : "-$al0",
-                    getopt_type => $got,
-                    getopt_note => undef,
-                    #req => $a->{req},
-                    summary => rimeta($alspec)->langprop("summary"),
-                    description => rimeta($alspec)->langprop("description"),
-                    #in => $in,
-                };
-            }
-
+        my $cat_title;
+        if ($cat eq '') {
+            $cat_title = __("Options");
+        } else {
+            $cat_title = __x("{category} options", category=>ucfirst($cat));
         }
-    }
+        $self->_help_add_heading($r, $cat_title);
 
-    # output gathered options
-    for my $cat (sort keys %catopts) {
-        $self->_help_add_heading($r, $cat);
-        my @opts = sort {
-            my $va = $a->{getopt};
-            my $vb = $b->{getopt};
-            for ($va, $vb) { s/^--(\[no\])?// }
-            $va cmp $vb;
-        } @{$catopts{$cat}};
         if ($verbose) {
-            for my $o (@opts) {
-                my $ct = $self->_color('option_name', $o->{getopt}) .
-                    ($o->{getopt_type} ? " [$o->{getopt_type}]" : "").
-                        ($o->{getopt_note} ? $o->{getopt_note} : "");
+            for my $opt_name (@opts) {
+                my $opt_spec = $opts->{$opt_name};
+                my $arg_spec = $opt_spec->{arg_spec};
+                my $ct = $self->_color('option_name', $opt_name);
+                # BEGIN DUPE1
+                if ($arg_spec && !$opt_spec->{main_opt} &&
+                        defined($arg_spec->{pos})) {
+                    if ($arg_spec->{greedy}) {
+                        $ct .= " (=argv[$arg_spec->{pos}-])";
+                    } else {
+                        $ct .= " (=argv[$arg_spec->{pos}])";
+                    }
+                }
+                if ($arg_spec && !$opt_spec->{main_opt} &&
+                        defined($arg_spec->{cmdline_src})) {
+                    $ct .= " (or from $arg_spec->{cmdline_src})";
+                    $ct =~ s!_or_!/!;
+                }
+                # END DUPE1
                 $self->_help_add_row($r, [$ct], {indent=>1});
-                if ($o->{in} || $o->{summary} || $o->{description}) {
+
+                if ($opt_spec->{summary} || $opt_spec->{description}) {
                     my $ct = "";
-                    $ct .= ($ct ? "\n\n":"").ucfirst(__("value in")).
-                        ": $o->{in}" if $o->{in};
-                    $ct .= ($ct ? "\n\n":"")."$o->{summary}." if $o->{summary};
-                    $ct .= ($ct ? "\n\n":"").$o->{description}
-                        if $o->{description};
+                    $ct .= ($ct ? "\n\n":"")."$opt_spec->{summary}."
+                        if $opt_spec->{summary};
+                    $ct .= ($ct ? "\n\n":"").$opt_spec->{description}
+                        if $opt_spec->{description};
                     $self->_help_add_row($r, [$ct], {indent=>2, wrap=>1});
                 }
             }
@@ -350,10 +226,26 @@ sub help_section_options {
                 my @row;
                 for (1..$columns) {
                     last unless @opts;
-                    my $o = shift @opts;
-                    push @row, $self->_color('option_name', $o->{getopt}) .
-                        #($o->{getopt_type} ? " [$o->{getopt_type}]" : "") .
-                            ($o->{getopt_note} ? $o->{getopt_note} : "");
+                    my $opt_name = shift @opts;
+                    my $opt_spec = $opts->{$opt_name};
+                    my $arg_spec = $opt_spec->{arg_spec};
+                    my $ct = $self->_color('option_name', $opt_name);
+                    # BEGIN DUPE1
+                    if ($arg_spec && !$opt_spec->{main_opt} &&
+                            defined($arg_spec->{pos})) {
+                        if ($arg_spec->{greedy}) {
+                            $ct .= " (=argv[$arg_spec->{pos}-])";
+                        } else {
+                            $ct .= " (=argv[$arg_spec->{pos}])";
+                        }
+                    }
+                    if ($arg_spec && !$opt_spec->{main_opt} &&
+                            defined($arg_spec->{cmdline_src})) {
+                        $ct .= " (or from $arg_spec->{cmdline_src})";
+                        $ct =~ s!_or_!/!;
+                    }
+                    # END DUPE1
+                    push @row, $ct;
                 }
                 last unless @row;
                 for (@row+1 .. $columns) { push @row, "" }
@@ -581,6 +473,20 @@ sub run_help {
         $self->_err("Can't meta '$url': $res->[0] - $res->[1]")
             unless $res->[0] == 200;
         $r->{_help_meta} = $res->[2]; # cache here
+    }
+
+    # get cli opt spec
+    unless ($r->{_help_cliospec}) {
+        require Perinci::Sub::To::CLIOptSpec;
+        my $res = Perinci::Sub::To::CLIOptSpec::gen_cli_opt_spec_from_meta(
+            meta => $r->{_help_meta}, meta_is_normalized => 1,
+            common_opts  => $self->common_opts,
+            per_arg_json => $self->per_arg_json,
+            per_arg_yaml => $self->per_arg_yaml,
+        );
+        $self->_err("Can't gen CLI help: $res->[0] - $res->[1]")
+            unless $res->[0] == 200;
+        $r->{_help_cliospec} = $res->[2]; # cache here
     }
 
     # ux: since --verbose will potentially show lots of paragraph text, let's
