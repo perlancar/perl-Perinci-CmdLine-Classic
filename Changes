@@ -1,5 +1,18 @@
 Revision history for Perinci-CmdLine
 
+1.38    2014-11-21 (PERLANCAR)
+
+        - Use Perinci::Sub::To::CLIOptSpec to avoid code duplication and produce
+          nicer list of options for displaying in --help.
+
+        - Tweak --help output.
+
+        [REMOVED FEATURES]
+
+        - Like in Perinci::CmdLine::Lite, now only provide --no-config instead
+          of also --noconfig.
+
+
 1.37    2014-11-09 (PERLANCAR)
 
 	- [Incompatible change] Rename attribute 'log_any_app' to 'log' for
