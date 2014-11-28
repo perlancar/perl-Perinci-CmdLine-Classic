@@ -196,9 +196,9 @@ sub help_section_options {
                 if ($arg_spec && !$opt_spec->{main_opt} &&
                         defined($arg_spec->{pos})) {
                     if ($arg_spec->{greedy}) {
-                        $ct .= " (=argv[$arg_spec->{pos}-])";
+                        $ct .= " (=arg[$arg_spec->{pos}-])";
                     } else {
-                        $ct .= " (=argv[$arg_spec->{pos}])";
+                        $ct .= " (=arg[$arg_spec->{pos}])";
                     }
                 }
                 if ($arg_spec && !$opt_spec->{main_opt} &&
@@ -234,9 +234,9 @@ sub help_section_options {
                     if ($arg_spec && !$opt_spec->{main_opt} &&
                             defined($arg_spec->{pos})) {
                         if ($arg_spec->{greedy}) {
-                            $ct .= " (=argv[$arg_spec->{pos}-])";
+                            $ct .= " (=arg[$arg_spec->{pos}-])";
                         } else {
-                            $ct .= " (=argv[$arg_spec->{pos}])";
+                            $ct .= " (=arg[$arg_spec->{pos}])";
                         }
                     }
                     if ($arg_spec && !$opt_spec->{main_opt} &&
