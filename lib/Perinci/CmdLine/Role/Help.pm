@@ -139,7 +139,7 @@ sub help_section_usage {
                 " " . __("<subcommand> [options]");
         }
     } else {
-        my $usage = $r->{_help_cliospec}{usage_line};
+        my $usage = $r->{_help_clidocdata}{usage_line};
         $usage =~ s/\[\[prog\]\]/$pn/;
         $usage =~ s/\[options\]/__("[options]")/e;
         $ct .= ($ct ? "\n" : "") . $usage;
@@ -151,7 +151,7 @@ sub help_section_usage {
 sub help_section_options {
     my ($self, $r) = @_;
 
-    my $opts = $r->{_help_cliospec}{opts};
+    my $opts = $r->{_help_clidocdata}{opts};
     return unless keys %$opts;
 
     my $verbose = $r->{_help_verbose};
@@ -316,7 +316,7 @@ sub help_section_hints {
     unless ($verbose) {
         push @hints, N__("For more complete help, use '--help --verbose'");
     }
-    if ($self->{_help_hide_some_subcommands}) {
+    if ($r->{_help_hide_some_subcommands}) {
         push @hints,
             N__("To see all available subcommands, use '--subcommands'");
     }
@@ -342,51 +342,20 @@ sub help_section_examples {
 
     my $verbose = $r->{_help_verbose};
     my $meta = $r->{_help_meta};
-    my $egs = $meta->{examples};
+    my $egs = $r->{_help_clidocdata}{examples};
     return unless $egs && @$egs;
 
     $self->_help_add_heading($r, __("Examples"));
     my $pn = $self->_color(
         'program_name', $self->get_program_and_subcommand_name($r));
     for my $eg (@$egs) {
-        my $argv;
-        my $ct;
-        if (defined($eg->{src})) {
-            # we only show shell command examples
-            if ($eg->{src_plang} =~ /^(sh|bash)$/) {
-                $ct = $eg->{src};
-            } else {
-                next;
-            }
-        } else {
-            require String::ShellQuote;
-            if ($eg->{argv}) {
-                $argv = $eg->{argv};
-            } else {
-                require Perinci::Sub::ConvertArgs::Argv;
-                my $res = Perinci::Sub::ConvertArgs::Argv::convert_args_to_argv(
-                    args => $eg->{args}, meta => $meta);
-                $self->_err("Can't convert args to argv: $res->[0] - $res->[1]")
-                    unless $res->[0] == 200;
-                $argv = $res->[2];
-            }
-            $ct = $pn;
-            for my $arg (@$argv) {
-                $arg = String::ShellQuote::shell_quote($arg);
-                if ($arg =~ /^-/) {
-                    $ct .= " ".$self->_color('option_name', $arg);
-                } else {
-                    $ct .= " $arg";
-                }
-            }
-        }
-        $self->_help_add_row($r, [$ct], {indent=>1});
+        my $cmdline = $eg->{cmdline};
+        $cmdline =~ s/\[\[prog\]\]/$pn/;
+        $self->_help_add_row($r, ["% $cmdline"], {indent=>1});
         if ($verbose) {
-            $ct = "";
-            my $summary = rimeta($eg)->langprop('summary');
-            if ($summary) { $ct .= "$summary." }
-            my $desc = rimeta($eg)->langprop('description');
-            if ($desc) { $ct .= "\n\n$desc" }
+            my $ct = "";
+            if ($eg->{summary}) { $ct .= "$eg->{summary}." }
+            if ($eg->{description}) { $ct .= "\n\n$eg->{description}" }
             $self->_help_add_row($r, [$ct], {indent=>2}) if $ct;
         }
     }
@@ -476,17 +445,17 @@ sub run_help {
     }
 
     # get cli opt spec
-    unless ($r->{_help_cliospec}) {
-        require Perinci::Sub::To::CLIOptSpec;
-        my $res = Perinci::Sub::To::CLIOptSpec::gen_cli_opt_spec_from_meta(
+    unless ($r->{_help_clidocdata}) {
+        require Perinci::Sub::To::CLIDocData;
+        my $res = Perinci::Sub::To::CLIDocData::gen_cli_doc_data_from_meta(
             meta => $r->{_help_meta}, meta_is_normalized => 1,
             common_opts  => $self->common_opts,
             per_arg_json => $self->per_arg_json,
             per_arg_yaml => $self->per_arg_yaml,
         );
-        $self->_err("Can't gen CLI help: $res->[0] - $res->[1]")
+        $self->_err("Can't gen_cli_doc_data_from_meta: $res->[0] - $res->[1]")
             unless $res->[0] == 200;
-        $r->{_help_cliospec} = $res->[2]; # cache here
+        $r->{_help_clidocdata} = $res->[2]; # cache here
     }
 
     # ux: since --verbose will potentially show lots of paragraph text, let's
