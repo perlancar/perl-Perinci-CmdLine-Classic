@@ -18,8 +18,8 @@ our $REQ_VERSION = 0; # version requested by user
 
 extends 'Perinci::CmdLine::Base';
 
-with 'SHARYANTO::Role::ColorTheme' unless $ENV{COMP_LINE};
-#with 'SHARYANTO::Role::TermAttrs' unless $ENV{COMP_LINE}; already loaded by ColorTheme
+with 'Color::Theme::Role' unless $ENV{COMP_LINE};
+#with 'Term::App::Role::Attrs' unless $ENV{COMP_LINE}; already loaded by ColorTheme
 with 'Perinci::CmdLine::Role::Help' unless $ENV{COMP_LINE};
 
 has log => (is => 'rw', default=>sub{1});
@@ -900,8 +900,8 @@ L</"LOGGING"> for more details.
 
 =head2 use_utf8 => BOOL
 
-From L<SHARYANTO::Role::TermAttrs> (please see its docs for more details). There
-are several other attributes added by the role.
+From L<Term::App::Role::Attrs> (please see its docs for more details). There are
+several other attributes added by the role.
 
 =head2 undo => BOOL (optional, default 0)
 
@@ -969,11 +969,11 @@ Explicitly turn the progress bar on/off.
 
 =head2 COLOR => INT
 
-Please see L<SHARYANTO::Role::TermAttrs>.
+Please see L<Term::App::Role::Attrs>.
 
 =head2 UTF8 => BOOL
 
-Please see L<SHARYANTO::Role::TermAttrs>.
+Please see L<Term::App::Role::Attrs>.
 
 
 =head1 SEE ALSO

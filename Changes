@@ -1,5 +1,12 @@
 Revision history for Perinci-CmdLine
 
+1.39    2014-12-02 (PERLANCAR)
+
+	- No functional changes.
+
+	- Switch Perinci::Sub::To::{CLIOptSpec,CLIDocData}.
+
+
 1.38    2014-11-21 (PERLANCAR)
 
         - Use Perinci::Sub::To::CLIOptSpec to avoid code duplication and produce
