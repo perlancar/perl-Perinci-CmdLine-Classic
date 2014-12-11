@@ -18,9 +18,9 @@ our $REQ_VERSION = 0; # version requested by user
 
 extends 'Perinci::CmdLine::Base';
 
-with 'Color::Theme::Role' unless $ENV{COMP_LINE};
-#with 'Term::App::Role::Attrs' unless $ENV{COMP_LINE}; already loaded by ColorTheme
+with 'Color::Theme::Role::ANSI' unless $ENV{COMP_LINE};
 with 'Perinci::CmdLine::Role::Help' unless $ENV{COMP_LINE};
+with 'Term::App::Role::Attrs' unless $ENV{COMP_LINE};
 
 has log => (is => 'rw', default=>sub{1});
 has undo => (is=>'rw', default=>sub{0});
