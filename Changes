@@ -1,5 +1,12 @@
 Revision history for Perinci-CmdLine
 
+1.40    2014-12-11 (PERLANCAR)
+
+        - Use new name of renamed modules: SHARYANTO::Role::ColorTheme ->
+          Color::Theme::Role::ANSI, SHARYANTO::Role::TermAttrs ->
+          Term::App::Role::Attrs.
+
+
 1.39    2014-12-02 (PERLANCAR)
 
 	- No functional changes.
