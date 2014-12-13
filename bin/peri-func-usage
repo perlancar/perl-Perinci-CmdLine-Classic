@@ -30,7 +30,7 @@ sub generate_usage {
 
     my $progname = $url; $progname =~ s!.+/!!;
     my $cmd = Perinci::CmdLine->new(
-        log_any_app => 0,
+        log => 0,
         program_name => $progname,
         url => $url,
     );
@@ -39,7 +39,7 @@ sub generate_usage {
 }
 
 my $cmd = Perinci::CmdLine->new(
-    log_any_app => 0, # speed up start-up
+    log => 0, # speed up start-up
     url => '/main/generate_usage',
 );
 delete $cmd->common_opts->{format};
