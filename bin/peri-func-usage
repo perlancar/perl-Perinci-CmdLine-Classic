@@ -1,5 +1,8 @@
 #!perl
 
+# DATE
+# VERSION
+
 use 5.010;
 use strict;
 use warnings;
@@ -7,12 +10,11 @@ use Log::Any '$log';
 
 use Perinci::CmdLine;
 
-# VERSION
-
 our %SPEC;
 
 $SPEC{generate_usage} = {
     v => 1.1,
+    summary => 'Display command-line usage of a Riap function',
     args => {
         url => {
             summary => 'Riap URL to function, e.g. /Git/Bunch/backup_bunch',
@@ -46,7 +48,7 @@ delete $cmd->common_opts->{format};
 delete $cmd->common_opts->{format_options};
 $cmd->run;
 
-# ABSTRACT: Display command-line usage of a Riap function
+# ABSTRACT:
 # PODNAME:
 
 =head1 SYNOPSIS
