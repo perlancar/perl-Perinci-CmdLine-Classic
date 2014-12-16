@@ -47,7 +47,7 @@ delete $cmd->common_opts->{format_options};
 $cmd->run;
 
 # ABSTRACT: Display command-line usage of a Riap function
-# PODNAME: peri-func-usage
+# PODNAME:
 
 =head1 SYNOPSIS
 
