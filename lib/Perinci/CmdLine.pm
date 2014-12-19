@@ -146,50 +146,41 @@ sub BUILD {
         };
     }
 
-    if (!$self->{common_opts}) {
+    # translate summary & usage
+    my $_t = sub {
+        no warnings;
+        my $co_name = shift;
+        my $copt = $Perinci::CmdLine::Base::copts{$co_name};
+        my %res;
+        for (keys %$copt) {
+            if ($_ eq 'summary' || $_ eq 'usage') {
+                $res{$_} = N__($copt->{$_});
+            } else {
+                $res{$_} = $copt->{$_};
+            }
+        }
+        %res;
+    };
 
+    if (!$self->{common_opts}) {
         my $copts = {};
 
         $copts->{version} = {
-            getopt  => "version|v",
-            usage   => N__("--version (or -v)"),
-            summary => N__("Show version"),
+            $_t->('version'),
             show_in_options => sub { $ENV{VERBOSE} },
-            handler => sub {
-                my ($go, $val, $r) = @_;
-                die "'url' not set, required for --version"
-                    unless $self->url;
-                $r->{action} = 'version';
-                $r->{skip_parse_subcommand_argv} = 1;
-            },
         };
-
         $copts->{help} = {
-            getopt  => "help|h|?",
-            usage   => N__("--help (or -h, -?) [--verbose]"),
-            summary => N__("Display this help message"),
+            $_t->('help'),
             show_in_options => sub { $ENV{VERBOSE} },
-            handler => sub {
-                my ($go, $val, $r) = @_;
-                $r->{action} = 'help';
-                $r->{skip_parse_subcommand_argv} = 1;
-            },
-            order   => 0, # high
         };
-
         $copts->{format} = {
-            getopt  => "format=s",
-            summary => N__("Choose output format, e.g. json, text"),
+            $_t->('format'),
             schema => ['str*' => in => $formats],
-            handler => sub {
-                my ($go, $val, $r) = @_;
-                $r->{format} = $val;
-            },
         };
-
+        # XXX support --naked-res
         if ($REQ_VERSION >= 1.04) {
             $copts->{json} = {
-                getopt  => "json",
+                $_t->('json'),
                 summary => N__("Equivalent to --format=json-pretty"),
                 handler => sub {
                     my ($go, $val, $r) = @_;
@@ -213,7 +204,6 @@ sub BUILD {
                 },
             };
         }
-
         $copts->{format_options} = {
             getopt  => "format-options=s",
             summary => N__("Pass options to formatter"),
@@ -225,114 +215,31 @@ sub BUILD {
 
         if ($self->subcommands) {
             $copts->{subcommands} = {
-                getopt  => "subcommands",
-                usage   => N__("--subcommands"),
-                show_in_usage => sub {
-                    my ($self, $r) = @_;
-                    !$r->{subcommand_name};
-                },
+                $_t->('subcommands'),
                 show_in_options => sub {
                     my ($self, $r) = @_;
                     $ENV{VERBOSE} && !$r->{subcommand_name};
                 },
-                summary => N__("List available subcommands"),
                 show_in_help => 0,
-                handler => sub {
-                    my ($go, $val, $r) = @_;
-                    $r->{action} = 'subcommands';
-                    $r->{skip_parse_subcommand_argv} = 1;
-                },
             };
         }
 
         if (defined $self->default_subcommand) {
-            # 'cmd=SUBCOMMAND_NAME' can be used to select other subcommands
-            # when default_subcommand is in effect.
-            $copts->{cmd} = {
-                getopt  => "cmd=s",
-                handler => sub {
-                    my ($go, $val, $r) = @_;
-                    $r->{subcommand_name} = $val;
-                    $r->{subcommand_name_from} = '--cmd';
-                },
-            };
+            $copts->{cmd} = { $_t->('cmd') };
         }
 
         if ($self->read_config) {
-            $copts->{config_path} = {
-                getopt  => 'config-path=s@',
-                summary => N__('Set path to configuration file'),
-                handler => sub {
-                    my ($go, $val, $r) = @_;
-                    $r->{config_paths} //= [];
-                    push @{ $r->{config_paths} }, $val;
-                },
-            };
-            $copts->{no_config} = {
-                getopt  => 'no-config',
-                summary => N__('Do not use any configuration file'),
-                handler => sub {
-                    my ($go, $val, $r) = @_;
-                    $r->{read_config} = 0;
-                },
-            };
-            $copts->{config_profile} = {
-                getopt  => 'config-profile=s',
-                summary => N__('Set configuration profile to use'),
-                handler => sub {
-                    my ($go, $val, $r) = @_;
-                    $r->{config_profile} = $val;
-                },
-            };
+            $copts->{config_path}    = { $_t->('config_path') };
+            $copts->{no_config}      = { $_t->('no_config') };
+            $copts->{config_profile} = { $_t->('config_profile') };
         }
 
-        # convenience for Log::Any::App-using apps
         if ($self->log) {
-            # since the cmdline opts is consumed, Log::Any::App doesn't see
-            # this. we currently work around this via setting env.
-
-            $copts->{quiet} = {
-                getopt  => "quiet",
-                summary => N__("Set log level to quiet"),
-                handler => sub {
-                    my ($go, $val, $r) = @_;
-                    $ENV{QUIET} = 1;
-                },
-            };
-            $copts->{verbose} = {
-                getopt  => "verbose",
-                summary => N__("Set log level to verbose"),
-                handler => sub {
-                    my ($go, $val, $r) = @_;
-                    $ENV{VERBOSE} = 1;
-                    $r->{_help_verbose} = 1;
-                },
-            };
-            $copts->{debug} = {
-                getopt  => "debug",
-                summary => N__("Set log level to debug"),
-                handler => sub {
-                    my ($go, $val, $r) = @_;
-                    $ENV{DEBUG} = 1;
-                },
-            };
-            $copts->{trace} = {
-                getopt  => "trace",
-                summary => N__("Set log level to trace"),
-                handler => sub {
-                    my ($go, $val, $r) = @_;
-                    $ENV{TRACE} = 1;
-                },
-            };
-
-            $copts->{log_level} = {
-                getopt  => "log-level=s",
-                summary => N__("Set log level"),
-                handler => sub {
-                    my ($go, $val, $r) = @_;
-                    $ENV{LOG_LEVEL} = $val;
-                },
-            };
+            $copts->{log_level} = { $_t->('log_level'), };
+            $copts->{trace}     = { $_t->('trace'), };
+            $copts->{debug}     = { $_t->('debug'), };
+            $copts->{verbose}   = { $_t->('verbose'), };
+            $copts->{quiet}     = { $_t->('quiet'), };
         }
 
         if ($self->undo) {
