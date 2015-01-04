@@ -1,12 +1,22 @@
 Revision history for Perinci-CmdLine
 
+1.42    2015-01-03 (PERLANCAR)
+
+        - No functional changes.
+
+        - Remove unneeded dep [RT#101270].
+
 1.41    2014-12-19 (PERLANCAR)
+
+        - No functional changes.
 
         - Adjust to new pericmd-base (0.68, refactored common bits of default
           common_opts to ::Base to reduce code duplication).
 
 
 1.40    2014-12-11 (PERLANCAR)
+
+        - No functional changes.
 
         - Use new name of renamed modules: SHARYANTO::Role::ColorTheme ->
           Color::Theme::Role::ANSI, SHARYANTO::Role::TermAttrs ->
