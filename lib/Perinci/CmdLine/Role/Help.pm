@@ -10,7 +10,6 @@ use Moo::Role;
 
 use Locale::TextDomain::UTF8 'Perinci-CmdLine';
 use Perinci::Object;
-use Perinci::ToUtil;
 
 sub _help_draw_curtbl {
     my ($self, $r) = @_;
