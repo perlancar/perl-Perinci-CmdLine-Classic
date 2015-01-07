@@ -1,5 +1,11 @@
 Revision history for Perinci-CmdLine
 
+1.43    2015-01-07 (PERLANCAR)
+
+	- Update old code (_err is no more) and change help hook interface
+	  (now pass $r).
+
+
 1.42    2015-01-03 (PERLANCAR)
 
         - No functional changes.
