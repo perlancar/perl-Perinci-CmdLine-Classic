@@ -408,6 +408,7 @@ sub help_section_result {
                    keys %handler_args) {
         my $ha = $handler_args{$k};
         my $meth = $ha->{meth};
+        #say "D:Invoking $meth ...";
         my $t = $self->$meth(meta => $meta, %$ha);
         $text .= $t if $t;
     }
