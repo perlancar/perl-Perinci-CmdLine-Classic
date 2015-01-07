@@ -373,8 +373,7 @@ sub help_section_result {
     $text = $summary . ($summary ? "\n\n" : "") . $desc;
 
     # collect handler
-    my %handler_args;
-    my %handler_metas;
+    my %handlers;
     for my $k0 (keys %$rmeta) {
         my $v = $rmeta->{$k0};
 
@@ -394,22 +393,19 @@ sub help_section_result {
         unless ($self->can($meth)) {
             die "No help handler for property result/$k0 ($meth)";
         }
-        my $hm = $self->$meth;
-        my $ha = {
-            prio=>$hm->{prio}, value=>$v->{$k0}, property=>$k0,
-            meth=>"help_hook_result__$k",
+        my $hmeta = $self->$meth;
+        $handlers{$k} = {
+            prio => $hmeta->{prio},
+            meth => "help_hook_result__$k",
         };
-        $handler_args{$k} = $ha;
-        $handler_metas{$k} = $hm;
     }
 
     # call all the handlers in order
-    for my $k (sort {$handler_args{$a}{prio} <=> $handler_args{$b}{prio}}
-                   keys %handler_args) {
-        my $ha = $handler_args{$k};
-        my $meth = $ha->{meth};
-        #say "D:Invoking $meth ...";
-        my $t = $self->$meth(meta => $meta, %$ha);
+    for my $k (sort {$handlers{$a}{prio} <=> $handlers{$b}{prio}}
+                   keys %handlers) {
+        my $h = $handlers{$k};
+        my $meth = $h->{meth};
+        my $t = $self->$meth($r);
         $text .= $t if $t;
     }
 
@@ -435,11 +431,11 @@ sub run_help {
     unless ($r->{_help_meta}) {
         my $url = $r->{subcommand_data}{url} // $self->url;
         my $res = $self->riap_client->request(info => $url);
-        $self->_err("Can't info '$url': $res->[0] - $res->[1]")
+        die [500, "Can't info '$url': $res->[0] - $res->[1]"]
             unless $res->[0] == 200;
         $r->{_help_info} = $res->[2];
         $res = $self->riap_client->request(meta => $url);
-        $self->_err("Can't meta '$url': $res->[0] - $res->[1]")
+        die [500, "Can't meta '$url': $res->[0] - $res->[1]"]
             unless $res->[0] == 200;
         $r->{_help_meta} = $res->[2]; # cache here
     }
@@ -453,7 +449,7 @@ sub run_help {
             per_arg_json => $self->per_arg_json,
             per_arg_yaml => $self->per_arg_yaml,
         );
-        $self->_err("Can't gen_cli_doc_data_from_meta: $res->[0] - $res->[1]")
+        die [500, "Can't gen_cli_doc_data_from_meta: $res->[0] - $res->[1]"]
             unless $res->[0] == 200;
         $r->{_help_clidocdata} = $res->[2]; # cache here
     }
