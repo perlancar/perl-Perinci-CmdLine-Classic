@@ -378,8 +378,7 @@ sub _setup_progress_output {
 
     if ($ENV{PROGRESS} // (-t STDOUT)) {
         require Progress::Any::Output;
-        Progress::Any::Output->set("TermProgressBarColor");
-        my $out = $Progress::Any::outputs{''}[0];
+        my $out = Progress::Any::Output->set("TermProgressBarColor");
         $setup_progress = 1;
         # we need to patch the logger adapters so it won't interfere with
         # progress meter's output
