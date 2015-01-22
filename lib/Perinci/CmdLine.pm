@@ -567,8 +567,6 @@ sub hook_display_result {
 sub hook_after_run {
     my ($self, $r) = @_;
     $self->_unsetup_progress_output;
-    $log->tracef("End of CLI run, res status=%s, exit code=%s",
-                 $r->{res}[0], $self->status2exitcode($r->{res}[0]));
 }
 
 sub run_subcommands {
