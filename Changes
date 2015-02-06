@@ -1,5 +1,14 @@
 Revision history for Perinci-CmdLine-Classic
 
+1.45    2015-02-06 (PERLANCAR)
+
+        - Rename module/dist from Perinci::CmdLine to Perinci::CmdLine::Classic
+          to allow us to refer to it more clearly.
+
+        - Enable --json unconditionally, but remove --yaml and --perl so we are
+          more like ::Lite.
+
+
 1.44    2015-01-11 (PERLANCAR)
 
 	- No functional changes.
