@@ -8,7 +8,7 @@ use strict;
 use warnings;
 use Log::Any '$log';
 
-use Perinci::CmdLine;
+use Perinci::CmdLine::Classic;
 
 our %SPEC;
 
@@ -40,7 +40,7 @@ sub generate_usage {
     [200, "OK", ''];
 }
 
-my $cmd = Perinci::CmdLine->new(
+my $cmd = Perinci::CmdLine::Classic->new(
     log => 0, # speed up start-up
     url => '/main/generate_usage',
 );

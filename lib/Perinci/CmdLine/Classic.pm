@@ -1,4 +1,4 @@
-package Perinci::CmdLine;
+package Perinci::CmdLine::Classic;
 
 # DATE
 # VERSION
@@ -10,7 +10,7 @@ use Log::Any '$log';
 
 use Moo;
 use experimental 'smartmatch'; # must be after Moo
-use Locale::TextDomain::UTF8 'Perinci-CmdLine';
+use Locale::TextDomain::UTF8 'Perinci-CmdLine-Classic';
 use Perinci::Object;
 use Scalar::Util qw(blessed);
 
@@ -19,7 +19,7 @@ our $REQ_VERSION = 0; # version requested by user
 extends 'Perinci::CmdLine::Base';
 
 with 'Color::Theme::Role::ANSI' unless $ENV{COMP_LINE};
-with 'Perinci::CmdLine::Role::Help' unless $ENV{COMP_LINE};
+with 'Perinci::CmdLine::Classic::Role::Help' unless $ENV{COMP_LINE};
 with 'Term::App::Role::Attrs' unless $ENV{COMP_LINE};
 
 has log => (is => 'rw', default=>sub{1});
@@ -178,32 +178,14 @@ sub BUILD {
             schema => ['str*' => in => $formats],
         };
         # XXX support --naked-res
-        if ($REQ_VERSION >= 1.04) {
-            $copts->{json} = {
-                $_t->('json'),
-                summary => N__("Equivalent to --format=json-pretty"),
-                handler => sub {
-                    my ($go, $val, $r) = @_;
-                    $r->{format} = 'json-pretty';
-                },
-            };
-            $copts->{yaml} = {
-                getopt  => "yaml",
-                summary => N__("Equivalent to --format=yaml"),
-                handler => sub {
-                    my ($go, $val, $r) = @_;
-                    $r->{format} = 'yaml';
-                },
-            };
-            $copts->{perl} = {
-                getopt  => "perl",
-                summary => N__("Equivalent to --format=perl"),
-                handler => sub {
-                    my ($go, $val, $r) = @_;
-                    $r->{format} = 'perl';
-                },
-            };
-        }
+        $copts->{json} = {
+            $_t->('json'),
+            summary => N__("Equivalent to --format=json-pretty"),
+            handler => sub {
+                my ($go, $val, $r) = @_;
+                $r->{format} = 'json-pretty';
+            },
+        };
         $copts->{format_options} = {
             getopt  => "format-options=s",
             summary => N__("Pass options to formatter"),
@@ -641,10 +623,10 @@ sub run_version {
         "\n",
         "  ", __x(
             "{program} version {version}",
-            program => $self->_color('emphasis', "Perinci::CmdLine"),
+            program => $self->_color('emphasis', "Perinci::CmdLine::Classic"),
             version => $self->_color('emphasis',
-                                     $Perinci::CmdLine::VERSION || "dev")),
-        ($Perinci::CmdLine::DATE ? " ($Perinci::CmdLine::DATE)" : ""),
+                                     $Perinci::CmdLine::Classic::VERSION || "dev")),
+        ($Perinci::CmdLine::Classic::DATE ? " ($Perinci::CmdLine::Classic::DATE)" : ""),
         "\n",
     ), {"x.perinci.cmdline._skip_format"=>1}];
 }

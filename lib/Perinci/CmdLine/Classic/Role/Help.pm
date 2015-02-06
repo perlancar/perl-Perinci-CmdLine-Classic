@@ -1,4 +1,4 @@
-package Perinci::CmdLine::Role::Help;
+package Perinci::CmdLine::Classic::Role::Help;
 
 # DATE
 # VERSION

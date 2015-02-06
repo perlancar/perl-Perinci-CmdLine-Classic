@@ -4,11 +4,11 @@ use 5.010;
 use strict;
 use warnings;
 
-use Perinci::CmdLine;
+use Perinci::CmdLine::Classic;
 use Test::More 0.98;
 use Test::Perinci::CmdLine qw(test_complete);
 
-$Test::Perinci::CmdLine::CLASS = 'Perinci::CmdLine';
+$Test::Perinci::CmdLine::CLASS = 'Perinci::CmdLine::Classic';
 
 test_complete(
     args       => {url=>'/Perinci/Examples/test_completion'},

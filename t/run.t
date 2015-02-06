@@ -6,11 +6,11 @@ use warnings;
 
 use File::Slurp::Tiny qw(write_file);
 use File::Temp qw(tempdir tempfile);
-use Perinci::CmdLine 1.04;
+use Perinci::CmdLine::Classic;
 use Test::More 0.98;
 use Test::Perinci::CmdLine qw(test_run);
 
-$Test::Perinci::CmdLine::CLASS = 'Perinci::CmdLine';
+$Test::Perinci::CmdLine::CLASS = 'Perinci::CmdLine::Classic';
 
 subtest 'help action' => sub {
     test_run(
