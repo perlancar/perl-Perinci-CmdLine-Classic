@@ -1,5 +1,11 @@
 Revision history for Perinci-CmdLine-Classic
 
+1.46    2015-02-26 (PERLANCAR)
+
+	- [Bugfix] Pass subcommands hash to Perinci::CmdLine::Help even
+	  though subcommands list is dynamic (coderef).
+
+
 1.45    2015-02-06 (PERLANCAR)
 
         - Rename module/dist from Perinci::CmdLine to Perinci::CmdLine::Classic
