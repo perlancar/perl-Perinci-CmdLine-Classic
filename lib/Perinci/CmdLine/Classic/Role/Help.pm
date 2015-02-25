@@ -258,8 +258,8 @@ sub help_section_subcommands {
     my ($self, $r) = @_;
 
     my $verbose = $r->{_help_verbose};
-    my $scs = $self->subcommands;
-    return unless $scs && !$r->{subcommand_name};
+    return unless $self->subcommands && !$r->{subcommand_name};
+    my $scs = $self->list_subcommands;
 
     my @scs = sort keys %$scs;
     my @shown_scs;
