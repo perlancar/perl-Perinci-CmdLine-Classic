@@ -494,8 +494,7 @@ sub hook_format_result {
         $format = 'text';
     }
 
-    $res->[3]{result_format_options} = $r->{format_options}
-        if $r->{format_options};
+    $res->[3]{format_options} = $r->{format_options} if $r->{format_options};
 
     if ($res->[3]{is_stream}) {
         $log->tracef("Result is a stream");
