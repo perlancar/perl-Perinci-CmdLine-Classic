@@ -1,5 +1,12 @@
 Revision history for Perinci-CmdLine-Classic
 
+1.48    2015-03-22 (PERLANCAR)
+
+	- No functional changes.
+
+	- [doc] Add more attractive Synopsis, link to tutorial blog series.
+
+
 1.47    2015-03-10 (PERLANCAR)
 
 	- Change result metadata 'result_format_options' ->
