@@ -736,12 +736,19 @@ sub run_redo {
 
 =head1 SYNOPSIS
 
-See L<Perinci::CmdLine::Manual::Examples>.
+#RENDER_TEMPLATE: dist=>"Perinci-CmdLine-Lite", dist_file=>"templates/synopsis.txt", context=>{module=>"Perinci::CmdLine::Classic"}
 
 
 =head1 DESCRIPTION
 
-See L<Perinci::CmdLine::Manual>.
+#RENDER_TEMPLATE: dist=>"Perinci-CmdLine-Lite", dist_file=>"templates/description.txt"
+
+Perinci::CmdLine::Classic is the heavier backend implementation which supports
+some extra features currently not supported by the default backend
+implementation L<Perinci::CmdLine::Lite>. These features come at some startup
+overhead cost and more dependencies. You normally should use
+L<Perinci::CmdLine::Any> instead to be able to switch backend on the fly.
+
 
 Screenshots:
 
@@ -863,13 +870,6 @@ Please see L<Term::App::Role::Attrs>.
 
 =head1 SEE ALSO
 
-L<Perinci>, L<Rinci>, L<Riap>.
-
-L<Perinci::CmdLine::Base>.
-
-L<Perinci::CmdLine::Lite>.
-
-Other CPAN modules to write command-line applications: L<App::Cmd>, L<App::Rad>,
-L<MooseX::Getopt>.
+L<Perinci::CmdLine::Any>, L<Perinci::CmdLine::Lite>.
 
 =cut
