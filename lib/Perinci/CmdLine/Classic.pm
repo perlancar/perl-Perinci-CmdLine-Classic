@@ -193,6 +193,8 @@ sub BUILD {
                 my ($go, $val, $r) = @_;
                 $r->{format_options} = __json_decode($val);
             },
+            is_settable_via_config => 1,
+            tags => ['category:output'],
         };
 
         if ($self->subcommands) {
@@ -226,7 +228,6 @@ sub BUILD {
 
         if ($self->undo) {
             $copts->{history} = {
-                category => 'Undo options',
                 getopt  => 'history',
                 summary => N__('List actions history'),
                 handler => sub {
@@ -234,9 +235,9 @@ sub BUILD {
                     $r->{action} = 'history';
                     $r->{skip_parse_subcommand_argv} = 1;
                 },
+                tags => ['category:undo'],
             };
             $copts->{clear_history} = {
-                category => 'Undo options',
                 getopt  => "clear-history",
                 summary => N__('Clear actions history'),
                 handler => sub {
@@ -244,9 +245,9 @@ sub BUILD {
                     $r->{action} = 'clear_history';
                     $r->{skip_parse_subcommand_argv} = 1;
                 },
+                tags => ['category:undo'],
             };
             $copts->{undo} = {
-                category => 'Undo options',
                 getopt  => 'undo',
                 summary => N__('Undo previous action'),
                 handler => sub {
@@ -254,9 +255,9 @@ sub BUILD {
                     $r->{action} = 'undo';
                     $r->{skip_parse_subcommand_argv} = 1;
                 },
+                tags => ['category:undo'],
             };
             $copts->{redo} = {
-                category => 'Undo options',
                 getopt  => 'redo',
                 summary => N__('Redo previous undone action'),
                 handler => sub {
