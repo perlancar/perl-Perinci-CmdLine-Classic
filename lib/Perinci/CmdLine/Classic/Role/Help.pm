@@ -419,7 +419,7 @@ sub help_section_links {
     # not yet
 }
 
-sub run_help {
+sub action_help {
     my ($self, $r) = @_;
 
     $r->{_help_buf} = '';

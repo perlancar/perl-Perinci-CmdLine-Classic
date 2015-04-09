@@ -551,7 +551,7 @@ sub hook_after_run {
     $self->_unsetup_progress_output;
 }
 
-sub run_subcommands {
+sub action_subcommands {
     my ($self, $r) = @_;
 
     if (!$self->subcommands) {
@@ -604,7 +604,7 @@ sub run_subcommands {
      {"x.perinci.cmdline._skip_format"=>1}];
 }
 
-sub run_version {
+sub action_version {
     my ($self, $r) = @_;
 
     my $url = $r->{subcommand_data}{url} // $self->url;
@@ -631,7 +631,7 @@ sub run_version {
     ), {"x.perinci.cmdline._skip_format"=>1}];
 }
 
-sub run_call {
+sub action_call {
     my ($self, $r) = @_;
 
     my $scn = $r->{subcommand_name};
@@ -693,7 +693,7 @@ sub run_call {
     $res;
 }
 
-sub run_history {
+sub action_history {
     my ($self, $r) = @_;
     my $res = $self->riap_client->request(list_txs => "/", {detail=>1});
     $log->tracef("list_txs res=%s", $res);
@@ -715,17 +715,17 @@ sub run_history {
     [200, "OK", \@txs];
 }
 
-sub run_clear_history {
+sub action_clear_history {
     my ($self, $r) = @_;
     $self->riap_client->request(discard_all_txs => "/");
 }
 
-sub run_undo {
+sub action_undo {
     my ($self, $r) = @_;
     $self->riap_client->request(undo => "/");
 }
 
-sub run_redo {
+sub action_redo {
     my ($self, $r) = @_;
     $self->riap_client->request(redo => "/");
 }
