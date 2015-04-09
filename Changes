@@ -1,5 +1,14 @@
 Revision history for Perinci-CmdLine-Classic
 
+1.49    2015-04-09 (PERLANCAR)
+
+	- [Removed feature] Remove bin/peri-func-usage because it's not
+          maintained and I'm not using it.
+
+	- Adjust to Perinci::CmdLine::Base 1.06 (renamed run_* methods to
+          action_*).
+
+
 1.48    2015-03-22 (PERLANCAR)
 
 	- No functional changes.
