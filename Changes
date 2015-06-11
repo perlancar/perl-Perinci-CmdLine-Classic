@@ -1,5 +1,12 @@
 Revision history for Perinci-CmdLine-Classic
 
+1.51    2015-06-11 (PERLANCAR)
+
+	- No functional changes.
+
+        - Use Test::Perinci::CmdLine test suite.
+
+
 1.50    2015-04-11 (PERLANCAR)
 
 	- Add common option: --no-env like in PC:Lite.
