@@ -612,27 +612,42 @@ sub action_version {
     my ($self, $r) = @_;
 
     my $url = $r->{subcommand_data}{url} // $self->url;
-    my $meta = $self->get_meta($r, $url);
-    my $ver = $meta->{entity_v} // "?";
-    my $date = $meta->{entity_date};
 
-    [200, "OK", join(
-        "",
-        __x(
+    my @text;
+
+    {
+        my $meta = $self->get_meta($r, $url);
+        push @text, __x(
             "{program} version {version}",
             program => $self->_color('program_name',
                                      $self->get_program_and_subcommand_name),
-            version => $self->_color('emphasis', $ver)),
-        ($date ? " ($date)" : ""),
-        "\n",
-        "  ", __x(
+            version => $self->_color('emphasis', ($meta->{entity_v} // "?")),
+        ),
+            ($meta->{entity_date} ? " ($meta->{entity_date})" : ""),
+            "\n";
+    }
+
+    for my $url (@{ $self->extra_urls_for_version // [] }) {
+        my $meta = $self->get_meta($r, $url);
+        push @text, "  ", __x(
             "{program} version {version}",
-            program => $self->_color('emphasis', "Perinci::CmdLine::Classic"),
-            version => $self->_color('emphasis',
-                                     $Perinci::CmdLine::Classic::VERSION || "dev")),
+            program => $url,
+            version => $self->_color('emphasis', ($meta->{entity_v} // "?")),
+        ),
+            ($meta->{entity_date} ? " ($meta->{entity_date})" : ''),
+            "\n";
+    }
+
+    push @text, "  ", __x(
+        "{program} version {version}",
+        program => $self->_color('emphasis', "Perinci::CmdLine::Classic"),
+        version => $self->_color('emphasis',
+                                 $Perinci::CmdLine::Classic::VERSION || "dev"),
+    ),
         ($Perinci::CmdLine::Classic::DATE ? " ($Perinci::CmdLine::Classic::DATE)" : ""),
-        "\n",
-    ), {"x.perinci.cmdline._skip_format"=>1}];
+        "\n";
+
+    [200, "OK", join("", @text), {"x.perinci.cmdline._skip_format"=>1}];
 }
 
 sub action_call {
