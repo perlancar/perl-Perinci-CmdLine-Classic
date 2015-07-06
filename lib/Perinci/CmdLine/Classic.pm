@@ -560,7 +560,7 @@ sub action_subcommands {
 
     if (!$self->subcommands) {
         return [200, "OK", __("There are no subcommands") . ".",
-                {"x.perinci.cmdline._skip_format"=>1}];
+                {"cmdline.skip_format"=>1}];
     }
 
     $r->{_help_buf} = '';
@@ -605,7 +605,7 @@ sub action_subcommands {
     $self->_help_draw_curtbl($r);
 
     [200, "OK", $r->{_help_buf},
-     {"x.perinci.cmdline._skip_format"=>1}];
+     {"cmdline.skip_format"=>1}];
 }
 
 sub action_version {
@@ -647,7 +647,7 @@ sub action_version {
         ($Perinci::CmdLine::Classic::DATE ? " ($Perinci::CmdLine::Classic::DATE)" : ""),
         "\n";
 
-    [200, "OK", join("", @text), {"x.perinci.cmdline._skip_format"=>1}];
+    [200, "OK", join("", @text), {"cmdline.skip_format"=>1}];
 }
 
 sub action_call {
