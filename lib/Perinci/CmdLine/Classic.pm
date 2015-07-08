@@ -173,29 +173,32 @@ sub BUILD {
             $_t->('help'),
             show_in_options => sub { $ENV{VERBOSE} },
         };
-        $copts->{format} = {
-            $_t->('format'),
-            schema => ['str*' => in => $formats],
-        };
-        # XXX support --naked-res
-        $copts->{json} = {
-            $_t->('json'),
-            summary => N__("Equivalent to --format=json-pretty"),
-            handler => sub {
-                my ($go, $val, $r) = @_;
-                $r->{format} = 'json-pretty';
-            },
-        };
-        $copts->{format_options} = {
-            getopt  => "format-options=s",
-            summary => N__("Pass options to formatter"),
-            handler => sub {
-                my ($go, $val, $r) = @_;
-                $r->{format_options} = __json_decode($val);
-            },
-            is_settable_via_config => 1,
-            tags => ['category:output'],
-        };
+
+        unless ($self->skip_format) {
+            $copts->{format} = {
+                $_t->('format'),
+                schema => ['str*' => in => $formats],
+            };
+            # XXX support --naked-res
+            $copts->{json} = {
+                $_t->('json'),
+                summary => N__("Equivalent to --format=json-pretty"),
+                handler => sub {
+                    my ($go, $val, $r) = @_;
+                    $r->{format} = 'json-pretty';
+                },
+            };
+            $copts->{format_options} = {
+                getopt  => "format-options=s",
+                summary => N__("Pass options to formatter"),
+                handler => sub {
+                    my ($go, $val, $r) = @_;
+                    $r->{format_options} = __json_decode($val);
+                },
+                is_settable_via_config => 1,
+                tags => ['category:output'],
+            };
+        }
 
         if ($self->subcommands) {
             $copts->{subcommands} = {
