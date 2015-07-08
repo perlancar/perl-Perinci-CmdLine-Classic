@@ -1,5 +1,13 @@
 Revision history for Perinci-CmdLine-Classic
 
+1.53    2015-07-08 (PERLANCAR)
+
+        - Adjust to Perinci::CmdLine::Base 1.21 (add skip_format attribute).
+
+        - Update Rinci result metadata attributes interpreted by this module:
+          x.perinci.cmdline._skip_format -> cmdline.skip_format.
+
+
 1.52    2015-06-30 (PERLANCAR)
 
 	- Adjust to Perinci::CmdLine::Base 1.17 (extra_urls_for_version).
