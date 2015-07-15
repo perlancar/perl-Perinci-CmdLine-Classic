@@ -612,6 +612,8 @@ sub action_subcommands {
 }
 
 sub action_version {
+    no strict 'refs';
+
     my ($self, $r) = @_;
 
     my $url = $r->{subcommand_data}{url} // $self->url;
@@ -628,13 +630,22 @@ sub action_version {
         ),
             ($meta->{entity_date} ? " ($meta->{entity_date})" : ""),
             "\n";
+        for my $mod (@{ $meta->{'x.dynamic_generator_modules'} // [] }) {
+            push @text, "  ", __x(
+                "{program} version {version}",
+                program => $self->_color('emphasis', $mod),
+                version => $self->_color('emphasis', (${"$mod\::VERSION"} // "?")),
+            ),
+                (${"$mod\::DATE"} ? " (".${"$mod\::DATE"}.")" : ""),
+                    "\n";
+        }
     }
 
     for my $url (@{ $self->extra_urls_for_version // [] }) {
         my $meta = $self->get_meta($r, $url);
         push @text, "  ", __x(
             "{program} version {version}",
-            program => $url,
+            program => $self->_color('emphasis', $url),
             version => $self->_color('emphasis', ($meta->{entity_v} // "?")),
         ),
             ($meta->{entity_date} ? " ($meta->{entity_date})" : ''),
