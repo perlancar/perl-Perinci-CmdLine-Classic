@@ -1,5 +1,11 @@
 Revision history for Perinci-CmdLine-Classic
 
+1.54    2015-07-15 (PERLANCAR)
+
+	- Show dynamic generator modules' (x.dynamic_generator_modules)
+	  version in --version.
+
+
 1.53    2015-07-08 (PERLANCAR)
 
         - Adjust to Perinci::CmdLine::Base 1.21 (add skip_format attribute).
