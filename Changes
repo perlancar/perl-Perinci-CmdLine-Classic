@@ -1,5 +1,12 @@
 Revision history for Perinci-CmdLine-Classic
 
+1.55    2015-08-18 (PERLANCAR)
+
+	- No functional changes.
+
+	- Switch from Log::Any to Log::Any::IfLOG.
+
+
 1.54    2015-07-15 (PERLANCAR)
 
 	- Show dynamic generator modules' (x.dynamic_generator_modules)
