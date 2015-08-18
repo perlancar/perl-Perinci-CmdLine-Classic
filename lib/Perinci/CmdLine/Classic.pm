@@ -6,7 +6,7 @@ package Perinci::CmdLine::Classic;
 use 5.010001;
 #use strict; # enabled by Moo
 #use warnings; # enabled by Moo
-use Log::Any '$log';
+use Log::Any::IfLOG '$log';
 
 use Moo;
 use experimental 'smartmatch'; # must be after Moo
