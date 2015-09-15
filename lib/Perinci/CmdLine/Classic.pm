@@ -504,15 +504,23 @@ sub hook_format_result {
 
     $res->[3]{format_options} = $r->{format_options} if $r->{format_options};
 
+    my $fres;
     if ($res->[3]{is_stream}) {
         $log->tracef("Result is a stream");
         return undef;
     } elsif ($res->[3]{'x.hint.result_binary'} && $format =~ /text/) {
-        $r->{fres} = $res->[2];
+        $fres = $res->[2];
     } else {
         $log->tracef("Formatting output with %s", $format);
-        $r->{fres} = Perinci::Result::Format::format($res, $format);
+        $fres = Perinci::Result::Format::format($res, $format);
     }
+
+    # ux: prefix error message with program name
+    if ($format=~/text/ && $r->{res}[0] =~ /\A[45]/ && defined($r->{res}[1])) {
+        $fres = "$self->{program_name}: $fres";
+    }
+
+    $fres;
 }
 
 sub hook_display_result {
