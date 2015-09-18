@@ -179,14 +179,13 @@ sub BUILD {
                 $_t->('format'),
                 schema => ['str*' => in => $formats],
             };
-            # XXX support --naked-res
             $copts->{json} = {
                 $_t->('json'),
                 summary => N__("Equivalent to --format=json-pretty"),
-                handler => sub {
-                    my ($go, $val, $r) = @_;
-                    $r->{format} = 'json-pretty';
-                },
+            };
+            $copts->{naked_res} = {
+                $_t->('naked_res'),
+                summary => N__("When outputing as JSON, strip result envelope"),
             };
             $copts->{format_options} = {
                 getopt  => "format-options=s",
