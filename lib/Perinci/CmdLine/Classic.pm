@@ -511,7 +511,7 @@ sub hook_format_result {
         $fres = $res->[2];
     } else {
         $log->tracef("Formatting output with %s", $format);
-        $fres = Perinci::Result::Format::format($res, $format);
+        $fres = Perinci::Result::Format::format($res, $format, $r->{naked_res});
     }
 
     # ux: prefix error message with program name
