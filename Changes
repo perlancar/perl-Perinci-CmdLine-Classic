@@ -1,5 +1,12 @@
 Revision history for Perinci-CmdLine-Classic
 
+1.59    2015-09-29 (PERLANCAR)
+
+        - [Bugfix] Fix --naked-res.
+
+        - Adjust to Test::Perinci::CmdLine 1.25.
+
+
 1.58    2015-09-18 (PERLANCAR)
 
 	- Add result_naked common option like in Perinci::CmdLine::Lite.
