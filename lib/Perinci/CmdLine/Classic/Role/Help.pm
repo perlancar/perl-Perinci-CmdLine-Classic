@@ -68,14 +68,18 @@ sub _help_add_row {
 
     $t->add_row($row);
 
-    for (0..@{$t->{columns}}-1) {
-        my %styles = (formats=>[]);
-        push @{ $styles{formats} },
-            [wrap=>{ansi=>1, mb=>1, width=>$t->{cell_width}-$indent*2}]
+    my $dux_available = eval { require Data::Unixish; 1 } && !$@;
+
+    if ($dux_available) {
+        for (0..@{$t->{columns}}-1) {
+            my %styles = (formats=>[]);
+            push @{ $styles{formats} },
+                [wrap=>{ansi=>1, mb=>1, width=>$t->{cell_width}-$indent*2}]
                 if $wrap;
-        push @{ $styles{formats} }, [lins=>{text=>"  " x $indent}]
-            if $indent && $_ == 0;
-        $t->set_cell_style($rownum, $_, \%styles);
+            push @{ $styles{formats} }, [lins=>{text=>"  " x $indent}]
+                if $indent && $_ == 0;
+            $t->set_cell_style($rownum, $_, \%styles);
+        }
     }
 }
 
