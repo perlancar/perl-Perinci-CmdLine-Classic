@@ -1,5 +1,14 @@
 Revision history for Perinci-CmdLine-Classic
 
+1.60    2015-10-20 (PERLANCAR)
+
+	- No functional changes.
+
+	- To reduce deps, make indenting of columns in --help --verbose
+	  optional, so we don't have to deps require (only recommends) on
+	  Data::Unixish.
+
+
 1.59    2015-09-29 (PERLANCAR)
 
         - [Bugfix] Fix --naked-res.
