@@ -1,5 +1,14 @@
 Revision history for Perinci-CmdLine-Classic
 
+1.61    2015-12-09 (PERLANCAR)
+
+	- No functional changes.
+
+	- Bump prereq version Perinci::CmdLine::Base 1.33 -> 1.42.
+
+	- Bump prereq version Test::Perinci::CmdLine 1.25 -> 1.31 [CT].
+
+
 1.60    2015-10-20 (PERLANCAR)
 
 	- No functional changes.
