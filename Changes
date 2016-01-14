@@ -1,5 +1,12 @@
 Revision history for Perinci-CmdLine-Classic
 
+1.62    2016-01-14 (PERLANCAR)
+
+	- Tweak how utf8 enabling is determined.
+
+	- Bump prereq version Log::Any::IfLOG to 0.07.
+
+
 1.61    2015-12-09 (PERLANCAR)
 
 	- No functional changes.
