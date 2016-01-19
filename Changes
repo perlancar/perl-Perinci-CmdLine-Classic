@@ -1,5 +1,13 @@
 Revision history for Perinci-CmdLine-Classic
 
+1.63    2016-01-19 (PERLANCAR)
+
+	- No functional changes.
+
+	- Bump prereq version to force update: Log::Any::App to 0.52
+	  [RT#110234].
+
+
 1.62    2016-01-14 (PERLANCAR)
 
 	- Tweak how utf8 enabling is determined.
