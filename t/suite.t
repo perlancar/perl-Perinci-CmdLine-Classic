@@ -11,6 +11,5 @@ use Test::Perinci::CmdLine;
 
 pericmd_ok(
     class => 'Perinci::CmdLine::Classic',
-    exclude_tags => ['fail1'], # TODO
 );
 done_testing;
