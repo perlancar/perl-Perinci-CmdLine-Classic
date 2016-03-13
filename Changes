@@ -1,5 +1,12 @@
 Revision history for Perinci-CmdLine-Classic
 
+1.68    2016-03-13 (PERLANCAR)
+
+	- No functional changes.
+
+	- Bump prereq version Data::Unixish to 1.54 [RT#112948].
+
+
 1.67    2016-02-26 (PERLANCAR)
 
 	- Adjust to Perinci::CmdLine::Base 1.51 (support for
