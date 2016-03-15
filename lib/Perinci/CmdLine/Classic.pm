@@ -296,14 +296,14 @@ sub BUILD {
 }
 
 sub __json_decode {
-    require JSON;
-    state $json = do { JSON->new->allow_nonref };
+    require JSON::MaybeXS;
+    state $json = do { JSON::MaybeXS->new->allow_nonref };
     $json->decode(shift);
 }
 
 sub __json_encode {
-    require JSON;
-    state $json = do { JSON->new->allow_nonref };
+    require JSON::MaybeXS;
+    state $json = do { JSON::MaybeXS->new->allow_nonref };
     $json->encode(shift);
 }
 
