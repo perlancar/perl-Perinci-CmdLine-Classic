@@ -1,5 +1,15 @@
 Revision history for Perinci-CmdLine-Classic
 
+1.70    2016-06-12 (PERLANCAR)
+
+	- No functional changes.
+
+	- [dist] Bump prereq versions to force installing of updated
+	  Data::Sah 0.82+: Perinci::Access::Perl -> 0.87,
+	  Perinci::Access::Schemeless -> 0.87, Perinci::Sub::Wrapper ->
+	  0.83, Perinci::Tx::Manager -> 0.56.
+
+
 1.69    2016-03-16 (PERLANCAR)
 
 	- No functional changes.
