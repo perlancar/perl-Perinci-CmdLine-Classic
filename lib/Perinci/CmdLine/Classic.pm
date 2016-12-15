@@ -347,10 +347,14 @@ sub hook_format_row {
 sub hook_after_get_meta {
     my ($self, $r) = @_;
 
-    if (risub($r->{meta})->can_dry_run) {
+    my $metao = risub($r->{meta});
+    if ($metao->can_dry_run) {
+        my $default_dry_run = $metao->default_dry_run // $self->default_dry_run;
+        $r->{dry_run} = 1 if $default_dry_run;
+        $r->{dry_run} = ($ENV{DRY_RUN} ? 1:0) if defined $ENV{DRY_RUN};
         $self->common_opts->{dry_run} = {
-            getopt  => $self->default_dry_run ? 'dry-run!' : 'dry-run',
-            summary => $self->default_dry_run ?
+            getopt  => $default_dry_run ? 'dry-run!' : 'dry-run',
+            summary => $default_dry_run ?
                 N__("Disable simulation mode (also via DRY_RUN=0)") :
                 N__("Run in simulation mode (also via DRY_RUN=1)"),
             handler => sub {
