@@ -349,12 +349,20 @@ sub hook_after_get_meta {
 
     if (risub($r->{meta})->can_dry_run) {
         $self->common_opts->{dry_run} = {
-            getopt  => 'dry-run',
-            summary => N__("Run in simulation mode (also via DRY_RUN=1)"),
+            getopt  => $self->default_dry_run ? 'dry-run!' : 'dry-run',
+            summary => $self->default_dry_run ?
+                N__("Disable simulation mode (also via DRY_RUN=0)") :
+                N__("Run in simulation mode (also via DRY_RUN=1)"),
             handler => sub {
                 my ($go, $val, $r) = @_;
-                $r->{dry_run} = 1;
-                $ENV{VERBOSE} = 1;
+                if ($val) {
+                    $log->debugf("[pericmd] Dry-run mode is activated");
+                    $r->{dry_run} = 1;
+                    #$ENV{VERBOSE} = 1;
+                } else {
+                    $log->debugf("[pericmd] Dry-run mode is deactivated");
+                    $r->{dry_run} = 0;
+                }
             },
         };
     }
