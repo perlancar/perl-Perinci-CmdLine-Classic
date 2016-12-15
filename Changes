@@ -1,5 +1,11 @@
 Revision history for Perinci-CmdLine-Classic
 
+1.73    2016-12-15 (PERLANCAR)
+
+	- Observe default=>1 in 'dry_run' feature property in Rinci
+	  function metadata.
+
+
 1.72    2016-12-15 (PERLANCAR)
 
 	- Observe default_dry_run (Perinci::CmdLine::Base 1.65).
