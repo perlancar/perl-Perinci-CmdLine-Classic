@@ -268,7 +268,6 @@ sub BUILD {
 
     $self->{formats} //= $formats;
     $self->{per_arg_json} //= 1;
-    $self->{per_arg_yaml} //= 1;
 
     unless ($ENV{COMP_LINE}) {
         my $ct = $self->{color_theme} // $ENV{PERINCI_CMDLINE_COLOR_THEME};
