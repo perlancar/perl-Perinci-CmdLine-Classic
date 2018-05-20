@@ -452,6 +452,9 @@ sub hook_before_run {
     $r->{orig_argv} = [@ARGV];
 }
 
+sub hook_before_parse_argv {
+}
+
 sub hook_after_parse_argv {
 }
 
