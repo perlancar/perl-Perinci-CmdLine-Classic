@@ -1,3 +1,5 @@
+## no critic: (ControlStructures::ProhibitMutatingListFunctions)
+
 package Perinci::CmdLine::Classic::Role::Help;
 
 # DATE

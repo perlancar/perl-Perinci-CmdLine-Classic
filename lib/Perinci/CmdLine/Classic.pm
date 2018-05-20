@@ -74,7 +74,7 @@ has riap_client => (
 has action_metadata => (
     is => 'rw',
     default => sub {
-        +{
+        return {
             clear_history => {
             },
             help => {
@@ -113,7 +113,7 @@ sub BUILD {
                          ruby phpserialization)];
 
     if (!$self->{default_prompt_template}) {
-        $self->{default_prompt_template} = N__("Enter %s:") . " ",
+        $self->{default_prompt_template} = N__("Enter %s:") . " ";
     }
 
     if (!$self->{actions}) {
@@ -517,7 +517,8 @@ sub hook_display_result {
             $utf8 = 0; last;
         }
 
-        my $am = $self->action_metadata->{$r->{action}}
+        my $am;
+        $am = $self->action_metadata->{$r->{action}}
             if $r->{action};
         last if defined($utf8 = $am->{use_utf8});
 
@@ -527,7 +528,7 @@ sub hook_display_result {
 
         $utf8 = $self->use_utf8;
     }
-    binmode($handle, ":utf8") if $utf8;
+    binmode($handle, ":encoding(utf8)") if $utf8;
 
     $self->display_result($r);
 }
