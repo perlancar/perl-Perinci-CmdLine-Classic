@@ -200,7 +200,7 @@ sub help_section_options {
                 # BEGIN DUPE1
                 if ($arg_spec && !$opt_spec->{main_opt} &&
                         defined($arg_spec->{pos})) {
-                    if ($arg_spec->{greedy}) {
+                    if ($arg_spec->{slurpy} // $arg_spec->{greedy}) {
                         $ct .= " (=arg[$arg_spec->{pos}-])";
                     } else {
                         $ct .= " (=arg[$arg_spec->{pos}])";
@@ -238,7 +238,7 @@ sub help_section_options {
                     # BEGIN DUPE1
                     if ($arg_spec && !$opt_spec->{main_opt} &&
                             defined($arg_spec->{pos})) {
-                        if ($arg_spec->{greedy}) {
+                        if ($arg_spec->{slurpy} // $arg_spec->{greedy}) {
                             $ct .= " (=arg[$arg_spec->{pos}-])";
                         } else {
                             $ct .= " (=arg[$arg_spec->{pos}])";
