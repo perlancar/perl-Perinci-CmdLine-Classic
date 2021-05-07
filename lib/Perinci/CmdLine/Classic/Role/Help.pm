@@ -33,7 +33,7 @@ sub _help_add_table {
 
     $self->_help_draw_curtbl($r);
     my $t = Text::ANSITable->new;
-    $t->border_style('Default::spacei_ascii');
+    $t->border_style('ASCII::SingleLineInnerOnly');
     $t->cell_pad(0);
     if ($args{column_widths}) {
         for (0..$columns-1) {
@@ -91,9 +91,9 @@ sub _help_add_heading {
 }
 
 sub _color {
-    my ($self, $color_name, $text) = @_;
-    my $color_code = $color_name ?
-        $self->get_theme_color_as_ansi($color_name) : "";
+    my ($self, $item_name, $text) = @_;
+    my $color_code = $item_name ?
+        $self->{color_theme_obj}->get_item_color_as_ansi($item_name) : "";
     my $reset_code = $color_code ? "\e[0m" : "";
     "$color_code$text$reset_code";
 }

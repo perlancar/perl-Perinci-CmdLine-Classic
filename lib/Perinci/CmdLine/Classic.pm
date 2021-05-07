@@ -18,9 +18,23 @@ our $REQ_VERSION = 0; # version requested by user
 
 extends 'Perinci::CmdLine::Base';
 
-with 'Color::Theme::Role::ANSI' unless $ENV{COMP_LINE};
 with 'Perinci::CmdLine::Classic::Role::Help' unless $ENV{COMP_LINE};
 with 'Term::App::Role::Attrs' unless $ENV{COMP_LINE};
+
+has color_theme => (
+    is => 'rw',
+    trigger => sub {
+        require Module::Load::Util;
+        require Role::Tiny;
+
+        my ($self, $val) = @_;
+        my $obj =
+            Module::Load::Util::instantiate_class_with_optional_args(
+                {ns_prefix=>'ColorTheme'}, $val);
+        Role::Tiny->apply_roles_to_object($obj, 'ColorThemeRole::ANSI');
+        $self->{color_theme_obj} = $obj;
+    },
+);
 
 has undo => (is=>'rw', default=>sub{0});
 has undo_dir => (
@@ -274,10 +288,10 @@ sub BUILD {
         if (!$ct) {
             if ($self->use_color) {
                 my $bg = $self->detect_terminal->{default_bgcolor} // '';
-                $ct = 'Default::default' .
-                    ($bg eq 'ffffff' ? '_whitebg' : '');
+                $ct = 'Perinci::CmdLine::Classic::Default' .
+                    ($bg eq 'ffffff' ? 'WhiteBG' : '');
             } else {
-                $ct = 'Default::no_color';
+                $ct = 'NoColor';
             }
         }
         $self->color_theme($ct);
@@ -297,9 +311,9 @@ sub __json_encode {
 }
 
 sub _color {
-    my ($self, $color_name, $text) = @_;
-    my $color_code = $color_name ?
-        $self->get_theme_color_as_ansi($color_name) : "";
+    my ($self, $item_name, $text) = @_;
+    my $color_code = $item_name ?
+        $self->{color_theme_obj}->get_item_color_as_ansi($item_name) : "";
     my $reset_code = $color_code ? "\e[0m" : "";
     "$color_code$text$reset_code";
 }
@@ -435,6 +449,7 @@ sub _unsetup_progress_output {
     my $self = shift;
 
     return unless $setup_progress;
+    no warnings 'once';
     my $out = $Progress::Any::outputs{''}[0];
     $out->cleanup if $out->can("cleanup");
     undef $ph1;
