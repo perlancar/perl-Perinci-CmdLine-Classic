@@ -1,4 +1,4 @@
-package ColorTheme::Perinci::CmdLine::Classic::Default;
+package ColorTheme::Perinci::CmdLine::Classic::DefaultWhiteBG;
 
 # AUTHORITY
 # DATE

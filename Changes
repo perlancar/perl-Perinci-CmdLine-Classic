@@ -1,3 +1,9 @@
+1.814   2021-05-07  Released-By: PERLANCAR; Urgency: medium
+
+	- Adjust to new BorderStyle and ColorTheme specification (2.x)
+	  (resolves RT#135341).
+
+
 1.813   2019-04-15  Released-By: PERLANCAR
 
 	- Observe argument spec property 'slurpy' in addition to 'greedy'
