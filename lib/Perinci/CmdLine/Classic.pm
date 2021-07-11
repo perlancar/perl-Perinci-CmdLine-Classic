@@ -246,6 +246,7 @@ sub BUILD {
                     $r->{skip_parse_subcommand_argv} = 1;
                 },
                 tags => ['category:undo'],
+                key => 'action',
             };
             $copts->{clear_history} = {
                 getopt  => "clear-history",
@@ -256,6 +257,7 @@ sub BUILD {
                     $r->{skip_parse_subcommand_argv} = 1;
                 },
                 tags => ['category:undo'],
+                key => 'action',
             };
             $copts->{undo} = {
                 getopt  => 'undo',
@@ -266,6 +268,7 @@ sub BUILD {
                     $r->{skip_parse_subcommand_argv} = 1;
                 },
                 tags => ['category:undo'],
+                key => 'action',
             };
             $copts->{redo} = {
                 getopt  => 'redo',
@@ -275,6 +278,8 @@ sub BUILD {
                     $r->{action} = 'redo';
                     $r->{skip_parse_subcommand_argv} = 1;
                 },
+                tags => ['category:undo'],
+                key => 'action',
             };
         }
         $self->{common_opts} = $copts;
