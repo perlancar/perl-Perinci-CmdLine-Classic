@@ -1,13 +1,13 @@
 package ColorTheme::Perinci::CmdLine::Classic::Default;
 
+use strict;
+use warnings;
+use parent 'ColorThemeBase::Static';
+
 # AUTHORITY
 # DATE
 # DIST
 # VERSION
-
-use strict;
-use warnings;
-use parent 'ColorThemeBase::Static';
 
 our %THEME = (
     v => 2,

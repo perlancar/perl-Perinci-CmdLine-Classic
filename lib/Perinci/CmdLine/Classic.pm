@@ -388,7 +388,7 @@ my $setup_progress;
 sub _setup_progress_output {
     my $self = shift;
 
-    if ($ENV{PROGRESS} // (-t STDOUT)) {
+    if ($ENV{PROGRESS} // (-t STDOUT)) { ## no critic: InputOutput::ProhibitInteractiveTest
         require Progress::Any::Output;
         my $out = Progress::Any::Output->set("TermProgressBarColor");
         $setup_progress = 1;
@@ -503,7 +503,7 @@ sub hook_format_result {
     my $fres;
     if ($res->[3]{is_stream}) {
         log_trace("Result is a stream");
-        return undef;
+        return;
     } elsif ($res->[3]{'x.hint.result_binary'} && $format =~ /text/) {
         $fres = $res->[2];
     } else {
@@ -615,7 +615,7 @@ sub action_subcommands {
 }
 
 sub action_version {
-    no strict 'refs';
+    no strict 'refs'; ## no critic: TestingAndDebugging::ProhibitNoStrict
 
     my ($self, $r) = @_;
 
