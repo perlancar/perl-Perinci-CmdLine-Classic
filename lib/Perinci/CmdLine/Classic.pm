@@ -1,8 +1,5 @@
 package Perinci::CmdLine::Classic;
 
-# DATE
-# VERSION
-
 use 5.010001;
 #use strict; # enabled by Moo
 #use warnings; # enabled by Moo
@@ -13,6 +10,11 @@ use experimental 'smartmatch'; # must be after Moo
 use Locale::TextDomain::UTF8 'Perinci-CmdLine-Classic';
 use Perinci::Object;
 use Scalar::Util qw(blessed);
+
+# AUTHORITY
+# DATE
+# DIST
+# VERSION
 
 our $REQ_VERSION = 0; # version requested by user
 
@@ -116,6 +118,7 @@ has default_prompt_template => (is=>'rw');
 sub VERSION {
     my ($pkg, $req) = @_;
     $REQ_VERSION = $req;
+    $pkg->SUPER::VERSION(@_);
 }
 
 sub BUILD {

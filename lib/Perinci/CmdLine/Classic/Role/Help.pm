@@ -2,9 +2,6 @@
 
 package Perinci::CmdLine::Classic::Role::Help;
 
-# DATE
-# VERSION
-
 # split here just so it's more organized
 
 use 5.010;
@@ -12,6 +9,11 @@ use Moo::Role;
 
 use Locale::TextDomain::UTF8 'Perinci-CmdLine';
 use Perinci::Object;
+
+# AUTHORITY
+# DATE
+# DIST
+# VERSION
 
 sub _help_draw_curtbl {
     my ($self, $r) = @_;
