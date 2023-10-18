@@ -493,7 +493,7 @@ sub hook_format_result {
 
     require Perinci::Result::Format;
 
-    unless ($format ~~ @{ $self->formats }) {
+    unless (grep { $_ eq $format } @{ $self->formats }) {
         warn "Unknown output format '$format'";
         $format = 'text';
     }
